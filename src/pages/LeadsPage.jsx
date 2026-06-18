@@ -115,16 +115,29 @@ export function LeadsPage() {
           <div className="kicker">Leads intel</div>
           <h1>Detect the nearest dealership and capture the right contact material.</h1>
         </div>
-        <label className="btn primary" htmlFor="contact-capture-input">
-          Capture contact material
-        </label>
+        <div className="action-row">
+          <label className="btn" htmlFor="contact-upload-input">
+            Upload photo
+          </label>
+          <label className="btn primary" htmlFor="contact-camera-input">
+            Use camera
+          </label>
+        </div>
       </section>
 
       <input
-        id="contact-capture-input"
+        id="contact-upload-input"
         className="sr-only-input"
         type="file"
         accept="image/*"
+        onChange={onCaptureFile}
+      />
+      <input
+        id="contact-camera-input"
+        className="sr-only-input"
+        type="file"
+        accept="image/*"
+        capture="environment"
         onChange={onCaptureFile}
       />
 
@@ -155,11 +168,11 @@ export function LeadsPage() {
             ))}
           </div>
           <div className="action-row">
-            <label className="btn primary" htmlFor="contact-capture-input">
-              Capture card
+            <label className="btn" htmlFor="contact-upload-input">
+              Upload card
             </label>
-            <label className="btn" htmlFor="contact-capture-input">
-              Capture storefront
+            <label className="btn primary" htmlFor="contact-camera-input">
+              Camera
             </label>
           </div>
         </div>
@@ -258,7 +271,10 @@ export function LeadsPage() {
           {ocrError ? <div className="inline-alert error">{ocrError}</div> : null}
 
           <div className="action-row">
-            <label className="btn" htmlFor="contact-capture-input">
+            <label className="btn" htmlFor="contact-upload-input">
+              Upload another
+            </label>
+            <label className="btn" htmlFor="contact-camera-input">
               Replace image
             </label>
             <button className="btn primary" type="button" onClick={runOcr} disabled={!capturedImageUrl || ocrBusy}>
