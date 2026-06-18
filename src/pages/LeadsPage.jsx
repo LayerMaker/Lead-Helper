@@ -41,13 +41,20 @@ export function LeadsPage() {
   const [ocrError, setOcrError] = useState("");
   const [ocrFields, setOcrFields] = useState(() => defaultFields(selectedDealership, latestContact));
   const previousDealershipIdRef = useRef(selectedDealership.id);
+  const cameraVideoRef = useRef(null);
+  const cameraCanvasRef = useRef(null);
   const [selectedGroupId, setSelectedGroupId] = useState(selectedCluster.id);
   const [locationBusy, setLocationBusy] = useState(false);
   const [locationStatus, setLocationStatus] = useState("Use location to suggest the nearest dealership.");
   const [locationSuggestion, setLocationSuggestion] = useState(null);
   const [dismissedSuggestionId, setDismissedSuggestionId] = useState("");
+  const [guidedCameraOpen, setGuidedCameraOpen] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [cameraError, setCameraError] = useState("");
+  const [inlineApiKey, setInlineApiKey] = useState("");
 
   const suggestedDomain = useMemo(() => selectedDealership.website || "", [selectedDealership.website]);
+  const effectiveOpenRouterKey = settings?.openRouterApiKey || inlineApiKey.trim();
   const unclusteredDealerships = useMemo(
     () => dealerships.filter((dealership) => !dealership.clusterId),
     [dealerships],
@@ -69,6 +76,18 @@ export function LeadsPage() {
     setOcrError("");
     setOcrStatus("No contact media captured yet");
   }, [latestContact, selectedDealership]);
+
+  useEffect(() => {
+    if (!guidedCameraOpen || !cameraStream || !cameraVideoRef.current) return;
+    cameraVideoRef.current.srcObject = cameraStream;
+    cameraVideoRef.current.play().catch(() => {});
+  }, [cameraStream, guidedCameraOpen]);
+
+  useEffect(() => () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+    }
+  }, [cameraStream]);
 
   function updateField(key, value) {
     setOcrFields((current) => ({
@@ -174,6 +193,98 @@ export function LeadsPage() {
     }
   }
 
+  function saveInlineApiKey() {
+    const key = inlineApiKey.trim();
+    if (!key) {
+      setOcrError("Paste an OpenRouter API key before saving.");
+      return;
+    }
+    dispatch({
+      type: "save-settings",
+      payload: {
+        ...(settings || {}),
+        openRouterApiKey: key,
+        ocrProvider: "openrouter",
+      },
+    });
+    setInlineApiKey("");
+    setOcrError("");
+    setOcrStatus("OpenRouter key saved locally. OCR is ready.");
+  }
+
+  function continueManually() {
+    setOcrError("");
+    setOcrStatus("Manual entry mode. Type the contact details, then save.");
+  }
+
+  function stopGuidedCamera() {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+    }
+    setCameraStream(null);
+    setGuidedCameraOpen(false);
+  }
+
+  async function openGuidedCamera() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError("In-app camera is unavailable in this browser. Use Upload photo instead.");
+      return;
+    }
+
+    setCameraError("");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
+      });
+      setCameraStream(stream);
+      setGuidedCameraOpen(true);
+      setOcrStatus("Align the business card inside the frame, then capture.");
+    } catch (error) {
+      setCameraError(error?.message || "Camera permission was denied or unavailable.");
+    }
+  }
+
+  function captureGuidedPhoto() {
+    const video = cameraVideoRef.current;
+    const canvas = cameraCanvasRef.current;
+    if (!video || !canvas || !video.videoWidth || !video.videoHeight) {
+      setCameraError("Camera preview is not ready yet.");
+      return;
+    }
+
+    const cardAspectRatio = 1.586;
+    const sourceWidth = video.videoWidth;
+    const sourceHeight = video.videoHeight;
+    let cropWidth = sourceWidth * 0.82;
+    let cropHeight = cropWidth / cardAspectRatio;
+    if (cropHeight > sourceHeight * 0.72) {
+      cropHeight = sourceHeight * 0.72;
+      cropWidth = cropHeight * cardAspectRatio;
+    }
+
+    const cropX = (sourceWidth - cropWidth) / 2;
+    const cropY = (sourceHeight - cropHeight) / 2;
+    canvas.width = Math.round(cropWidth);
+    canvas.height = Math.round(cropHeight);
+
+    const context = canvas.getContext("2d");
+    context.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height);
+
+    const imageDataUrl = canvas.toDataURL("image/jpeg", 0.92);
+    setCapturedFileName(`guided-card-${Date.now()}.jpg`);
+    setCapturedImageUrl(imageDataUrl);
+    setOcrStatus("Cropped card image ready. Run OCR to populate the form.");
+    setOcrError("");
+    setCameraError("");
+    setOcrFields(defaultFields(selectedDealership, latestContact));
+    stopGuidedCamera();
+  }
+
   async function onCaptureFile(event) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -194,8 +305,8 @@ export function LeadsPage() {
       setOcrError("Capture or upload a business card first");
       return;
     }
-    if (!settings?.openRouterApiKey) {
-      setOcrError("Add your OpenRouter API key in Settings before running OCR");
+    if (!effectiveOpenRouterKey) {
+      setOcrError("Paste your OpenRouter key here, or continue manually.");
       return;
     }
 
@@ -204,7 +315,7 @@ export function LeadsPage() {
     setOcrStatus("Reading card with Qwen OCR");
     try {
       const result = await runOpenRouterBusinessCardOcr({
-        apiKey: settings.openRouterApiKey,
+        apiKey: effectiveOpenRouterKey,
         model: settings.ocrModel,
         imageDataUrl: capturedImageUrl,
         dealershipName: selectedDealership.name,
@@ -227,7 +338,7 @@ export function LeadsPage() {
         ...ocrFields,
         fileName: capturedFileName || "captured-contact",
         mediaType: "business_card",
-        source: settings?.openRouterApiKey ? "openrouter-qwen" : "manual",
+        source: effectiveOpenRouterKey ? "openrouter-qwen" : "manual",
       },
     });
     setOcrStatus(openEmail ? "Contact saved and email draft primed" : "Contact saved into lead card");
@@ -245,14 +356,7 @@ export function LeadsPage() {
       </section>
 
       <input id="contact-upload-input" className="sr-only-input" type="file" accept="image/*" onChange={onCaptureFile} />
-      <input
-        id="contact-camera-input"
-        className="sr-only-input"
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={onCaptureFile}
-      />
+      <canvas ref={cameraCanvasRef} className="sr-only-input" aria-hidden="true" />
 
       <section className="panel pad" style={{ marginBottom: 14 }}>
         <div className="section-head">
@@ -329,11 +433,34 @@ export function LeadsPage() {
               <div className="kicker">Qwen OCR capture</div>
               <h2>Business card or contact photo</h2>
             </div>
-            <span className={`pill${settings?.openRouterApiKey ? " active" : ""}`}>
-              {settings?.openRouterApiKey ? settings.ocrModel : "Configure OCR in Settings"}
+            <span className={`pill${effectiveOpenRouterKey ? " active" : ""}`}>
+              {effectiveOpenRouterKey ? settings.ocrModel : "Key needed"}
             </span>
           </div>
           <p>Capture the card first. OCR fills the contact fields beside this panel, then you check and save.</p>
+
+          {!settings?.openRouterApiKey ? (
+            <div className="inline-alert api-key-inline">
+              <div className="field">
+                <label>OpenRouter API key</label>
+                <input
+                  className="text-input"
+                  type="password"
+                  value={inlineApiKey}
+                  onChange={(event) => setInlineApiKey(event.target.value)}
+                  placeholder="sk-or-v1-..."
+                />
+              </div>
+              <div className="action-row">
+                <button className="btn primary" type="button" onClick={saveInlineApiKey}>
+                  Save key
+                </button>
+                <button className="btn" type="button" onClick={continueManually}>
+                  Continue manually
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           <div className="capture-preview">
             {capturedImageUrl ? (
@@ -352,14 +479,37 @@ export function LeadsPage() {
           </div>
 
           {ocrError ? <div className="inline-alert error">{ocrError}</div> : null}
+          {cameraError ? <div className="inline-alert error">{cameraError}</div> : null}
+
+          {guidedCameraOpen ? (
+            <div className="guided-camera">
+              <div className="guided-camera-view">
+                <video ref={cameraVideoRef} muted playsInline />
+                <div className="card-guide">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+              <div className="action-row">
+                <button className="btn primary" type="button" onClick={captureGuidedPhoto}>
+                  Capture card
+                </button>
+                <button className="btn" type="button" onClick={stopGuidedCamera}>
+                  Close camera
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           <div className="action-row">
             <label className="btn" htmlFor="contact-upload-input">
               Upload photo
             </label>
-            <label className="btn primary" htmlFor="contact-camera-input">
+            <button className="btn primary" type="button" onClick={openGuidedCamera}>
               Use camera
-            </label>
+            </button>
             <button className="btn primary" type="button" onClick={runOcr} disabled={!capturedImageUrl || ocrBusy}>
               {ocrBusy ? "Reading card" : "Run OCR"}
             </button>
