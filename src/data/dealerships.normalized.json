@@ -1,0 +1,914 @@
+[
+  {
+    "id": "battersea-motors",
+    "clusterId": "battersea",
+    "order": 1,
+    "name": "Battersea Motors",
+    "shortName": "Battersea",
+    "address": "Queenstown Road, Battersea, London",
+    "roleHint": "Ask for Simon or the owner",
+    "contactHint": "Simon Reed handles property leads after 2pm",
+    "parentGroup": "Independent dealer",
+    "brands": [
+      "Mixed used stock"
+    ],
+    "phone": "020 7223 0102",
+    "website": "batterseamotors.co.uk",
+    "pitch": "Urban handover point and overflow stock close to Battersea.",
+    "location": [
+      51.4789,
+      -0.1495
+    ],
+    "radar": {
+      "left": 56,
+      "top": 32
+    },
+    "intelDistance": "0.13 mi",
+    "sourceType": "seed",
+    "sourceQuery": "Battersea Motors"
+  },
+  {
+    "id": "brentford-auto-centre",
+    "clusterId": "brentford",
+    "order": 1,
+    "name": "Brentford Auto Centre",
+    "shortName": "Brentford",
+    "address": "Great West Road, Brentford",
+    "roleHint": "Ask for Operations Manager",
+    "contactHint": "Service yard visible from road",
+    "parentGroup": "Multi-bay used and van stock",
+    "brands": [
+      "Vans",
+      "Mixed used stock"
+    ],
+    "phone": "020 8560 1199",
+    "website": "brentfordautocentre.co.uk",
+    "pitch": "Service-yard overflow and trade stock staging.",
+    "location": [
+      51.4889,
+      -0.2949
+    ],
+    "radar": {
+      "left": 76,
+      "top": 54
+    },
+    "intelDistance": "1.62 mi",
+    "sourceType": "seed",
+    "sourceQuery": "Brentford Auto Centre"
+  },
+  {
+    "id": "fast-cars-chiswick",
+    "clusterId": "chiswick",
+    "order": 1,
+    "name": "Fast Cars Chiswick",
+    "shortName": "Fast Cars",
+    "address": "214 Chiswick High Road, London",
+    "roleHint": "Ask for Sales Manager",
+    "contactHint": "Matthew Carter likely Sales Manager",
+    "parentGroup": "Independent used car showroom",
+    "brands": [
+      "Premium used stock",
+      "Local handover"
+    ],
+    "phone": "020 8742 1101",
+    "website": "fastcarschiswick.co.uk",
+    "pitch": "Overflow storage, handover point, and local staging near Battersea.",
+    "location": [
+      51.4929674,
+      -0.2572227
+    ],
+    "radar": {
+      "left": 57,
+      "top": 34
+    },
+    "intelDistance": "0.84 mi",
+    "sourceType": "seed",
+    "sourceQuery": "214 Chiswick High Road, London"
+  },
+  {
+    "id": "chiswick-motor-house",
+    "clusterId": "chiswick",
+    "order": 2,
+    "name": "Chiswick Motor House",
+    "shortName": "Motor House",
+    "address": "Power Road, Chiswick, London",
+    "roleHint": "Ask for Dealer Principal",
+    "contactHint": "Dealer Principal handles property decisions",
+    "parentGroup": "Single-site showroom",
+    "brands": [
+      "Prestige used",
+      "Overflow stock"
+    ],
+    "phone": "020 8742 1180",
+    "website": "chiswickmotorhouse.co.uk",
+    "pitch": "Overflow stock and handover use with flexible viewing.",
+    "location": [
+      51.4935143,
+      -0.280056
+    ],
+    "radar": {
+      "left": 70,
+      "top": 62
+    },
+    "intelDistance": "0.17 mi",
+    "sourceType": "seed",
+    "sourceQuery": "Power Road, Chiswick, London"
+  },
+  {
+    "id": "west4-auto-centre",
+    "clusterId": "chiswick",
+    "order": 3,
+    "name": "West4 Auto Centre",
+    "shortName": "West4",
+    "address": "Acton Lane, Chiswick, London",
+    "roleHint": "Ask for Store Manager",
+    "contactHint": "Operations contact likely, owner unknown",
+    "parentGroup": "Family-owned used cars",
+    "brands": [
+      "Value stock",
+      "Trade cars"
+    ],
+    "phone": "020 8994 4432",
+    "website": "west4autocentre.co.uk",
+    "pitch": "Short-term staging, stock overflow, and collection point.",
+    "location": [
+      51.4933767,
+      -0.2672936
+    ],
+    "radar": {
+      "left": 35,
+      "top": 60
+    },
+    "intelDistance": "0.41 mi",
+    "sourceType": "seed",
+    "sourceQuery": "Acton Lane, Chiswick, London"
+  },
+  {
+    "id": "node-8240310772",
+    "clusterId": "wandsworth",
+    "order": 1,
+    "name": "Cazoo",
+    "shortName": "Cazoo",
+    "address": "Cazoo, Wandsworth, London",
+    "roleHint": "Ask for showroom manager or business manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Manufacturer or branded dealership",
+    "brands": [
+      "Cazoo"
+    ],
+    "phone": "",
+    "website": "https://www.cazoo.co.uk/customer-centres/london-fulham/",
+    "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+    "location": [
+      51.4667313,
+      -0.1885563
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "0.4 mi",
+    "sourceType": "osm",
+    "sourceQuery": "Cazoo, Wandsworth, London"
+  },
+  {
+    "id": "node-3488395622",
+    "clusterId": "wandsworth",
+    "order": 2,
+    "name": "Classic Automobiles",
+    "shortName": "Classic",
+    "address": "Classic Automobiles, Wandsworth, London",
+    "roleHint": "Ask for proprietor or sales manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Dealership",
+    "brands": [],
+    "phone": "",
+    "website": "",
+    "pitch": "Overflow stock, local handover use, or short-term staging conversation near Battersea.",
+    "location": [
+      51.4579491,
+      -0.1969978
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "0.43 mi",
+    "sourceType": "osm",
+    "sourceQuery": "Classic Automobiles, Wandsworth, London"
+  },
+  {
+    "id": "way-821683850",
+    "clusterId": "wandsworth",
+    "order": 3,
+    "name": "HNI Motors Ltd",
+    "shortName": "HNI",
+    "address": "38A West Hill, London, SW18 1RX",
+    "roleHint": "Ask for proprietor or sales manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Dealership",
+    "brands": [],
+    "phone": "",
+    "website": "https://www.hnimotors.co.uk/",
+    "pitch": "Overflow stock, local handover use, or short-term staging conversation near Battersea.",
+    "location": [
+      51.4569031,
+      -0.2013769
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "0.63 mi",
+    "sourceType": "osm",
+    "sourceQuery": "HNI Motors Ltd, 38A West Hill, London, SW18 1RX, Wandsworth, London"
+  },
+  {
+    "id": "way-333778999",
+    "clusterId": "wandsworth",
+    "order": 4,
+    "name": "Lookers Battersea Land Rover",
+    "shortName": "Lookers",
+    "address": "50 Lombard Road, London, SW11 3SU",
+    "roleHint": "Ask for showroom manager or business manager",
+    "contactHint": "Lookers branded site; ask who handles property or overflow decisions",
+    "parentGroup": "Dealership",
+    "brands": [],
+    "phone": "",
+    "website": "https://www.lookers.co.uk/land-rover/contact-us/49/lookers-battersea-land-rover/",
+    "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+    "location": [
+      51.4693093,
+      -0.1776071
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "0.74 mi",
+    "sourceType": "osm",
+    "sourceQuery": "Lookers Battersea Land Rover, 50 Lombard Road, London, SW11 3SU, Wandsworth, London"
+  },
+  {
+    "id": "way-791165648",
+    "clusterId": "wandsworth",
+    "order": 5,
+    "name": "Wimbledon Park Honda",
+    "shortName": "Wimbledon",
+    "address": "60 West Hill Road, London",
+    "roleHint": "Ask for proprietor or sales manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Dealership",
+    "brands": [],
+    "phone": "",
+    "website": "",
+    "pitch": "Overflow stock, local handover use, or short-term staging conversation near Battersea.",
+    "location": [
+      51.4516276,
+      -0.2006888
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "0.84 mi",
+    "sourceType": "osm",
+    "sourceQuery": "Wimbledon Park Honda, 60 West Hill Road, London, Wandsworth, London"
+  },
+  {
+    "id": "way-791359685",
+    "clusterId": "wandsworth",
+    "order": 6,
+    "name": "Joe Macari",
+    "shortName": "Joe",
+    "address": "249,251 Merton Road, London, SW18 5EB",
+    "roleHint": "Ask for showroom manager or business manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Manufacturer or branded dealership",
+    "brands": [
+      "Ferrari"
+    ],
+    "phone": "+44 20 8870 9007",
+    "website": "https://www.joemacari.com/",
+    "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+    "location": [
+      51.4484841,
+      -0.1987326
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "0.97 mi",
+    "sourceType": "osm",
+    "sourceQuery": "Joe Macari, 249,251 Merton Road, London, SW18 5EB, Wandsworth, London"
+  },
+  {
+    "id": "way-791359674",
+    "clusterId": "wandsworth",
+    "order": 7,
+    "name": "Jack Barclay Bentley Service",
+    "shortName": "Jack",
+    "address": "65 Burr Road, London, SW18 4SQ",
+    "roleHint": "Ask for showroom manager or business manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Manufacturer or branded dealership",
+    "brands": [
+      "Bentley"
+    ],
+    "phone": "",
+    "website": "",
+    "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+    "location": [
+      51.4469598,
+      -0.1971824
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "1.04 mi",
+    "sourceType": "osm",
+    "sourceQuery": "Jack Barclay Bentley Service, 65 Burr Road, London, SW18 4SQ, Wandsworth, London"
+  },
+  {
+    "id": "way-1211583716",
+    "clusterId": "wandsworth",
+    "order": 8,
+    "name": "Harringtons of Fulham",
+    "shortName": "Harringtons",
+    "address": "120 New King's Road, London, SW6 4LZ",
+    "roleHint": "Ask for proprietor or sales manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Independent used dealer",
+    "brands": [],
+    "phone": "",
+    "website": "https://www.harringtonsoffulham.co.uk/",
+    "pitch": "Overflow stock, local handover use, or short-term staging conversation near Battersea.",
+    "location": [
+      51.4716927,
+      -0.2059135
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "1.06 mi",
+    "sourceType": "osm",
+    "sourceQuery": "Harringtons of Fulham, 120 New King's Road, London, SW6 4LZ, Wandsworth, London"
+  },
+  {
+    "id": "way-1109765963",
+    "clusterId": "wandsworth",
+    "order": 9,
+    "name": "The London Mini Centre",
+    "shortName": "The",
+    "address": "125 Lower Richmond Road, London",
+    "roleHint": "Ask for proprietor or sales manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Dealership",
+    "brands": [],
+    "phone": "",
+    "website": "",
+    "pitch": "Overflow stock, local handover use, or short-term staging conversation near Battersea.",
+    "location": [
+      51.4677018,
+      -0.2220441
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "1.53 mi",
+    "sourceType": "osm",
+    "sourceQuery": "The London Mini Centre, 125 Lower Richmond Road, London, Wandsworth, London"
+  },
+  {
+    "id": "node-5585080921",
+    "clusterId": "wandsworth",
+    "order": 10,
+    "name": "Chelsea Truck Company",
+    "shortName": "Chelsea",
+    "address": "385 King's Road",
+    "roleHint": "Ask for proprietor or sales manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Dealership",
+    "brands": [],
+    "phone": "+44 20 7751 4555",
+    "website": "https://www.chelseatruckcompany.com/",
+    "pitch": "Overflow stock, local handover use, or short-term staging conversation near Battersea.",
+    "location": [
+      51.4832789,
+      -0.1768901
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "1.62 mi",
+    "sourceType": "osm",
+    "sourceQuery": "Chelsea Truck Company, 385 King's Road, Wandsworth, London"
+  },
+  {
+    "id": "node-5855832443",
+    "clusterId": "wandsworth",
+    "order": 11,
+    "name": "RR London",
+    "shortName": "RR",
+    "address": "RR London, Wandsworth, London",
+    "roleHint": "Ask for proprietor or sales manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Dealership",
+    "brands": [],
+    "phone": "",
+    "website": "",
+    "pitch": "Overflow stock, local handover use, or short-term staging conversation near Battersea.",
+    "location": [
+      51.4756462,
+      -0.1476117
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "2.02 mi",
+    "sourceType": "osm",
+    "sourceQuery": "RR London, Wandsworth, London"
+  },
+  {
+    "id": "way-871795149",
+    "clusterId": "wandsworth",
+    "order": 12,
+    "name": "H.R. Owen Ferrari",
+    "shortName": "H.R.",
+    "address": "125-133 Old Brompton Road, London",
+    "roleHint": "Ask for proprietor or sales manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Dealership",
+    "brands": [],
+    "phone": "+44 20 3053 0760",
+    "website": "https://london-hrowen.ferraridealers.com/en_gb/",
+    "pitch": "Overflow stock, local handover use, or short-term staging conversation near Battersea.",
+    "location": [
+      51.4907612,
+      -0.1817558
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "2.08 mi",
+    "sourceType": "osm",
+    "sourceQuery": "H.R. Owen Ferrari, 125-133 Old Brompton Road, London, Wandsworth, London"
+  },
+  {
+    "id": "node-8779669268",
+    "clusterId": "wandsworth",
+    "order": 13,
+    "name": "Balham Cars London",
+    "shortName": "Balham",
+    "address": "Balham Cars London, Wandsworth, London",
+    "roleHint": "Ask for proprietor or sales manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Dealership",
+    "brands": [],
+    "phone": "",
+    "website": "",
+    "pitch": "Overflow stock, local handover use, or short-term staging conversation near Battersea.",
+    "location": [
+      51.4368199,
+      -0.1587055
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "2.1 mi",
+    "sourceType": "osm",
+    "sourceQuery": "Balham Cars London, Wandsworth, London"
+  },
+  {
+    "id": "way-188541854",
+    "clusterId": "wandsworth",
+    "order": 14,
+    "name": "Trust Ford",
+    "shortName": "Trust",
+    "address": "Trust Ford, Wandsworth, London",
+    "roleHint": "Ask for proprietor or sales manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Dealership",
+    "brands": [],
+    "phone": "",
+    "website": "",
+    "pitch": "Overflow stock, local handover use, or short-term staging conversation near Battersea.",
+    "location": [
+      51.4292111,
+      -0.1876101
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "2.19 mi",
+    "sourceType": "osm",
+    "sourceQuery": "Trust Ford, Wandsworth, London"
+  },
+  {
+    "id": "way-188541907",
+    "clusterId": "wandsworth",
+    "order": 15,
+    "name": "Vauxhall Go",
+    "shortName": "Vauxhall",
+    "address": "80 Plough Lane, London, SW17 0BW",
+    "roleHint": "Ask for showroom manager or business manager",
+    "contactHint": "Robins & Day branded site; ask who handles property or overflow decisions",
+    "parentGroup": "Manufacturer or branded dealership",
+    "brands": [
+      "Vauxhall"
+    ],
+    "phone": "",
+    "website": "https://www.robinsandday.co.uk/vauxhall",
+    "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+    "location": [
+      51.4286807,
+      -0.1862037
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "2.23 mi",
+    "sourceType": "osm",
+    "sourceQuery": "Vauxhall Go, 80 Plough Lane, London, SW17 0BW, Wandsworth, London"
+  },
+  {
+    "id": "node-7838663552",
+    "clusterId": "wandsworth",
+    "order": 16,
+    "name": "Monaco Volkswagen",
+    "shortName": "Monaco",
+    "address": "28 Astwood Mews, London",
+    "roleHint": "Ask for proprietor or sales manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Dealership",
+    "brands": [],
+    "phone": "",
+    "website": "https://www.monacovw.co.uk/",
+    "pitch": "Overflow stock, local handover use, or short-term staging conversation near Battersea.",
+    "location": [
+      51.493576,
+      -0.1862617
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "2.26 mi",
+    "sourceType": "osm",
+    "sourceQuery": "Monaco Volkswagen, 28 Astwood Mews, London, Wandsworth, London"
+  },
+  {
+    "id": "node-7899265978",
+    "clusterId": "wandsworth",
+    "order": 17,
+    "name": "Bradfield Peter Ltd",
+    "shortName": "Bradfield",
+    "address": "8 Reece Mews",
+    "roleHint": "Ask for proprietor or sales manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Dealership",
+    "brands": [],
+    "phone": "",
+    "website": "https://www.bradfieldcars.com/",
+    "pitch": "Overflow stock, local handover use, or short-term staging conversation near Battersea.",
+    "location": [
+      51.4931347,
+      -0.1768943
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "2.28 mi",
+    "sourceType": "osm",
+    "sourceQuery": "Bradfield Peter Ltd, 8 Reece Mews, Wandsworth, London"
+  },
+  {
+    "id": "node-7838663520",
+    "clusterId": "wandsworth",
+    "order": 18,
+    "name": "London Morgan",
+    "shortName": "London",
+    "address": "6 Astwood Mews, London",
+    "roleHint": "Ask for proprietor or sales manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Dealership",
+    "brands": [],
+    "phone": "",
+    "website": "https://www.morgan-motor.com/london/",
+    "pitch": "Overflow stock, local handover use, or short-term staging conversation near Battersea.",
+    "location": [
+      51.4938742,
+      -0.1861991
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "2.28 mi",
+    "sourceType": "osm",
+    "sourceQuery": "London Morgan, 6 Astwood Mews, London, Wandsworth, London"
+  },
+  {
+    "id": "node-7901967458",
+    "clusterId": "wandsworth",
+    "order": 19,
+    "name": "Sports Classics",
+    "shortName": "Sports",
+    "address": "6 Kendrick Place",
+    "roleHint": "Ask for proprietor or sales manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Independent used dealer",
+    "brands": [],
+    "phone": "",
+    "website": "https://www.sportsclassicslondon.com/",
+    "pitch": "Overflow stock, local handover use, or short-term staging conversation near Battersea.",
+    "location": [
+      51.4932378,
+      -0.1766821
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "2.28 mi",
+    "sourceType": "osm",
+    "sourceQuery": "Sports Classics, 6 Kendrick Place, Wandsworth, London"
+  },
+  {
+    "id": "way-868946713",
+    "clusterId": "wandsworth",
+    "order": 20,
+    "name": "H R Owen Maserati London",
+    "shortName": "H",
+    "address": "25-27 Old Brompton Road, London, SW7 3JQ",
+    "roleHint": "Ask for proprietor or sales manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Independent used dealer",
+    "brands": [],
+    "phone": "+44 333 240 7862",
+    "website": "https://www.hrowen.co.uk/maserati/locations/1559/hr-owen-maserati-london/",
+    "pitch": "Overflow stock, local handover use, or short-term staging conversation near Battersea.",
+    "location": [
+      51.4929571,
+      -0.17466
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "2.29 mi",
+    "sourceType": "osm",
+    "sourceQuery": "H R Owen Maserati London, 25-27 Old Brompton Road, London, SW7 3JQ, Wandsworth, London"
+  },
+  {
+    "id": "way-427051662",
+    "clusterId": "wandsworth",
+    "order": 21,
+    "name": "Big Motor World - Wimbledon",
+    "shortName": "Big",
+    "address": "Waterside Way, London, SW17 0HB",
+    "roleHint": "Ask for proprietor or sales manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Dealership",
+    "brands": [],
+    "phone": "+441634248638",
+    "website": "https://www.bigmotoringworld.co.uk",
+    "pitch": "Overflow stock, local handover use, or short-term staging conversation near Battersea.",
+    "location": [
+      51.4274852,
+      -0.185823
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "2.32 mi",
+    "sourceType": "osm",
+    "sourceQuery": "Big Motor World - Wimbledon, Waterside Way, London, SW17 0HB, Wandsworth, London"
+  },
+  {
+    "id": "node-4784492728",
+    "clusterId": "wandsworth",
+    "order": 22,
+    "name": "H.R. Owen Lamborghini London",
+    "shortName": "H.R.",
+    "address": "27 Old Brompton Road, London",
+    "roleHint": "Ask for proprietor or sales manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Dealership",
+    "brands": [],
+    "phone": "+44 333 240 8817",
+    "website": "https://www.hrowen.co.uk/lamborghini/locations/1566/lamborghini-london/",
+    "pitch": "Overflow stock, local handover use, or short-term staging conversation near Battersea.",
+    "location": [
+      51.4935696,
+      -0.1747674
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "2.33 mi",
+    "sourceType": "osm",
+    "sourceQuery": "H.R. Owen Lamborghini London, 27 Old Brompton Road, London, Wandsworth, London"
+  },
+  {
+    "id": "way-138701171",
+    "clusterId": "wandsworth",
+    "order": 23,
+    "name": "West Motor Company",
+    "shortName": "West",
+    "address": "Castelnau, London, SW13 9RU",
+    "roleHint": "Ask for proprietor or sales manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Dealership",
+    "brands": [],
+    "phone": "",
+    "website": "",
+    "pitch": "Overflow stock, local handover use, or short-term staging conversation near Battersea.",
+    "location": [
+      51.4756213,
+      -0.2388411
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "2.4 mi",
+    "sourceType": "osm",
+    "sourceQuery": "West Motor Company, Castelnau, London, SW13 9RU, Wandsworth, London"
+  },
+  {
+    "id": "node-7579269797",
+    "clusterId": "wandsworth",
+    "order": 24,
+    "name": "Fiskens",
+    "shortName": "Fiskens",
+    "address": "14 Queen's Gate Place Mews",
+    "roleHint": "Ask for proprietor or sales manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Dealership",
+    "brands": [],
+    "phone": "",
+    "website": "https://www.fiskens.com/",
+    "pitch": "Overflow stock, local handover use, or short-term staging conversation near Battersea.",
+    "location": [
+      51.4961828,
+      -0.1803892
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "2.46 mi",
+    "sourceType": "osm",
+    "sourceQuery": "Fiskens, 14 Queen's Gate Place Mews, Wandsworth, London"
+  },
+  {
+    "id": "way-825900460",
+    "clusterId": "wandsworth",
+    "order": 25,
+    "name": "Graeme Hunt Ltd",
+    "shortName": "Graeme",
+    "address": "18-23 Radley Mews, London",
+    "roleHint": "Ask for proprietor or sales manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Independent used dealer",
+    "brands": [],
+    "phone": "",
+    "website": "https://www.graemehunt.com/about",
+    "pitch": "Overflow stock, local handover use, or short-term staging conversation near Battersea.",
+    "location": [
+      51.4963757,
+      -0.193224
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "2.46 mi",
+    "sourceType": "osm",
+    "sourceQuery": "Graeme Hunt Ltd, 18-23 Radley Mews, London, Wandsworth, London"
+  },
+  {
+    "id": "way-428293728",
+    "clusterId": "wandsworth",
+    "order": 26,
+    "name": "BMW Nine Elms",
+    "shortName": "BMW",
+    "address": "Battersea Park Road, London, SW8 5AL",
+    "roleHint": "Ask for showroom manager or business manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Manufacturer or branded dealership",
+    "brands": [
+      "BMW"
+    ],
+    "phone": "",
+    "website": "",
+    "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+    "location": [
+      51.4791476,
+      -0.138164
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "2.5 mi",
+    "sourceType": "osm",
+    "sourceQuery": "BMW Nine Elms, Battersea Park Road, London, SW8 5AL, Wandsworth, London"
+  },
+  {
+    "id": "node-7436893988",
+    "clusterId": "wandsworth",
+    "order": 27,
+    "name": "Koenigsegg London",
+    "shortName": "Koenigsegg",
+    "address": "375 Kensington High Street, London, W14 8QA",
+    "roleHint": "Ask for showroom manager or business manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Manufacturer or branded dealership",
+    "brands": [
+      "Koenigsegg"
+    ],
+    "phone": "",
+    "website": "https://koenigsegglondon.com/",
+    "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+    "location": [
+      51.4964212,
+      -0.2059077
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "2.57 mi",
+    "sourceType": "osm",
+    "sourceQuery": "Koenigsegg London, 375 Kensington High Street, London, W14 8QA, Wandsworth, London"
+  },
+  {
+    "id": "node-1591503133",
+    "clusterId": "wandsworth",
+    "order": 28,
+    "name": "Microlino UK",
+    "shortName": "Microlino",
+    "address": "368-370 Kensington High Street, London",
+    "roleHint": "Ask for showroom manager or business manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Manufacturer or branded dealership",
+    "brands": [
+      "Microlino"
+    ],
+    "phone": "+44 203 007 1666",
+    "website": "https://microlino-car.com/en-uk/contact",
+    "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+    "location": [
+      51.4966916,
+      -0.2062702
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "2.59 mi",
+    "sourceType": "osm",
+    "sourceQuery": "Microlino UK, 368-370 Kensington High Street, London, Wandsworth, London"
+  },
+  {
+    "id": "way-244995916",
+    "clusterId": "wandsworth",
+    "order": 29,
+    "name": "JP Motors",
+    "shortName": "JP",
+    "address": "26-28 Priests Bridge, London, SW14 8TA",
+    "roleHint": "Ask for proprietor or sales manager",
+    "contactHint": "Decision-maker name not yet confirmed",
+    "parentGroup": "Dealership",
+    "brands": [],
+    "phone": "+44 20 8878 9980",
+    "website": "https://jpmotors.co.uk/",
+    "pitch": "Overflow stock, local handover use, or short-term staging conversation near Battersea.",
+    "location": [
+      51.465865,
+      -0.2523222
+    ],
+    "radar": {
+      "left": 50,
+      "top": 50
+    },
+    "intelDistance": "2.78 mi",
+    "sourceType": "osm",
+    "sourceQuery": "JP Motors, 26-28 Priests Bridge, London, SW14 8TA, Wandsworth, London"
+  }
+]

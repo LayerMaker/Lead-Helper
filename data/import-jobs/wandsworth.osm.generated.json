@@ -1,0 +1,8 @@
+{
+  "clusterId": "wandsworth",
+  "clusterName": "Wandsworth",
+  "centerQuery": "Wandsworth Town, London SW18",
+  "maxDistanceMiles": 3,
+  "sourceType": "osm",
+  "candidatesFile": "../candidates/wandsworth.osm.generated.json"
+}

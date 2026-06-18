@@ -1,0 +1,40 @@
+{
+  "clusterId": "london-newcar-discovery",
+  "clusterName": "London New Car Discovery",
+  "profile": "new-car-showroom",
+  "continueOnSearchError": true,
+  "sameNameMergeDistanceMiles": 0.35,
+  "searches": [
+    {
+      "label": "Battersea / Nine Elms",
+      "centerQuery": "Battersea Power Station, London",
+      "radiusMiles": 3.25
+    },
+    {
+      "label": "Kensington / Chelsea",
+      "centerQuery": "South Kensington, London",
+      "radiusMiles": 3
+    },
+    {
+      "label": "Chiswick / Hammersmith",
+      "centerQuery": "Chiswick High Road, London",
+      "radiusMiles": 3
+    },
+    {
+      "label": "Brentford / Kew",
+      "centerQuery": "Brentford, London",
+      "radiusMiles": 3
+    },
+    {
+      "label": "Wimbledon / Wandsworth",
+      "centerQuery": "Wimbledon, London",
+      "radiusMiles": 3
+    },
+    {
+      "label": "Park Royal / Acton",
+      "centerQuery": "Park Royal, London",
+      "radiusMiles": 3.25
+    }
+  ],
+  "outputFile": "../candidates/london-newcar.discovery.json"
+}

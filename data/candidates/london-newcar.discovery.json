@@ -1,0 +1,2234 @@
+{
+  "generatedAt": "2026-06-16T18:11:08.746Z",
+  "collector": "overpass",
+  "centerQuery": null,
+  "radiusMiles": null,
+  "clusterId": "london-newcar-discovery",
+  "profile": "new-car-showroom",
+  "searches": [
+    {
+      "label": "Battersea / Nine Elms",
+      "centerQuery": "Battersea Power Station, London",
+      "radiusMiles": 3.25,
+      "tagKey": "shop",
+      "tagValue": "car"
+    },
+    {
+      "label": "Kensington / Chelsea",
+      "centerQuery": "South Kensington, London",
+      "radiusMiles": 3,
+      "tagKey": "shop",
+      "tagValue": "car"
+    },
+    {
+      "label": "Chiswick / Hammersmith",
+      "centerQuery": "Chiswick High Road, London",
+      "radiusMiles": 3,
+      "tagKey": "shop",
+      "tagValue": "car"
+    },
+    {
+      "label": "Brentford / Kew",
+      "centerQuery": "Brentford, London",
+      "radiusMiles": 3,
+      "tagKey": "shop",
+      "tagValue": "car"
+    },
+    {
+      "label": "Wimbledon / Wandsworth",
+      "centerQuery": "Wimbledon, London",
+      "radiusMiles": 3,
+      "tagKey": "shop",
+      "tagValue": "car"
+    },
+    {
+      "label": "Park Royal / Acton",
+      "centerQuery": "Park Royal, London",
+      "radiusMiles": 3.25,
+      "tagKey": "shop",
+      "tagValue": "car"
+    }
+  ],
+  "failedSearches": [],
+  "candidates": [
+    {
+      "id": "way-44721172",
+      "name": "Honda Chiswick",
+      "shortName": "Honda",
+      "query": "Honda Chiswick, London New Car Discovery, London",
+      "address": "",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "Honda"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/44721172",
+      "osmType": "way",
+      "osmId": 44721172,
+      "osmTags": {
+        "brand": "Honda",
+        "brand:wikidata": "Q9584",
+        "building": "yes",
+        "name": "Honda Chiswick",
+        "shop": "car"
+      },
+      "distanceMiles": 0.15,
+      "intelDistance": "0.15 mi",
+      "lat": 51.4925579,
+      "lng": -0.2800933,
+      "searchOrigin": "Chiswick / Hammersmith",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 6,
+      "fitReasons": [
+        "Has brand tag"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 1
+    },
+    {
+      "id": "way-1293504180",
+      "name": "Chiswick MG",
+      "shortName": "Chiswick",
+      "query": "Chiswick MG, London New Car Discovery, London",
+      "address": "",
+      "website": "https://www.nortonway.com/mg/",
+      "phone": "",
+      "brands": [
+        "MG"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Norton Way branded site; ask who handles property or overflow decisions",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/1293504180",
+      "osmType": "way",
+      "osmId": 1293504180,
+      "osmTags": {
+        "brand": "MG",
+        "brand:wikidata": "Q1881443",
+        "building": "yes",
+        "name": "Chiswick MG",
+        "operator": "Norton Way",
+        "shop": "car",
+        "website": "https://www.nortonway.com/mg/"
+      },
+      "distanceMiles": 0.16,
+      "intelDistance": "0.16 mi",
+      "lat": 51.4932675,
+      "lng": -0.2799174,
+      "searchOrigin": "Chiswick / Hammersmith",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 13,
+      "fitReasons": [
+        "Has brand tag",
+        "Has operator tag",
+        "Has website"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 2
+    },
+    {
+      "id": "node-13688716803",
+      "name": "Lotus West London",
+      "shortName": "Lotus",
+      "query": "Lotus West London, 110 Power Road, London, W4 5PY, London New Car Discovery, London",
+      "address": "110 Power Road, London, W4 5PY",
+      "website": "https://www.endeavourautomotive.co.uk/lotus/contact-us/lotus-west-london/",
+      "phone": "",
+      "brands": [
+        "Lotus"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/node/13688716803",
+      "osmType": "node",
+      "osmId": 13688716803,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:housenumber": "110",
+        "addr:postcode": "W4 5PY",
+        "addr:street": "Power Road",
+        "brand": "Lotus",
+        "brand:wikidata": "Q35935",
+        "name": "Lotus West London",
+        "shop": "car",
+        "website": "https://www.endeavourautomotive.co.uk/lotus/contact-us/lotus-west-london/"
+      },
+      "distanceMiles": 0.19,
+      "intelDistance": "0.19 mi",
+      "lat": 51.4943277,
+      "lng": -0.2796295,
+      "searchOrigin": "Chiswick / Hammersmith",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 9,
+      "fitReasons": [
+        "Has brand tag",
+        "Has website",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 3
+    },
+    {
+      "id": "way-44689576",
+      "name": "Stellantis &You Peugeot West London",
+      "shortName": "Stellantis",
+      "query": "Stellantis &You Peugeot West London, 634 Chiswick High Road, London, W4 5RY, London New Car Discovery, London",
+      "address": "634 Chiswick High Road, London, W4 5RY",
+      "website": "https://www.stellantisandyou.co.uk/peugeot-west-london",
+      "phone": "",
+      "brands": [
+        "Peugeot"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/44689576",
+      "osmType": "way",
+      "osmId": 44689576,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:housenumber": "634",
+        "addr:postcode": "W4 5RY",
+        "addr:street": "Chiswick High Road",
+        "brand": "Peugeot",
+        "brand:wikidata": "Q6742",
+        "building": "yes",
+        "name": "Stellantis &You Peugeot West London",
+        "service:vehicle:inspection": "yes",
+        "shop": "car",
+        "website": "https://www.stellantisandyou.co.uk/peugeot-west-london"
+      },
+      "distanceMiles": 0.2,
+      "intelDistance": "0.2 mi",
+      "lat": 51.4922749,
+      "lng": -0.2813524,
+      "searchOrigin": "Chiswick / Hammersmith",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 9,
+      "fitReasons": [
+        "Has brand tag",
+        "Has website",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 4
+    },
+    {
+      "id": "way-44721092",
+      "name": "Volvo Cars West London",
+      "shortName": "Volvo",
+      "query": "Volvo Cars West London, 115 Power Road, London, W4 5PY, London New Car Discovery, London",
+      "address": "115 Power Road, London, W4 5PY",
+      "website": "https://www.volvocars.com/uk/dealers/car-retailers/volvo-cars-west-london/",
+      "phone": "",
+      "brands": [
+        "Volvo"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/44721092",
+      "osmType": "way",
+      "osmId": 44721092,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:housenumber": "115",
+        "addr:postcode": "W4 5PY",
+        "addr:street": "Power Road",
+        "brand": "Volvo",
+        "brand:wikidata": "Q215293",
+        "building": "yes",
+        "name": "Volvo Cars West London",
+        "ref:GB:uprn": "10091692501",
+        "shop": "car",
+        "website": "https://www.volvocars.com/uk/dealers/car-retailers/volvo-cars-west-london/"
+      },
+      "distanceMiles": 0.23,
+      "intelDistance": "0.23 mi",
+      "lat": 51.4935939,
+      "lng": -0.2816152,
+      "searchOrigin": "Chiswick / Hammersmith",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 9,
+      "fitReasons": [
+        "Has brand tag",
+        "Has website",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 5
+    },
+    {
+      "id": "way-428293728",
+      "name": "BMW Nine Elms",
+      "shortName": "BMW",
+      "query": "BMW Nine Elms, Battersea Park Road, London, SW8 5AL, London New Car Discovery, London",
+      "address": "Battersea Park Road, London, SW8 5AL",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "BMW"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/428293728",
+      "osmType": "way",
+      "osmId": 428293728,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:postcode": "SW8 5AL",
+        "addr:street": "Battersea Park Road",
+        "brand": "BMW",
+        "brand:wikidata": "Q26678",
+        "building": "industrial",
+        "name": "BMW Nine Elms",
+        "shop": "car",
+        "source:addr:postcode": "code-point_open"
+      },
+      "distanceMiles": 0.33,
+      "intelDistance": "0.33 mi",
+      "lat": 51.4791476,
+      "lng": -0.138164,
+      "searchOrigin": "Battersea / Nine Elms",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 7,
+      "fitReasons": [
+        "Has brand tag",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 6
+    },
+    {
+      "id": "way-23729647",
+      "name": "Citygate West London Volkswagen",
+      "shortName": "Citygate",
+      "query": "Citygate West London Volkswagen, Chiswick High Road, TW8 0EX, London New Car Discovery, London",
+      "address": "Chiswick High Road, TW8 0EX",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "Volkswagen"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/23729647",
+      "osmType": "way",
+      "osmId": 23729647,
+      "osmTags": {
+        "addr:postcode": "TW8 0EX",
+        "addr:street": "Chiswick High Road",
+        "brand": "Volkswagen",
+        "brand:wikidata": "Q246",
+        "building": "yes",
+        "building:levels": "5",
+        "name": "Citygate West London Volkswagen",
+        "shop": "car"
+      },
+      "distanceMiles": 0.34,
+      "intelDistance": "0.34 mi",
+      "lat": 51.4918492,
+      "lng": -0.284474,
+      "searchOrigin": "Chiswick / Hammersmith",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 7,
+      "fitReasons": [
+        "Has brand tag",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 7
+    },
+    {
+      "id": "way-229767914",
+      "name": "Porsche Centre West London",
+      "shortName": "Porsche",
+      "query": "Porsche Centre West London, Cedars Road, London, W4 4LZ, London New Car Discovery, London",
+      "address": "Cedars Road, London, W4 4LZ",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "Porsche"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/229767914",
+      "osmType": "way",
+      "osmId": 229767914,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:postcode": "W4 4LZ",
+        "addr:street": "Cedars Road",
+        "brand": "Porsche",
+        "brand:wikidata": "Q40993",
+        "building": "yes",
+        "building:levels": "2",
+        "name": "Porsche Centre West London",
+        "ref:GB:uprn": "10091693518",
+        "shop": "car"
+      },
+      "distanceMiles": 0.4,
+      "intelDistance": "0.4 mi",
+      "lat": 51.4883725,
+      "lng": -0.2697177,
+      "searchOrigin": "Chiswick / Hammersmith",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 10,
+      "fitReasons": [
+        "Has brand tag",
+        "Has address",
+        "Name suggests showroom"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 8
+    },
+    {
+      "id": "way-843997547",
+      "name": "Audi",
+      "shortName": "Audi",
+      "query": "Audi, Kingston Road, London, SW19 1JZ, London New Car Discovery, London",
+      "address": "Kingston Road, London, SW19 1JZ",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "Audi"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/843997547",
+      "osmType": "way",
+      "osmId": 843997547,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:postcode": "SW19 1JZ",
+        "addr:street": "Kingston Road",
+        "brand": "Audi",
+        "brand:wikidata": "Q23317",
+        "building": "yes",
+        "name": "Audi",
+        "ref:GB:uprn": "48082659",
+        "shop": "car"
+      },
+      "distanceMiles": 0.65,
+      "intelDistance": "0.65 mi",
+      "lat": 51.4152475,
+      "lng": -0.1950927,
+      "searchOrigin": "Wimbledon / Wandsworth",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 7,
+      "fitReasons": [
+        "Has brand tag",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 9
+    },
+    {
+      "id": "way-23699306",
+      "name": "Mercedes-Benz",
+      "shortName": "Mercedes-Benz",
+      "query": "Mercedes-Benz, Lionel Road South, TW8 9QR, London New Car Discovery, London",
+      "address": "Lionel Road South, TW8 9QR",
+      "website": "https://www.mercedes-benzretailgroup.co.uk/mercedes-benz-cars/contact-us/brentford/",
+      "phone": "",
+      "brands": [
+        "Mercedes-Benz"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/23699306",
+      "osmType": "way",
+      "osmId": 23699306,
+      "osmTags": {
+        "addr:postcode": "TW8 9QR",
+        "addr:street": "Lionel Road South",
+        "brand": "Mercedes-Benz",
+        "brand:wikidata": "Q36008",
+        "building": "retail",
+        "name": "Mercedes-Benz",
+        "shop": "car",
+        "website": "https://www.mercedes-benzretailgroup.co.uk/mercedes-benz-cars/contact-us/brentford/"
+      },
+      "distanceMiles": 0.75,
+      "intelDistance": "0.75 mi",
+      "lat": 51.4906251,
+      "lng": -0.2939344,
+      "searchOrigin": "Chiswick / Hammersmith",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 9,
+      "fitReasons": [
+        "Has brand tag",
+        "Has website",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 10
+    },
+    {
+      "id": "way-188541907",
+      "name": "Vauxhall Go",
+      "shortName": "Vauxhall",
+      "query": "Vauxhall Go, 80 Plough Lane, London, SW17 0BW, London New Car Discovery, London",
+      "address": "80 Plough Lane, London, SW17 0BW",
+      "website": "https://www.robinsandday.co.uk/vauxhall",
+      "phone": "",
+      "brands": [
+        "Vauxhall"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Robins & Day branded site; ask who handles property or overflow decisions",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/188541907",
+      "osmType": "way",
+      "osmId": 188541907,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:housenumber": "80",
+        "addr:postcode": "SW17 0BW",
+        "addr:street": "Plough Lane",
+        "brand": "Vauxhall",
+        "brand:wikidata": "Q59187",
+        "building": "retail",
+        "name": "Vauxhall Go",
+        "operator": "Robins & Day",
+        "ref:GB:uprn": "48084330",
+        "shop": "car",
+        "website": "https://www.robinsandday.co.uk/vauxhall"
+      },
+      "distanceMiles": 1,
+      "intelDistance": "1 mi",
+      "lat": 51.4286807,
+      "lng": -0.1862037,
+      "searchOrigin": "Wimbledon / Wandsworth",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 14,
+      "fitReasons": [
+        "Has brand tag",
+        "Has operator tag",
+        "Has website",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 11
+    },
+    {
+      "id": "way-43651336",
+      "name": "Mercedes-Benz Brentford",
+      "shortName": "Mercedes-Benz",
+      "query": "Mercedes-Benz Brentford, TW8 9AH, London New Car Discovery, London",
+      "address": "TW8 9AH",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "Mercedes-Benz"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Sytner branded site; ask who handles property or overflow decisions",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/43651336",
+      "osmType": "way",
+      "osmId": 43651336,
+      "osmTags": {
+        "addr:postcode": "TW8 9AH",
+        "brand": "Mercedes-Benz",
+        "brand:wikidata": "Q36008",
+        "building": "retail",
+        "layer": "1",
+        "name": "Mercedes-Benz Brentford",
+        "operator": "Sytner",
+        "ref:GB:uprn": "100023408248",
+        "second_hand": "yes",
+        "shop": "car"
+      },
+      "distanceMiles": 1.04,
+      "intelDistance": "1.04 mi",
+      "lat": 51.4919211,
+      "lng": -0.3006832,
+      "searchOrigin": "Chiswick / Hammersmith",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 6,
+      "fitReasons": [
+        "Tagged second_hand=yes",
+        "Has brand tag",
+        "Has operator tag",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 12
+    },
+    {
+      "id": "way-90466585",
+      "name": "Audi",
+      "shortName": "Audi",
+      "query": "Audi, TW8 9BQ, London New Car Discovery, London",
+      "address": "TW8 9BQ",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "Audi"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/90466585",
+      "osmType": "way",
+      "osmId": 90466585,
+      "osmTags": {
+        "addr:postcode": "TW8 9BQ",
+        "brand": "Audi",
+        "brand:wikidata": "Q23317",
+        "building": "yes",
+        "name": "Audi",
+        "ref:GB:uprn": "10023863019",
+        "shop": "car"
+      },
+      "distanceMiles": 1.1,
+      "intelDistance": "1.1 mi",
+      "lat": 51.4918597,
+      "lng": -0.3020987,
+      "searchOrigin": "Chiswick / Hammersmith",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 7,
+      "fitReasons": [
+        "Has brand tag",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 13
+    },
+    {
+      "id": "way-431510907",
+      "name": "Land Rover Service Centre Wimbledon",
+      "shortName": "Land",
+      "query": "Land Rover Service Centre Wimbledon, Bushey Road, London, SW20 8BP, London New Car Discovery, London",
+      "address": "Bushey Road, London, SW20 8BP",
+      "website": "http://www.wimbledon.landrover.co.uk",
+      "phone": "+44 20 8543 4321",
+      "brands": [
+        "Land Rover"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Jaguar Land Rover Ltd branded site; ask who handles property or overflow decisions",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/431510907",
+      "osmType": "way",
+      "osmId": 431510907,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:country": "GB",
+        "addr:postcode": "SW20 8BP",
+        "addr:street": "Bushey Road",
+        "addr:suburb": "Raynes Park",
+        "brand": "Land Rover",
+        "brand:wikidata": "Q26777551",
+        "email": "service@wimbledonlandrover.com",
+        "name": "Land Rover Service Centre Wimbledon",
+        "opening_hours": "Mo-Fr 08:00-18:00; Sa 08:30-12:30; Su,PH off",
+        "operator": "Jaguar Land Rover Ltd",
+        "phone": "+44 20 8543 4321",
+        "shop": "car",
+        "website": "http://www.wimbledon.landrover.co.uk"
+      },
+      "distanceMiles": 1.21,
+      "intelDistance": "1.21 mi",
+      "lat": 51.4075867,
+      "lng": -0.2234932,
+      "searchOrigin": "Wimbledon / Wandsworth",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 18,
+      "fitReasons": [
+        "Has brand tag",
+        "Has operator tag",
+        "Has website",
+        "Has phone",
+        "Has address",
+        "Name suggests showroom"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 14
+    },
+    {
+      "id": "way-960211471",
+      "name": "Wimbledon Audi",
+      "shortName": "Wimbledon",
+      "query": "Wimbledon Audi, 4 Prince George's Road, London, SW19 2PX, London New Car Discovery, London",
+      "address": "4 Prince George's Road, London, SW19 2PX",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "Audi"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/960211471",
+      "osmType": "way",
+      "osmId": 960211471,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:housenumber": "4",
+        "addr:postcode": "SW19 2PX",
+        "addr:street": "Prince George's Road",
+        "brand": "Audi",
+        "brand:wikidata": "Q23317",
+        "brand:wikipedia": "en:Audi",
+        "building:part": "yes",
+        "name": "Wimbledon Audi",
+        "shop": "car"
+      },
+      "distanceMiles": 1.4,
+      "intelDistance": "1.4 mi",
+      "lat": 51.4129531,
+      "lng": -0.1768878,
+      "searchOrigin": "Wimbledon / Wandsworth",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 7,
+      "fitReasons": [
+        "Has brand tag",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 15
+    },
+    {
+      "id": "node-1759071585",
+      "name": "H.R Owen Ferrari Atelier",
+      "shortName": "H.R",
+      "query": "H.R Owen Ferrari Atelier, London New Car Discovery, London",
+      "address": "",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "Ferrari"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/node/1759071585",
+      "osmType": "node",
+      "osmId": 1759071585,
+      "osmTags": {
+        "brand": "Ferrari",
+        "brand:wikidata": "Q27586",
+        "name": "H.R Owen Ferrari Atelier",
+        "shop": "car",
+        "source": "survey"
+      },
+      "distanceMiles": 1.5,
+      "intelDistance": "1.5 mi",
+      "lat": 51.5022241,
+      "lng": -0.1559817,
+      "searchOrigin": "Battersea / Nine Elms",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 6,
+      "fitReasons": [
+        "Has brand tag"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 16
+    },
+    {
+      "id": "way-307225506",
+      "name": "McLaren London",
+      "shortName": "McLaren",
+      "query": "McLaren London, 100 Knightsbridge, London, SW1X 7LJ, London New Car Discovery, London",
+      "address": "100 Knightsbridge, London, SW1X 7LJ",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "McLaren"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/307225506",
+      "osmType": "way",
+      "osmId": 307225506,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:country": "GB",
+        "addr:housename": "One Hyde Park",
+        "addr:housenumber": "100",
+        "addr:postcode": "SW1X 7LJ",
+        "addr:street": "Knightsbridge",
+        "brand": "McLaren",
+        "name": "McLaren London",
+        "shop": "car"
+      },
+      "distanceMiles": 1.57,
+      "intelDistance": "1.57 mi",
+      "lat": 51.501944,
+      "lng": -0.1615202,
+      "searchOrigin": "Battersea / Nine Elms",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 7,
+      "fitReasons": [
+        "Has brand tag",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 17
+    },
+    {
+      "id": "way-333778999",
+      "name": "Lookers Battersea Land Rover",
+      "shortName": "Lookers",
+      "query": "Lookers Battersea Land Rover, 50 Lombard Road, London, SW11 3SU, London New Car Discovery, London",
+      "address": "50 Lombard Road, London, SW11 3SU",
+      "website": "https://www.lookers.co.uk/land-rover/contact-us/49/lookers-battersea-land-rover/",
+      "phone": "",
+      "brands": [],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Lookers branded site; ask who handles property or overflow decisions",
+      "parentGroup": "Dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/333778999",
+      "osmType": "way",
+      "osmId": 333778999,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:housenumber": "50",
+        "addr:postcode": "SW11 3SU",
+        "addr:street": "Lombard Road",
+        "building": "no",
+        "name": "Lookers Battersea Land Rover",
+        "operator": "Lookers",
+        "ref:GB:uprn": "10091910927;100023700199",
+        "shop": "car",
+        "website": "https://www.lookers.co.uk/land-rover/contact-us/49/lookers-battersea-land-rover/"
+      },
+      "distanceMiles": 1.66,
+      "intelDistance": "1.66 mi",
+      "lat": 51.4693093,
+      "lng": -0.1776071,
+      "searchOrigin": "Battersea / Nine Elms",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 8,
+      "fitReasons": [
+        "Has operator tag",
+        "Has website",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 18
+    },
+    {
+      "id": "node-12122393784",
+      "name": "Lotus",
+      "shortName": "Lotus",
+      "query": "Lotus, London New Car Discovery, London",
+      "address": "",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "Lotus"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/node/12122393784",
+      "osmType": "node",
+      "osmId": 12122393784,
+      "osmTags": {
+        "brand": "Lotus",
+        "brand:wikidata": "Q35935",
+        "name": "Lotus",
+        "shop": "car"
+      },
+      "distanceMiles": 1.77,
+      "intelDistance": "1.77 mi",
+      "lat": 51.5074071,
+      "lng": -0.1418985,
+      "searchOrigin": "Battersea / Nine Elms",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 6,
+      "fitReasons": [
+        "Has brand tag"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 19
+    },
+    {
+      "id": "way-791359674",
+      "name": "Jack Barclay Bentley Service",
+      "shortName": "Jack",
+      "query": "Jack Barclay Bentley Service, 65 Burr Road, London, SW18 4SQ, London New Car Discovery, London",
+      "address": "65 Burr Road, London, SW18 4SQ",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "Bentley"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/791359674",
+      "osmType": "way",
+      "osmId": 791359674,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:housenumber": "65",
+        "addr:postcode": "SW18 4SQ",
+        "addr:street": "Burr Road",
+        "brand": "Bentley",
+        "brand:wikidata": "Q27224",
+        "building": "industrial",
+        "name": "Jack Barclay Bentley Service",
+        "shop": "car"
+      },
+      "distanceMiles": 1.8,
+      "intelDistance": "1.8 mi",
+      "lat": 51.4469598,
+      "lng": -0.1971824,
+      "searchOrigin": "Wimbledon / Wandsworth",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 7,
+      "fitReasons": [
+        "Has brand tag",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 20
+    },
+    {
+      "id": "way-175639154",
+      "name": "Ford car depot",
+      "shortName": "Ford",
+      "query": "Ford car depot, TW8 8JJ, London New Car Discovery, London",
+      "address": "TW8 8JJ",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "Ford"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/175639154",
+      "osmType": "way",
+      "osmId": 175639154,
+      "osmTags": {
+        "addr:postcode": "TW8 8JJ",
+        "brand": "Ford",
+        "building": "yes",
+        "name": "Ford car depot",
+        "ref:GB:uprn": "10093258175",
+        "shop": "car",
+        "source": "Bing;survey"
+      },
+      "distanceMiles": 1.81,
+      "intelDistance": "1.81 mi",
+      "lat": 51.4819356,
+      "lng": -0.315345,
+      "searchOrigin": "Chiswick / Hammersmith",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 7,
+      "fitReasons": [
+        "Has brand tag",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 21
+    },
+    {
+      "id": "node-12924649907",
+      "name": "Rolls-Royce",
+      "shortName": "Rolls-Royce",
+      "query": "Rolls-Royce, London New Car Discovery, London",
+      "address": "",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "Rolls-Royce"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/node/12924649907",
+      "osmType": "node",
+      "osmId": 12924649907,
+      "osmTags": {
+        "brand": "Rolls-Royce",
+        "brand:wikidata": "Q234803",
+        "name": "Rolls-Royce",
+        "shop": "car"
+      },
+      "distanceMiles": 1.82,
+      "intelDistance": "1.82 mi",
+      "lat": 51.508048,
+      "lng": -0.1433584,
+      "searchOrigin": "Battersea / Nine Elms",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 6,
+      "fitReasons": [
+        "Has brand tag"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 22
+    },
+    {
+      "id": "node-1759071590",
+      "name": "BMW i Park Lane",
+      "shortName": "BMW",
+      "query": "BMW i Park Lane, 56 Park Lane, London, London New Car Discovery, London",
+      "address": "56 Park Lane, London",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "BMW"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/node/1759071590",
+      "osmType": "node",
+      "osmId": 1759071590,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:housenumber": "56",
+        "addr:street": "Park Lane",
+        "brand": "BMW",
+        "brand:wikidata": "Q26678",
+        "name": "BMW i Park Lane",
+        "shop": "car",
+        "source": "survey"
+      },
+      "distanceMiles": 1.83,
+      "intelDistance": "1.83 mi",
+      "lat": 51.5077264,
+      "lng": -0.1533075,
+      "searchOrigin": "Battersea / Nine Elms",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 7,
+      "fitReasons": [
+        "Has brand tag",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 23
+    },
+    {
+      "id": "node-6555144241",
+      "name": "Tesla",
+      "shortName": "Tesla",
+      "query": "Tesla, London New Car Discovery, London",
+      "address": "",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "Tesla"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/node/6555144241",
+      "osmType": "node",
+      "osmId": 6555144241,
+      "osmTags": {
+        "brand": "Tesla",
+        "brand:wikidata": "Q478214",
+        "brand:wikipedia": "en:Tesla, Inc.",
+        "check_date": "2023-12-28",
+        "check_date:opening_hours": "2023-06-18",
+        "level": "0",
+        "name": "Tesla",
+        "opening_hours:signed": "no",
+        "shop": "car",
+        "wheelchair": "yes"
+      },
+      "distanceMiles": 1.83,
+      "intelDistance": "1.83 mi",
+      "lat": 51.5069976,
+      "lng": -0.2215514,
+      "searchOrigin": "Kensington / Chelsea",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 6,
+      "fitReasons": [
+        "Has brand tag"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 24
+    },
+    {
+      "id": "node-13329965556",
+      "name": "Genesis",
+      "shortName": "Genesis",
+      "query": "Genesis, London New Car Discovery, London",
+      "address": "",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "Genesis"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/node/13329965556",
+      "osmType": "node",
+      "osmId": 13329965556,
+      "osmTags": {
+        "brand": "Genesis",
+        "brand:wikidata": "Q21451523",
+        "level": "0",
+        "name": "Genesis",
+        "shop": "car"
+      },
+      "distanceMiles": 1.85,
+      "intelDistance": "1.85 mi",
+      "lat": 51.5081216,
+      "lng": -0.2210507,
+      "searchOrigin": "Kensington / Chelsea",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 6,
+      "fitReasons": [
+        "Has brand tag"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 25
+    },
+    {
+      "id": "node-5724551225",
+      "name": "Stratstone of Mayfair Jaguar",
+      "shortName": "Stratstone",
+      "query": "Stratstone of Mayfair Jaguar, 18 Berkeley Street, London, London New Car Discovery, London",
+      "address": "18 Berkeley Street, London",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "Jaguar"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/node/5724551225",
+      "osmType": "node",
+      "osmId": 5724551225,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:housenumber": "18",
+        "addr:street": "Berkeley Street",
+        "brand": "Jaguar",
+        "brand:wikidata": "Q21170490",
+        "brand:wikipedia": "en:Jaguar (marque)",
+        "name": "Stratstone of Mayfair Jaguar",
+        "shop": "car",
+        "wheelchair": "no"
+      },
+      "distanceMiles": 1.86,
+      "intelDistance": "1.86 mi",
+      "lat": 51.5087124,
+      "lng": -0.1436731,
+      "searchOrigin": "Battersea / Nine Elms",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 7,
+      "fitReasons": [
+        "Has brand tag",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 26
+    },
+    {
+      "id": "node-452412983",
+      "name": "BMW Park Lane",
+      "shortName": "BMW",
+      "query": "BMW Park Lane, Park Lane, London, London New Car Discovery, London",
+      "address": "Park Lane, London",
+      "website": "https://www.bmwparklane.com/",
+      "phone": "",
+      "brands": [
+        "BMW"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/node/452412983",
+      "osmType": "node",
+      "osmId": 452412983,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:street": "Park Lane",
+        "brand": "BMW",
+        "brand:wikidata": "Q26678",
+        "name": "BMW Park Lane",
+        "shop": "car",
+        "website": "https://www.bmwparklane.com/",
+        "wheelchair": "limited"
+      },
+      "distanceMiles": 1.87,
+      "intelDistance": "1.87 mi",
+      "lat": 51.5081866,
+      "lng": -0.1538195,
+      "searchOrigin": "Battersea / Nine Elms",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 9,
+      "fitReasons": [
+        "Has brand tag",
+        "Has website",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 27
+    },
+    {
+      "id": "way-217873691",
+      "name": "MG Motor UK",
+      "shortName": "MG",
+      "query": "MG Motor UK, 47-48 Piccadilly, London, London New Car Discovery, London",
+      "address": "47-48 Piccadilly, London",
+      "website": "https://mg.co.uk/",
+      "phone": "+44 20 7438 2026",
+      "brands": [
+        "MG"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/217873691",
+      "osmType": "way",
+      "osmId": 217873691,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:housenumber": "47-48",
+        "addr:street": "Piccadilly",
+        "brand": "MG",
+        "brand:wikidata": "Q1881443",
+        "building": "yes",
+        "building:levels": "7",
+        "name": "MG Motor UK",
+        "phone": "+44 20 7438 2026",
+        "shop": "car",
+        "website": "https://mg.co.uk/"
+      },
+      "distanceMiles": 1.88,
+      "intelDistance": "1.88 mi",
+      "lat": 51.5087233,
+      "lng": -0.1384376,
+      "searchOrigin": "Battersea / Nine Elms",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 10,
+      "fitReasons": [
+        "Has brand tag",
+        "Has website",
+        "Has phone",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 28
+    },
+    {
+      "id": "way-791359685",
+      "name": "Joe Macari",
+      "shortName": "Joe",
+      "query": "Joe Macari, 249,251 Merton Road, London, SW18 5EB, London New Car Discovery, London",
+      "address": "249,251 Merton Road, London, SW18 5EB",
+      "website": "https://www.joemacari.com/",
+      "phone": "+44 20 8870 9007",
+      "brands": [
+        "Ferrari"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/791359685",
+      "osmType": "way",
+      "osmId": 791359685,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:housenumber": "249,251",
+        "addr:postcode": "SW18 5EB",
+        "addr:street": "Merton Road",
+        "brand": "Ferrari",
+        "brand:wikidata": "Q27586",
+        "building": "commercial",
+        "name": "Joe Macari",
+        "phone": "+44 20 8870 9007",
+        "ref:GB:uprn": "10091501352;121006971;10091501039;10024087822;10024087821",
+        "shop": "car",
+        "website": "https://www.joemacari.com/",
+        "wheelchair": "yes"
+      },
+      "distanceMiles": 1.89,
+      "intelDistance": "1.89 mi",
+      "lat": 51.4484841,
+      "lng": -0.1987326,
+      "searchOrigin": "Wimbledon / Wandsworth",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 10,
+      "fitReasons": [
+        "Has brand tag",
+        "Has website",
+        "Has phone",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 29
+    },
+    {
+      "id": "node-1759071592",
+      "name": "Mini Park Lane",
+      "shortName": "Mini",
+      "query": "Mini Park Lane, 77 Park Lane, London, London New Car Discovery, London",
+      "address": "77 Park Lane, London",
+      "website": "http://www.miniparklane.com/",
+      "phone": "",
+      "brands": [
+        "Mini"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/node/1759071592",
+      "osmType": "node",
+      "osmId": 1759071592,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:housenumber": "77",
+        "addr:street": "Park Lane",
+        "brand": "Mini",
+        "name": "Mini Park Lane",
+        "shop": "car",
+        "source": "survey",
+        "website": "http://www.miniparklane.com/"
+      },
+      "distanceMiles": 1.91,
+      "intelDistance": "1.91 mi",
+      "lat": 51.5087427,
+      "lng": -0.1542459,
+      "searchOrigin": "Battersea / Nine Elms",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 9,
+      "fitReasons": [
+        "Has brand tag",
+        "Has website",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 30
+    },
+    {
+      "id": "way-603958034",
+      "name": "Rolls-Royce Motor Cars London",
+      "shortName": "Rolls-Royce",
+      "query": "Rolls-Royce Motor Cars London, 15 Berkeley Square, London, London New Car Discovery, London",
+      "address": "15 Berkeley Square, London",
+      "website": "https://www.hrowen.co.uk/rolls-royce/locations/1564/rolls-royce-motor-cars-london-sales/",
+      "phone": "",
+      "brands": [
+        "Rolls-Royce"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/603958034",
+      "osmType": "way",
+      "osmId": 603958034,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:housenumber": "15",
+        "addr:street": "Berkeley Square",
+        "brand": "Rolls-Royce",
+        "brand:wikidata": "Q234803",
+        "check_date": "2025-08-15",
+        "name": "Rolls-Royce Motor Cars London",
+        "shop": "car",
+        "website": "https://www.hrowen.co.uk/rolls-royce/locations/1564/rolls-royce-motor-cars-london-sales/",
+        "wheelchair": "limited"
+      },
+      "distanceMiles": 1.95,
+      "intelDistance": "1.95 mi",
+      "lat": 51.509962,
+      "lng": -0.1450718,
+      "searchOrigin": "Battersea / Nine Elms",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 9,
+      "fitReasons": [
+        "Has brand tag",
+        "Has website",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 31
+    },
+    {
+      "id": "node-5731788595",
+      "name": "H.R. Owen Bugatti",
+      "shortName": "H.R.",
+      "query": "H.R. Owen Bugatti, 18-20 Bruton Street, London, London New Car Discovery, London",
+      "address": "18-20 Bruton Street, London",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "Bugatti"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/node/5731788595",
+      "osmType": "node",
+      "osmId": 5731788595,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:housenumber": "18-20",
+        "addr:street": "Bruton Street",
+        "brand": "Bugatti",
+        "brand:wikidata": "Q2308012",
+        "name": "H.R. Owen Bugatti",
+        "shop": "car",
+        "wheelchair": "yes"
+      },
+      "distanceMiles": 1.96,
+      "intelDistance": "1.96 mi",
+      "lat": 51.5101945,
+      "lng": -0.1450888,
+      "searchOrigin": "Battersea / Nine Elms",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 7,
+      "fitReasons": [
+        "Has brand tag",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 32
+    },
+    {
+      "id": "way-211547736",
+      "name": "Jack Barclay Bentley",
+      "shortName": "Jack",
+      "query": "Jack Barclay Bentley, 18 Berkeley Square, London, London New Car Discovery, London",
+      "address": "18 Berkeley Square, London",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "Bentley"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/211547736",
+      "osmType": "way",
+      "osmId": 211547736,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:housenumber": "18",
+        "addr:street": "Berkeley Square",
+        "brand": "Bentley",
+        "brand:wikidata": "Q27224",
+        "check_date": "2025-08-15",
+        "level": "0",
+        "name": "Jack Barclay Bentley",
+        "shop": "car",
+        "source": "photograph"
+      },
+      "distanceMiles": 1.96,
+      "intelDistance": "1.96 mi",
+      "lat": 51.5100731,
+      "lng": -0.1452145,
+      "searchOrigin": "Battersea / Nine Elms",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 7,
+      "fitReasons": [
+        "Has brand tag",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 33
+    },
+    {
+      "id": "node-5732430545",
+      "name": "Lamborghini",
+      "shortName": "Lamborghini",
+      "query": "Lamborghini, 20 Berkeley Square, London, London New Car Discovery, London",
+      "address": "20 Berkeley Square, London",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "Lamborghini"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/node/5732430545",
+      "osmType": "node",
+      "osmId": 5732430545,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:housenumber": "20",
+        "addr:street": "Berkeley Square",
+        "brand": "Lamborghini",
+        "brand:wikidata": "Q35886",
+        "check_date": "2025-11-11",
+        "check_date:opening_hours": "2025-11-11",
+        "name": "Lamborghini",
+        "opening_hours": "Mo-Sa 09:00-18:00",
+        "shop": "car"
+      },
+      "distanceMiles": 1.97,
+      "intelDistance": "1.97 mi",
+      "lat": 51.51025,
+      "lng": -0.1456169,
+      "searchOrigin": "Battersea / Nine Elms",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 7,
+      "fitReasons": [
+        "Has brand tag",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 34
+    },
+    {
+      "id": "way-211519238",
+      "name": "Porsche Centre Mayfair",
+      "shortName": "Porsche",
+      "query": "Porsche Centre Mayfair, Berkeley Square, London, W1K 3NA, London New Car Discovery, London",
+      "address": "Berkeley Square, London, W1K 3NA",
+      "website": "https://www.porschemayfair.co.uk/",
+      "phone": "",
+      "brands": [
+        "Porsche"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/211519238",
+      "osmType": "way",
+      "osmId": 211519238,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:postcode": "W1K 3NA",
+        "addr:street": "Berkeley Square",
+        "alt_name": "Porsche",
+        "brand": "Porsche",
+        "brand:wikidata": "Q40993",
+        "level": "0",
+        "name": "Porsche Centre Mayfair",
+        "shop": "car",
+        "source": "photograph",
+        "website": "https://www.porschemayfair.co.uk/",
+        "wheelchair": "no"
+      },
+      "distanceMiles": 1.99,
+      "intelDistance": "1.99 mi",
+      "lat": 51.5104698,
+      "lng": -0.1476244,
+      "searchOrigin": "Battersea / Nine Elms",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 12,
+      "fitReasons": [
+        "Has brand tag",
+        "Has website",
+        "Has address",
+        "Name suggests showroom"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 35
+    },
+    {
+      "id": "way-312752549",
+      "name": "Currie Motors",
+      "shortName": "Currie",
+      "query": "Currie Motors, London, SW20 0AD, London New Car Discovery, London",
+      "address": "London, SW20 0AD",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "Toyota"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/312752549",
+      "osmType": "way",
+      "osmId": 312752549,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:postcode": "SW20 0AD",
+        "brand": "Toyota",
+        "brand:wikidata": "Q53268",
+        "brand:wikipedia": "en:Toyota",
+        "building": "yes",
+        "name": "Currie Motors",
+        "ref:GB:uprn": "128001760",
+        "shop": "car"
+      },
+      "distanceMiles": 2,
+      "intelDistance": "2 mi",
+      "lat": 51.4154411,
+      "lng": -0.2517229,
+      "searchOrigin": "Wimbledon / Wandsworth",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 7,
+      "fitReasons": [
+        "Has brand tag",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 36
+    },
+    {
+      "id": "way-23701035",
+      "name": "Berry Chiswick",
+      "shortName": "Berry",
+      "query": "Berry Chiswick, Great West Road, London, London New Car Discovery, London",
+      "address": "Great West Road, London",
+      "website": "https://www.berrychiswickbmw.co.uk/",
+      "phone": "+44 20 8232 5700",
+      "brands": [
+        "BMW",
+        "Mini"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/23701035",
+      "osmType": "way",
+      "osmId": 23701035,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:country": "GB",
+        "addr:place": "Brentford",
+        "addr:street": "Great West Road",
+        "brand": "BMW;Mini",
+        "building": "yes",
+        "name": "Berry Chiswick",
+        "phone": "+44 20 8232 5700",
+        "shop": "car",
+        "website": "https://www.berrychiswickbmw.co.uk/"
+      },
+      "distanceMiles": 2.08,
+      "intelDistance": "2.08 mi",
+      "lat": 51.4839533,
+      "lng": -0.322965,
+      "searchOrigin": "Chiswick / Hammersmith",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 10,
+      "fitReasons": [
+        "Has brand tag",
+        "Has website",
+        "Has phone",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 37
+    },
+    {
+      "id": "node-852122487",
+      "name": "Aston Martin Mayfair",
+      "shortName": "Aston",
+      "query": "Aston Martin Mayfair, 113 Park Lane, London, London New Car Discovery, London",
+      "address": "113 Park Lane, London",
+      "website": "https://www.stratstone.com/dealers/aston-martin-mayfair/",
+      "phone": "",
+      "brands": [
+        "Aston Martin"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/node/852122487",
+      "osmType": "node",
+      "osmId": 852122487,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:housenumber": "113",
+        "addr:street": "Park Lane",
+        "brand": "Aston Martin",
+        "brand:wikidata": "Q27074",
+        "check_date": "2022-10-04",
+        "name": "Aston Martin Mayfair",
+        "shop": "car",
+        "website": "https://www.stratstone.com/dealers/aston-martin-mayfair/"
+      },
+      "distanceMiles": 2.11,
+      "intelDistance": "2.11 mi",
+      "lat": 51.5113215,
+      "lng": -0.1569906,
+      "searchOrigin": "Battersea / Nine Elms",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 9,
+      "fitReasons": [
+        "Has brand tag",
+        "Has website",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 38
+    },
+    {
+      "id": "way-23085783",
+      "name": "DD Classics",
+      "shortName": "DD",
+      "query": "DD Classics, London New Car Discovery, London",
+      "address": "",
+      "website": "https://www.ddclassics.com/",
+      "phone": "+44 20 8878 3355",
+      "brands": [],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "DD Classics Ltd. branded site; ask who handles property or overflow decisions",
+      "parentGroup": "Dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/23085783",
+      "osmType": "way",
+      "osmId": 23085783,
+      "osmTags": {
+        "building": "yes",
+        "email": "info@ddclassics.com",
+        "name": "DD Classics",
+        "operator": "DD Classics Ltd.",
+        "phone": "+44 20 8878 3355",
+        "shop": "car",
+        "website": "https://www.ddclassics.com/"
+      },
+      "distanceMiles": 2.15,
+      "intelDistance": "2.15 mi",
+      "lat": 51.4862433,
+      "lng": -0.3256714,
+      "searchOrigin": "Chiswick / Hammersmith",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 5,
+      "fitReasons": [
+        "Has operator tag",
+        "Has website",
+        "Has phone",
+        "Name suggests non-franchise or specialty stock"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 39
+    },
+    {
+      "id": "way-706625068",
+      "name": "Lookers Land Rover West London",
+      "shortName": "Lookers",
+      "query": "Lookers Land Rover West London, London New Car Discovery, London",
+      "address": "",
+      "website": "",
+      "phone": "",
+      "brands": [
+        "Land Rover"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Lookers branded site; ask who handles property or overflow decisions",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/706625068",
+      "osmType": "way",
+      "osmId": 706625068,
+      "osmTags": {
+        "brand": "Land Rover",
+        "brand:wikidata": "Q26777551",
+        "brand:wikipedia": "en:Land Rover (marque)",
+        "building": "yes",
+        "name": "Lookers Land Rover West London",
+        "operator": "Lookers",
+        "shop": "car"
+      },
+      "distanceMiles": 2.35,
+      "intelDistance": "2.35 mi",
+      "lat": 51.5262822,
+      "lng": -0.2788367,
+      "searchOrigin": "Chiswick / Hammersmith",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 11,
+      "fitReasons": [
+        "Has brand tag",
+        "Has operator tag"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 40
+    },
+    {
+      "id": "node-11090468025",
+      "name": "Tesla Centre - Park Royal",
+      "shortName": "Tesla",
+      "query": "Tesla Centre - Park Royal, London New Car Discovery, London",
+      "address": "",
+      "website": "",
+      "phone": "+44 1628 450660",
+      "brands": [
+        "Tesla"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/node/11090468025",
+      "osmType": "node",
+      "osmId": 11090468025,
+      "osmTags": {
+        "brand": "Tesla",
+        "brand:wikidata": "Q478214",
+        "contact:email": "uk_sales@tesla.com",
+        "contact:phone": "+44 1628 450660",
+        "name": "Tesla Centre - Park Royal",
+        "opening_hours": "Mo-Sa 10:00-17:00; Su 10:00-16:00",
+        "service:vehicle:car_repair": "yes",
+        "shop": "car"
+      },
+      "distanceMiles": 2.38,
+      "intelDistance": "2.38 mi",
+      "lat": 51.526482,
+      "lng": -0.2832447,
+      "searchOrigin": "Chiswick / Hammersmith",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 10,
+      "fitReasons": [
+        "Has brand tag",
+        "Has phone",
+        "Name suggests showroom"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 41
+    },
+    {
+      "id": "node-7436893988",
+      "name": "Koenigsegg London",
+      "shortName": "Koenigsegg",
+      "query": "Koenigsegg London, 375 Kensington High Street, London, W14 8QA, London New Car Discovery, London",
+      "address": "375 Kensington High Street, London, W14 8QA",
+      "website": "https://koenigsegglondon.com/",
+      "phone": "",
+      "brands": [
+        "Koenigsegg"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/node/7436893988",
+      "osmType": "node",
+      "osmId": 7436893988,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:housenumber": "375",
+        "addr:postcode": "W14 8QA",
+        "addr:street": "Kensington High Street",
+        "brand": "Koenigsegg",
+        "brand:wikidata": "Q35594",
+        "name": "Koenigsegg London",
+        "shop": "car",
+        "website": "https://koenigsegglondon.com/"
+      },
+      "distanceMiles": 2.83,
+      "intelDistance": "2.83 mi",
+      "lat": 51.4964212,
+      "lng": -0.2059077,
+      "searchOrigin": "Battersea / Nine Elms",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 9,
+      "fitReasons": [
+        "Has brand tag",
+        "Has website",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 42
+    },
+    {
+      "id": "node-1591503133",
+      "name": "Microlino UK",
+      "shortName": "Microlino",
+      "query": "Microlino UK, 368-370 Kensington High Street, London, London New Car Discovery, London",
+      "address": "368-370 Kensington High Street, London",
+      "website": "https://microlino-car.com/en-uk/contact",
+      "phone": "+44 203 007 1666",
+      "brands": [
+        "Microlino"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/node/1591503133",
+      "osmType": "node",
+      "osmId": 1591503133,
+      "osmTags": {
+        "addr:city": "London",
+        "addr:housenumber": "368-370",
+        "addr:street": "Kensington High Street",
+        "brand": "Microlino",
+        "brand:website": "https://microlino-car.com",
+        "email": "info@microlino-uk.co.uk",
+        "name": "Microlino UK",
+        "note": "On ground floor of hotel building. Text on window says \"Indian Motorcycles\", but the shop has Microlino cars and Micro scooters on display",
+        "opening_hours": "Mo-Fr 08:00-12:00,13:00-17:00; Sa, Su, PH off",
+        "phone": "+44 203 007 1666",
+        "shop": "car",
+        "website": "https://microlino-car.com/en-uk/contact",
+        "wikidata": "Q56303268"
+      },
+      "distanceMiles": 2.85,
+      "intelDistance": "2.85 mi",
+      "lat": 51.4966916,
+      "lng": -0.2062702,
+      "searchOrigin": "Battersea / Nine Elms",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 10,
+      "fitReasons": [
+        "Has brand tag",
+        "Has website",
+        "Has phone",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 43
+    },
+    {
+      "id": "way-392699026",
+      "name": "MKG 3000",
+      "shortName": "MKG",
+      "query": "MKG 3000, Heath Road, Twickenham, London New Car Discovery, London",
+      "address": "Heath Road, Twickenham",
+      "website": "https://www.mkg3000.com/",
+      "phone": "+44 20 8538 9377",
+      "brands": [
+        "Mazda"
+      ],
+      "roleHint": "Ask for showroom manager or business manager",
+      "contactHint": "Decision-maker name not yet confirmed",
+      "parentGroup": "Manufacturer or branded dealership",
+      "pitch": "Premium handover, overflow, or customer-facing staging conversation near Battersea.",
+      "radar": {
+        "left": 50,
+        "top": 50
+      },
+      "sourceType": "osm",
+      "sourceUrl": "https://www.openstreetmap.org/way/392699026",
+      "osmType": "way",
+      "osmId": 392699026,
+      "osmTags": {
+        "addr:city": "Twickenham",
+        "addr:street": "Heath Road",
+        "brand": "Mazda",
+        "brand:wikidata": "Q35996",
+        "brand:wikipedia": "en:Mazda",
+        "building": "retail",
+        "building:levels": "1",
+        "name": "MKG 3000",
+        "phone": "+44 20 8538 9377",
+        "shop": "car",
+        "website": "https://www.mkg3000.com/"
+      },
+      "distanceMiles": 2.93,
+      "intelDistance": "2.93 mi",
+      "lat": 51.4449005,
+      "lng": -0.3358438,
+      "searchOrigin": "Brentford / Kew",
+      "prospectProfile": "new-car-showroom",
+      "fitScore": 10,
+      "fitReasons": [
+        "Has brand tag",
+        "Has website",
+        "Has phone",
+        "Has address"
+      ],
+      "prospectType": "new-car-showroom",
+      "isQualified": true,
+      "order": 44
+    }
+  ]
+}

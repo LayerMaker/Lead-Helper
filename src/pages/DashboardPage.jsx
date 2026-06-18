@@ -1,0 +1,265 @@
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { AppLayout } from "../components/AppLayout";
+import { fromDateTimeLocalValue, getPendingActionBuckets, toDateTimeLocalValue } from "../lib/leadHelperModel";
+import { useAppState } from "../state/AppState";
+
+function ScheduledActionRow({ action, getDealershipById, dispatch }) {
+  const [scheduleValue, setScheduleValue] = useState(toDateTimeLocalValue(action.dueAt));
+  const dealership = getDealershipById(action.dealershipId);
+
+  function openDestination() {
+    dispatch({ type: "select-dealership", dealershipId: action.dealershipId });
+  }
+
+  return (
+    <div className="row dashboard-action-row">
+      <span className="number">{action.priority === "high" ? "HI" : "UP"}</span>
+      <div>
+        <h3>
+          {dealership?.name || action.dealershipId}: {action.title}
+        </h3>
+        <small>
+          {action.note} Due {action.dueText}.
+        </small>
+        <div className="dashboard-action-tools">
+          <input
+            className="text-input compact-datetime"
+            type="datetime-local"
+            value={scheduleValue}
+            onChange={(event) => setScheduleValue(event.target.value)}
+          />
+          <button
+            className="btn"
+            type="button"
+            onClick={() =>
+              dispatch({
+                type: "reschedule-action",
+                actionId: action.id,
+                dueAt: fromDateTimeLocalValue(scheduleValue),
+              })
+            }
+          >
+            Save time
+          </button>
+          <button
+            className="btn"
+            type="button"
+            onClick={() => {
+              const tomorrow = new Date();
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              tomorrow.setHours(10, 30, 0, 0);
+              setScheduleValue(toDateTimeLocalValue(tomorrow.toISOString()));
+              dispatch({
+                type: "reschedule-action",
+                actionId: action.id,
+                dueAt: tomorrow.toISOString(),
+              });
+            }}
+          >
+            Tomorrow 10:30
+          </button>
+        </div>
+      </div>
+      <div className="dashboard-action-cta">
+        {action.type === "email" ? (
+          <Link className="btn primary" to="/email" onClick={openDestination}>
+            Open FGI
+          </Link>
+        ) : (
+          <Link className="btn" to="/leads" onClick={openDestination}>
+            {action.type === "call" ? "Call" : "Review"}
+          </Link>
+        )}
+        <button className="btn" type="button" onClick={() => dispatch({ type: "complete-action", actionId: action.id })}>
+          Done
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ActionBucket({ title, description, actions, emptyText, getDealershipById, dispatch }) {
+  return (
+    <section className="panel pad dashboard-bucket">
+      <div className="section-head">
+        <div>
+          <div className="kicker">{title}</div>
+          <h2>{description}</h2>
+        </div>
+        <span className={`pill${actions.length ? " active" : ""}`}>{actions.length}</span>
+      </div>
+
+      <div className="admin-actions">
+        {actions.length ? (
+          actions.map((action) => (
+            <ScheduledActionRow key={action.id} action={action} getDealershipById={getDealershipById} dispatch={dispatch} />
+          ))
+        ) : (
+          <div className="row">
+            <span className="number">--</span>
+            <div>
+              <h3>Clear</h3>
+              <small>{emptyText}</small>
+            </div>
+            <span className="pill">Empty</span>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+export function DashboardPage() {
+  const {
+    pendingActions,
+    pendingDrafts,
+    clustersWithVisits,
+    selectedCluster,
+    getDealershipsForCluster,
+    getLatestVisit,
+    getDealershipById,
+    dispatch,
+  } = useAppState();
+  const clusterDealers = getDealershipsForCluster(selectedCluster.id);
+  const actionBuckets = useMemo(() => getPendingActionBuckets(pendingActions), [pendingActions]);
+  const leadAction = actionBuckets.overdue[0] || actionBuckets.today[0] || actionBuckets.upcoming[0] || null;
+  const latestVisit = leadAction ? getLatestVisit(leadAction.dealershipId) : null;
+
+  return (
+    <AppLayout statusLine={`Today - ${selectedCluster.name} route and follow-up day`}>
+      <section className="title-row">
+        <div>
+          <div className="kicker">Dashboard</div>
+          <h1>Start with what is overdue, then clear today, then move into the field route.</h1>
+        </div>
+        <Link className="btn primary" to="/map">
+          Choose cluster
+        </Link>
+      </section>
+
+      <section className="pipeline-strip panel pad" aria-label="Visit data pipeline">
+        <div>
+          <span className="flow-dot active"></span>
+          <b>Visit log</b>
+          <small>Outcomes captured at the forecourt</small>
+        </div>
+        <div>
+          <span className="flow-dot"></span>
+          <b>Today engine</b>
+          <small>Overdue, today, and upcoming reminders</small>
+        </div>
+        <div>
+          <span className="flow-dot"></span>
+          <b>FGI Email</b>
+          <small>Suggested draft and admin tasks</small>
+        </div>
+        <div>
+          <span className="flow-dot"></span>
+          <b>Reports</b>
+          <small>Cluster proof-of-work feed</small>
+        </div>
+      </section>
+
+      <section className="grid three">
+        <div className="panel metric">
+          <strong>{actionBuckets.overdue.length}</strong>
+          <span>overdue actions needing attention first</span>
+        </div>
+        <div className="panel metric">
+          <strong>{actionBuckets.today.length}</strong>
+          <span>actions due today before field work drifts</span>
+        </div>
+        <div className="panel metric">
+          <strong>{actionBuckets.upcoming.length}</strong>
+          <span>upcoming actions already scheduled</span>
+        </div>
+      </section>
+
+      <section className="grid two" style={{ marginTop: 14 }}>
+        <div className="grid dashboard-main-grid">
+          <ActionBucket
+            title="Overdue"
+            description="Missed follow-ups and callbacks"
+            actions={actionBuckets.overdue}
+            emptyText="Nothing overdue right now."
+            getDealershipById={getDealershipById}
+            dispatch={dispatch}
+          />
+          <ActionBucket
+            title="Due today"
+            description="Clear these before moving on"
+            actions={actionBuckets.today}
+            emptyText="No same-day actions waiting."
+            getDealershipById={getDealershipById}
+            dispatch={dispatch}
+          />
+          <ActionBucket
+            title="Upcoming"
+            description="Scheduled next touches and meetings"
+            actions={actionBuckets.upcoming}
+            emptyText="Nothing queued yet."
+            getDealershipById={getDealershipById}
+            dispatch={dispatch}
+          />
+        </div>
+
+        <aside className="panel pad">
+          <div className="kicker">Live cluster feed</div>
+          <div className="intel-card">
+            <span className="radar-dot"></span>
+            <div>
+              <h3>{selectedCluster.name} cluster</h3>
+              <small>
+                {clusterDealers.length} scraped pins,{" "}
+                {clusterDealers.filter((dealer) => dealer.status === "Interested" || dealer.status === "Site walk booked").length} warm
+                leads, {pendingActions.length} open actions
+              </small>
+            </div>
+            <span className="pill active">Active</span>
+          </div>
+          <div className="feed-forward">
+            <span className="flow-dot"></span>
+            <div>
+              <b>Start-of-day focus</b>
+              <small>
+                {leadAction
+                  ? `${getDealershipById(leadAction.dealershipId)?.name}: ${leadAction.title}. ${leadAction.dueText}.`
+                  : "No urgent actions. Move straight into the next cluster route."}
+              </small>
+            </div>
+          </div>
+          <div className="feed-forward">
+            <span className="flow-dot"></span>
+            <div>
+              <b>Latest captured input</b>
+              <small>
+                {latestVisit
+                  ? `${getDealershipById(latestVisit.dealershipId)?.name}: ${latestVisit.outcomes.join(", ")}.`
+                  : "No visit captured yet."}
+              </small>
+            </div>
+          </div>
+          <div className="feed-forward">
+            <span className="flow-dot"></span>
+            <div>
+              <b>Generated downstream</b>
+              <small>
+                {pendingDrafts.length} draft ready, {pendingActions.length} pending actions, and {clustersWithVisits.size} reportable
+                clusters.
+              </small>
+            </div>
+          </div>
+          <div className="action-row">
+            <Link className="btn" to="/leads">
+              Open intel
+            </Link>
+            <Link className="btn" to="/reports">
+              Cluster report
+            </Link>
+          </div>
+        </aside>
+      </section>
+    </AppLayout>
+  );
+}

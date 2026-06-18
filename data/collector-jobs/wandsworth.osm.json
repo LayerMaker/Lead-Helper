@@ -1,0 +1,10 @@
+{
+  "clusterId": "wandsworth",
+  "clusterName": "Wandsworth",
+  "centerQuery": "Wandsworth Town, London SW18",
+  "radiusMiles": 3,
+  "tagKey": "shop",
+  "tagValue": "car",
+  "sameNameMergeDistanceMiles": 0.5,
+  "outputFile": "../candidates/wandsworth.osm.generated.json"
+}
