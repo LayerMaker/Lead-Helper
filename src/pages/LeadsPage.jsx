@@ -43,6 +43,13 @@ export function LeadsPage() {
   const [manualBusy, setManualBusy] = useState(false);
   const [manualStatus, setManualStatus] = useState("Add an off-map dealership when you find a real lead outside the scraped pins.");
   const [manualError, setManualError] = useState("");
+  const manualNameInputRef = useRef(null);
+  const manualAddressInputRef = useRef(null);
+  const manualClusterSelectRef = useRef(null);
+  const manualWebsiteInputRef = useRef(null);
+  const manualPhoneInputRef = useRef(null);
+  const manualRoleInputRef = useRef(null);
+  const manualHintInputRef = useRef(null);
   const [manualForm, setManualForm] = useState({
     name: "",
     address: "",
@@ -141,8 +148,23 @@ export function LeadsPage() {
   }
 
   async function addManualDealership() {
-    const name = manualForm.name.trim();
-    const address = manualForm.address.trim();
+    const name = String(manualNameInputRef.current?.value ?? manualForm.name).trim();
+    const address = String(manualAddressInputRef.current?.value ?? manualForm.address).trim();
+    const clusterId = String(manualClusterSelectRef.current?.value ?? manualForm.clusterId ?? selectedCluster.id).trim();
+    const website = String(manualWebsiteInputRef.current?.value ?? manualForm.website).trim();
+    const phone = String(manualPhoneInputRef.current?.value ?? manualForm.phone).trim();
+    const roleHint = String(manualRoleInputRef.current?.value ?? manualForm.roleHint).trim();
+    const contactHint = String(manualHintInputRef.current?.value ?? manualForm.contactHint).trim();
+
+    setManualForm({
+      name,
+      address,
+      clusterId: clusterId || selectedCluster.id,
+      website,
+      phone,
+      roleHint,
+      contactHint,
+    });
 
     if (!name || !address) {
       setManualError("Add both a dealership name and address.");
@@ -160,11 +182,11 @@ export function LeadsPage() {
         payload: {
           name,
           address,
-          clusterId: manualForm.clusterId || selectedCluster.id,
-          website: manualForm.website.trim(),
-          phone: manualForm.phone.trim(),
-          roleHint: manualForm.roleHint.trim(),
-          contactHint: manualForm.contactHint.trim(),
+          clusterId: clusterId || selectedCluster.id,
+          website,
+          phone,
+          roleHint,
+          contactHint,
           location: [bestMatch.lat, bestMatch.lng],
           geocodeLabel: bestMatch.displayName,
           intelDistance: "Manual add",
@@ -240,6 +262,7 @@ export function LeadsPage() {
             <div className="field">
               <label>Dealership name</label>
               <input
+                ref={manualNameInputRef}
                 className="text-input"
                 value={manualForm.name}
                 onChange={(event) => updateManualField("name", event.target.value)}
@@ -249,6 +272,7 @@ export function LeadsPage() {
             <div className="field">
               <label>Assign to cluster</label>
               <select
+                ref={manualClusterSelectRef}
                 className="text-input"
                 value={manualForm.clusterId}
                 onChange={(event) => updateManualField("clusterId", event.target.value)}
@@ -263,6 +287,7 @@ export function LeadsPage() {
             <div className="field" style={{ gridColumn: "1 / -1" }}>
               <label>Street address</label>
               <input
+                ref={manualAddressInputRef}
                 className="text-input"
                 value={manualForm.address}
                 onChange={(event) => updateManualField("address", event.target.value)}
@@ -272,6 +297,7 @@ export function LeadsPage() {
             <div className="field">
               <label>Website</label>
               <input
+                ref={manualWebsiteInputRef}
                 className="text-input"
                 value={manualForm.website}
                 onChange={(event) => updateManualField("website", event.target.value)}
@@ -281,6 +307,7 @@ export function LeadsPage() {
             <div className="field">
               <label>Phone</label>
               <input
+                ref={manualPhoneInputRef}
                 className="text-input"
                 value={manualForm.phone}
                 onChange={(event) => updateManualField("phone", event.target.value)}
@@ -290,6 +317,7 @@ export function LeadsPage() {
             <div className="field">
               <label>Who to ask for</label>
               <input
+                ref={manualRoleInputRef}
                 className="text-input"
                 value={manualForm.roleHint}
                 onChange={(event) => updateManualField("roleHint", event.target.value)}
@@ -299,6 +327,7 @@ export function LeadsPage() {
             <div className="field">
               <label>Contact hint</label>
               <input
+                ref={manualHintInputRef}
                 className="text-input"
                 value={manualForm.contactHint}
                 onChange={(event) => updateManualField("contactHint", event.target.value)}
