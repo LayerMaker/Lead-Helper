@@ -7,31 +7,24 @@ import {
   buildOutlookComposeUrl,
   buildSuggestedRecipientOptions,
   deriveEmailType,
+  emailIntentCatalog,
   emailTypeCatalog,
+  getEmailIntentDetails,
 } from "../lib/leadHelperModel";
 import { generateOpenRouterEmailDraft } from "../lib/emailService";
 import { AppLayout } from "../components/AppLayout";
 import { useAppState } from "../state/AppState";
 
-const fgiOptions = [
-  "Met manager",
-  "Interested",
-  "Needs email",
-  "Follow-up required",
-  "Deferred to decision maker",
-  "Card captured",
-  "Site walk booked",
-  "Not suitable",
-];
-
-function normalizeDraftState({ state, dealershipId, outcomes, preferredType, storedDraft }) {
-  const generated = buildEmailDraft(state, dealershipId, outcomes, { emailType: preferredType });
+function normalizeDraftState({ state, dealershipId, outcomes, emailIntents, preferredType, storedDraft }) {
+  const generated = buildEmailDraft(state, dealershipId, outcomes, { emailType: preferredType, emailIntents });
   const nextType = storedDraft?.emailType || generated.emailType;
-  const nextGenerated = buildEmailDraft(state, dealershipId, outcomes, { emailType: nextType });
+  const nextEmailIntents = storedDraft?.emailIntents || emailIntents || [];
+  const nextGenerated = buildEmailDraft(state, dealershipId, outcomes, { emailType: nextType, emailIntents: nextEmailIntents });
   const suggestedRecipients = buildSuggestedRecipientOptions(state, dealershipId);
 
   return {
     outcomes,
+    emailIntents: nextEmailIntents,
     emailType: nextType,
     toAddress: storedDraft?.toAddress || suggestedRecipients[0]?.address || "",
     subject: storedDraft?.subject || nextGenerated.subject,
@@ -45,10 +38,12 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
     state,
     dealershipId: selectedDealership.id,
     outcomes: storedDraft?.outcomes || latestVisit?.outcomes || ["Met manager", "Interested", "Needs email"],
+    emailIntents: storedDraft?.emailIntents || ["instant-follow-up", "brochure-to-follow"],
     preferredType: storedDraft?.emailType,
     storedDraft,
   });
-  const [selectedOutcomes, setSelectedOutcomes] = useState(initialComposerState.outcomes);
+  const [selectedOutcomes] = useState(initialComposerState.outcomes);
+  const [selectedEmailIntents, setSelectedEmailIntents] = useState(initialComposerState.emailIntents);
   const [emailType, setEmailType] = useState(initialComposerState.emailType);
   const [toAddress, setToAddress] = useState(initialComposerState.toAddress);
   const [subject, setSubject] = useState(initialComposerState.subject);
@@ -59,6 +54,7 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
   const [errorState, setErrorState] = useState("");
 
   const adminEntries = useMemo(() => buildAdminEntries(selectedOutcomes), [selectedOutcomes]);
+  const emailIntentDetails = useMemo(() => getEmailIntentDetails(selectedEmailIntents), [selectedEmailIntents]);
   const suggestedRecipients = useMemo(
     () => buildSuggestedRecipientOptions(state, selectedDealership.id),
     [selectedDealership.id, state],
@@ -68,15 +64,19 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
     [suggestedRecipients],
   );
   const generatedTemplate = useMemo(
-    () => buildEmailDraft(state, selectedDealership.id, selectedOutcomes, { emailType }),
-    [emailType, selectedDealership.id, selectedOutcomes, state],
+    () => buildEmailDraft(state, selectedDealership.id, selectedOutcomes, { emailType, emailIntents: selectedEmailIntents }),
+    [emailType, selectedDealership.id, selectedEmailIntents, selectedOutcomes, state],
   );
 
-  function toggleOutcome(outcome) {
-    setSelectedOutcomes((current) => {
-      const next = current.includes(outcome) ? current.filter((item) => item !== outcome) : [...current, outcome];
-      const derivedType = deriveEmailType(next, emailType);
-      const refreshed = buildEmailDraft(state, selectedDealership.id, next, { emailType: derivedType });
+  function toggleEmailIntent(intentId) {
+    setSelectedEmailIntents((current) => {
+      const next = current.includes(intentId) ? current.filter((item) => item !== intentId) : [...current, intentId];
+      const selectedIntent = getEmailIntentDetails(next)[0];
+      const derivedType = deriveEmailType(selectedOutcomes, selectedIntent?.emailType || emailType);
+      const refreshed = buildEmailDraft(state, selectedDealership.id, selectedOutcomes, {
+        emailType: derivedType,
+        emailIntents: next,
+      });
       setEmailType(derivedType);
       setSubject(refreshed.subject);
       setBody(refreshed.body);
@@ -86,7 +86,10 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
   }
 
   function chooseEmailType(nextType) {
-    const refreshed = buildEmailDraft(state, selectedDealership.id, selectedOutcomes, { emailType: nextType });
+    const refreshed = buildEmailDraft(state, selectedDealership.id, selectedOutcomes, {
+      emailType: nextType,
+      emailIntents: selectedEmailIntents,
+    });
     setEmailType(nextType);
     setSubject(refreshed.subject);
     setBody(refreshed.body);
@@ -94,7 +97,10 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
   }
 
   function rebuildTemplate() {
-    const refreshed = buildEmailDraft(state, selectedDealership.id, selectedOutcomes, { emailType });
+    const refreshed = buildEmailDraft(state, selectedDealership.id, selectedOutcomes, {
+      emailType,
+      emailIntents: selectedEmailIntents,
+    });
     setSubject(refreshed.subject);
     setBody(refreshed.body);
     setGenerationMode("template");
@@ -109,6 +115,7 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
       subject,
       body,
       generationMode: modeOverride || generationMode,
+      emailIntents: selectedEmailIntents,
     };
   }
 
@@ -167,6 +174,11 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
         contact,
         latestVisit,
         outcomes: selectedOutcomes,
+        emailIntents: emailIntentDetails.map((intent) => ({
+          label: intent.label,
+          prompt_hint: intent.promptHint,
+          template_block: intent.templateBlock,
+        })),
         emailType,
         templateSubject: subject || generatedTemplate.subject,
         templateBody: body || generatedTemplate.body,
@@ -227,16 +239,32 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
         </div>
 
         <div className="field">
-          <label>Frequently given input</label>
+          <label>Saved visit outcomes</label>
           <div className="outcomes">
-            {fgiOptions.map((outcome) => (
+            {selectedOutcomes.length ? (
+              selectedOutcomes.map((outcome) => (
+                <span key={outcome} className="chip selected">
+                  {outcome}
+                </span>
+              ))
+            ) : (
+              <span className="pill">No visit outcomes saved yet</span>
+            )}
+          </div>
+        </div>
+
+        <div className="field">
+          <label>Email intent chips</label>
+          <div className="outcomes">
+            {emailIntentCatalog.map((intent) => (
               <button
-                key={outcome}
-                className={`chip${selectedOutcomes.includes(outcome) ? " selected" : ""}`}
+                key={intent.id}
+                className={`chip${selectedEmailIntents.includes(intent.id) ? " selected" : ""}`}
                 type="button"
-                onClick={() => toggleOutcome(outcome)}
+                onClick={() => toggleEmailIntent(intent.id)}
+                title={intent.promptHint}
               >
-                {outcome}
+                {intent.label}
               </button>
             ))}
           </div>
@@ -456,11 +484,11 @@ export function EmailPage() {
   const latestMedia = getLatestMedia(selectedDealership.id);
 
   return (
-    <AppLayout statusLine="Frequently given input engine">
+    <AppLayout statusLine="Email intent engine">
       <section className="title-row">
         <div>
-          <div className="kicker">FGI Email</div>
-          <h1>Turn visit outcomes into a recipient-ready follow-up without leaving the field workflow.</h1>
+          <div className="kicker">Email assistant</div>
+          <h1>Turn saved visit context and quick email intents into a recipient-ready follow-up.</h1>
         </div>
         <Link className="btn primary" to="/leads">
           Open contact intel
@@ -470,8 +498,8 @@ export function EmailPage() {
       <section className="pipeline-strip panel pad">
         <div>
           <span className="flow-dot active"></span>
-          <b>Outcome chips</b>
-          <small>What happened on the visit</small>
+          <b>Visit context</b>
+          <small>What happened, saved from Leads</small>
         </div>
         <div>
           <span className="flow-dot"></span>
@@ -480,7 +508,7 @@ export function EmailPage() {
         </div>
         <div>
           <span className="flow-dot"></span>
-          <b>Draft engine</b>
+          <b>Email intent</b>
           <small>Template, polish, or generate</small>
         </div>
         <div>

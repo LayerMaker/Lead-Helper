@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "../components/AppLayout";
-import { getDistanceMilesBetweenPoints } from "../lib/leadHelperModel";
+import { buildAdminEntries, getDistanceMilesBetweenPoints, visitOutcomeOptions } from "../lib/leadHelperModel";
 import { runOpenRouterBusinessCardOcr } from "../lib/ocrService";
 import { useAppState } from "../state/AppState";
 
@@ -76,9 +76,11 @@ export function LeadsPage() {
     selectedDealership,
     getDealershipsForCluster,
     getLatestContact,
+    getLatestVisit,
     dispatch,
   } = useAppState();
   const latestContact = getLatestContact(selectedDealership.id);
+  const latestVisit = getLatestVisit(selectedDealership.id);
   const [capturedFileName, setCapturedFileName] = useState("");
   const [capturedImageUrl, setCapturedImageUrl] = useState("");
   const [ocrBusy, setOcrBusy] = useState(false);
@@ -98,6 +100,9 @@ export function LeadsPage() {
   const [cameraError, setCameraError] = useState("");
   const [ocrCompleted, setOcrCompleted] = useState(false);
   const [phoneContactStatus, setPhoneContactStatus] = useState("");
+  const [selectedVisitOutcomes, setSelectedVisitOutcomes] = useState(() => latestVisit?.outcomes || []);
+  const [visitNote, setVisitNote] = useState(latestVisit?.note || "");
+  const [visitSaveStatus, setVisitSaveStatus] = useState(latestVisit ? "Latest visit loaded" : "No visit outcomes saved yet");
 
   const suggestedDomain = useMemo(() => selectedDealership.website || "", [selectedDealership.website]);
   const unclusteredDealerships = useMemo(
@@ -110,6 +115,7 @@ export function LeadsPage() {
   }, [getDealershipsForCluster, selectedGroupId, unclusteredDealerships]);
   const selectedDealershipInGroup = selectedGroupDealerships.some((dealership) => dealership.id === selectedDealership.id);
   const nearestSuggestion = locationSuggestion && locationSuggestion.id !== dismissedSuggestionId ? locationSuggestion : null;
+  const visitAdminEntries = useMemo(() => buildAdminEntries(selectedVisitOutcomes), [selectedVisitOutcomes]);
 
   useEffect(() => {
     if (previousDealershipIdRef.current === selectedDealership.id) return;
@@ -122,7 +128,10 @@ export function LeadsPage() {
     setOcrCompleted(false);
     setPhoneContactStatus("");
     setOcrStatus("No contact media captured yet");
-  }, [latestContact, selectedDealership]);
+    setSelectedVisitOutcomes(latestVisit?.outcomes || []);
+    setVisitNote(latestVisit?.note || "");
+    setVisitSaveStatus(latestVisit ? "Latest visit loaded" : "No visit outcomes saved yet");
+  }, [latestContact, latestVisit, selectedDealership]);
 
   useEffect(() => {
     if (!guidedCameraOpen || !cameraStream || !cameraVideoRef.current) return;
@@ -364,6 +373,25 @@ export function LeadsPage() {
     });
     setOcrStatus(openEmail ? "Contact saved and email draft primed" : "Contact saved into lead card");
     setOcrError("");
+    if (openEmail) saveVisitOutcomes(true);
+  }
+
+  function toggleVisitOutcome(outcome) {
+    setSelectedVisitOutcomes((current) =>
+      current.includes(outcome) ? current.filter((item) => item !== outcome) : [...current, outcome],
+    );
+    setVisitSaveStatus("Visit outcomes changed");
+  }
+
+  function saveVisitOutcomes(openEmail = false) {
+    const outcomes = selectedVisitOutcomes.length ? selectedVisitOutcomes : ["Card captured"];
+    dispatch({
+      type: "generate-visit",
+      dealershipId: selectedDealership.id,
+      outcomes,
+      note: visitNote || "Logged from Leads page",
+    });
+    setVisitSaveStatus(openEmail ? "Visit saved and email draft primed" : "Visit outcomes saved");
     if (openEmail) navigate("/email");
   }
 
@@ -606,6 +634,40 @@ export function LeadsPage() {
             />
           </div>
 
+          <div className="field">
+            <label>Visit outcome chips</label>
+            <div className="outcomes">
+              {visitOutcomeOptions.map((outcome) => (
+                <button
+                  key={outcome}
+                  className={`chip${selectedVisitOutcomes.includes(outcome) ? " selected" : ""}`}
+                  type="button"
+                  onClick={() => toggleVisitOutcome(outcome)}
+                >
+                  {outcome}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="field">
+            <label>Visit note</label>
+            <textarea
+              className="input"
+              rows="3"
+              value={visitNote}
+              onChange={(event) => {
+                setVisitNote(event.target.value);
+                setVisitSaveStatus("Visit outcomes changed");
+              }}
+              placeholder="Short note for reports, dashboard actions, or email context"
+            />
+          </div>
+
+          <div className="inline-alert">
+            {visitSaveStatus}. {visitAdminEntries.length} downstream admin item{visitAdminEntries.length === 1 ? "" : "s"} ready.
+          </div>
+
           <div className="inline-alert">
             {latestContact
               ? `Saved contact on this lead: ${latestContact.name}, ${latestContact.role}.`
@@ -629,6 +691,14 @@ export function LeadsPage() {
               disabled={!ocrFields.name && !ocrFields.email && !ocrFields.phone}
             >
               Save + phone contact
+            </button>
+            <button
+              className="btn"
+              type="button"
+              onClick={() => saveVisitOutcomes(false)}
+              disabled={!selectedVisitOutcomes.length}
+            >
+              Save visit
             </button>
             <button
               className="btn primary"

@@ -89,6 +89,84 @@ export const emailTypeCatalog = [
   "Polite close-out",
 ];
 
+export const visitOutcomeOptions = [
+  "Met manager",
+  "Interested",
+  "Needs email",
+  "Follow-up required",
+  "Deferred to decision maker",
+  "Card captured",
+  "Site walk booked",
+  "Not suitable",
+];
+
+export const emailIntentCatalog = [
+  {
+    id: "instant-follow-up",
+    label: "Instant follow-up",
+    emailType: "Standard follow-up",
+    templateBlock:
+      "It was great connecting with you today, I really appreciate your time. I just thought I would follow up with a quick email while the conversation is fresh.",
+    promptHint: "Send a same-day thank-you note after an in-person showroom visit.",
+  },
+  {
+    id: "brochure-to-follow",
+    label: "Brochure to follow",
+    emailType: "Site details follow-up",
+    templateBlock:
+      "When I am back at my desk, I will send over the brochure along with more detailed information on the Battersea site.",
+    promptHint: "Promise that the brochure and site information will follow shortly.",
+  },
+  {
+    id: "check-back-in",
+    label: "Check back in",
+    emailType: "Standard follow-up",
+    templateBlock:
+      "Before I check back in with you, I wanted to keep the email thread open so the details are easy to pick up.",
+    promptHint: "Keep the lead warm and create an easy thread for the next touchpoint.",
+  },
+  {
+    id: "decision-maker",
+    label: "Decision maker",
+    emailType: "Decision-maker intro request",
+    templateBlock:
+      "If it makes sense to include the decision-maker or wider team, please feel free to forward this on and I can send the relevant details through to them as well.",
+    promptHint: "Politely ask for the relevant property or senior decision-maker to be included.",
+  },
+  {
+    id: "team-member-absent",
+    label: "Team member absent",
+    emailType: "Decision-maker intro request",
+    templateBlock:
+      "I understand the relevant team member was unavailable today, so I am happy to pick this back up when they are back in.",
+    promptHint: "Acknowledge that the right person was unavailable without making the email sound stalled.",
+  },
+  {
+    id: "before-site-walk",
+    label: "Before site walk",
+    emailType: "Site walk confirmation",
+    templateBlock:
+      "Ahead of the site walk, I will send over the key access notes and site information so the visit is useful from the outset.",
+    promptHint: "Warmly bridge the conversation before an agreed or likely site walk.",
+  },
+  {
+    id: "send-site-pack",
+    label: "Send site pack",
+    emailType: "Site details follow-up",
+    templateBlock:
+      "I can send across a short site pack covering access, frontage, layout, and how the space could work for overflow stock, handovers, or local staging.",
+    promptHint: "Offer a concise Battersea site pack with the most relevant commercial property details.",
+  },
+  {
+    id: "polite-close-out",
+    label: "Polite close-out",
+    emailType: "Polite close-out",
+    templateBlock:
+      "If the site is not quite right for your current requirements, no problem at all. I am happy to close the loop for now and pick it back up if things change.",
+    promptHint: "Politely close the conversation while leaving the door open.",
+  },
+];
+
 export const defaultVisitOutcomes = ["Met manager", "Interested", "Needs email", "Follow-up required"];
 export const dealershipIdAliases = {
   "joe-macari-wandsworth": "way-791359685",
@@ -994,18 +1072,35 @@ export function buildEmailSubject(state, dealershipId, emailType) {
   return `Good to meet you - ${dealership.name}`;
 }
 
+export function getEmailIntentDetails(intentIds = []) {
+  return intentIds
+    .map((intentId) => emailIntentCatalog.find((item) => item.id === intentId || item.label === intentId))
+    .filter(Boolean);
+}
+
 export function buildEmailDraft(state, dealershipId, outcomes, options = {}) {
   const dealership = mergeDealership(state, dealershipId);
   const contact = getLatestContact(state, dealershipId);
   const latestVisit = getLatestVisit(state, dealershipId);
   const latestMedia = getLatestMedia(state, dealershipId);
+  const intentDetails = getEmailIntentDetails(options.emailIntents || []);
   const greeting = contact ? `Hi ${contact.name.split(" ")[0]},` : "Hi,";
-  const emailType = deriveEmailType(outcomes, options.emailType);
+  const emailType = deriveEmailType(outcomes, options.emailType || intentDetails[0]?.emailType || "");
   const subject = buildEmailSubject(state, dealershipId, emailType);
-  const lowerOutcomes = outcomes.map((outcome) => outcome.toLowerCase()).join(", ");
   const closing = "Best regards,\nConnor";
   const noteLine = latestVisit?.note ? ` ${latestVisit.note}` : "";
   const mediaLine = latestMedia?.rawText ? " I have also logged the contact details captured on site." : "";
+
+  if (intentDetails.length) {
+    const bodyBlocks = intentDetails.map((intent) => intent.templateBlock);
+    const contextLine = noteLine || mediaLine ? `${noteLine}${mediaLine}` : "";
+    return {
+      emailType,
+      subject,
+      body: `${greeting}\n\n${bodyBlocks.join("\n\n")}${contextLine}\n\nBest regards,\nConnor`,
+      emailIntents: intentDetails.map((intent) => intent.id),
+    };
+  }
 
   if (emailType === "Site walk confirmation") {
     return {
@@ -1050,7 +1145,7 @@ export function buildEmailDraft(state, dealershipId, outcomes, options = {}) {
   return {
     emailType,
     subject,
-    body: `${greeting} great meeting you today at ${dealership.name}. I have noted: ${lowerOutcomes}. I just wanted to touch base on email and keep the conversation moving.${noteLine}${mediaLine} If useful, I can send across a short Battersea overview and suggest the next practical step from here.\n\n${closing}`,
+    body: `${greeting} great meeting you today at ${dealership.name}. I just wanted to touch base on email and keep the conversation moving.${noteLine}${mediaLine} If useful, I can send across a short Battersea overview and suggest the next practical step from here.\n\n${closing}`,
   };
 }
 
@@ -1097,7 +1192,10 @@ export function createActionsFromOutcomes(outcomes, dealershipId, options = {}) 
 }
 
 export function upsertDraft(state, dealershipId, outcomes, status = "draft", draftOverrides = {}) {
-  const generated = buildEmailDraft(state, dealershipId, outcomes, { emailType: draftOverrides.emailType });
+  const generated = buildEmailDraft(state, dealershipId, outcomes, {
+    emailType: draftOverrides.emailType,
+    emailIntents: draftOverrides.emailIntents,
+  });
   const nextEmailType = draftOverrides.emailType || generated.emailType;
   const nextSubject = draftOverrides.subject || generated.subject;
   const nextBody = draftOverrides.body || generated.body;
@@ -1110,6 +1208,7 @@ export function upsertDraft(state, dealershipId, outcomes, status = "draft", dra
     current.body = nextBody;
     current.toAddress = nextToAddress;
     current.generationMode = draftOverrides.generationMode || current.generationMode || "template";
+    current.emailIntents = [...(draftOverrides.emailIntents || current.emailIntents || [])];
     current.status = status;
     current.createdAt = new Date().toISOString().slice(0, 16).replace("T", " ");
     return current;
@@ -1123,6 +1222,7 @@ export function upsertDraft(state, dealershipId, outcomes, status = "draft", dra
     body: nextBody,
     toAddress: nextToAddress,
     generationMode: draftOverrides.generationMode || "template",
+    emailIntents: [...(draftOverrides.emailIntents || [])],
     status,
     createdAt: new Date().toISOString().slice(0, 16).replace("T", " "),
   };
