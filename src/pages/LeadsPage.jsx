@@ -16,6 +16,15 @@ function defaultFields(selectedDealership, latestContact) {
   };
 }
 
+const AUTO_WEST_TEST_LEAD = {
+  name: "Auto West London OMODA & JAECOO",
+  address: "109 Devonshire Rd, Chiswick, London W4 2AN",
+  website: "autowestlondon.co.uk",
+  phone: "02039 317860",
+  roleHint: "Showroom manager",
+  contactHint: "Met on site, brochure already sent",
+};
+
 export function LeadsPage() {
   const navigate = useNavigate();
   const {
@@ -84,6 +93,15 @@ export function LeadsPage() {
       ...current,
       [key]: value,
     }));
+  }
+
+  function loadAutoWestTestLead() {
+    setManualError("");
+    setManualStatus("Auto West test lead loaded. Add it straight to the map or tweak any field first.");
+    setManualForm({
+      ...AUTO_WEST_TEST_LEAD,
+      clusterId: selectedCluster.id,
+    });
   }
 
   async function onCaptureFile(event) {
@@ -167,7 +185,7 @@ export function LeadsPage() {
     });
 
     if (!name || !address) {
-      setManualError("Add both a dealership name and address.");
+      setManualError("Dealership name and street address are required. The faint example text is only a prompt unless you tap Load Auto West test lead.");
       return;
     }
 
@@ -258,6 +276,16 @@ export function LeadsPage() {
             make it behave like every other dealership in route, email, and reports.
           </p>
 
+          <div className="inline-alert">
+            The sample text in these fields is only an example prompt. Use the button below to load your real Auto West test case.
+          </div>
+
+          <div className="action-row" style={{ marginTop: 12, marginBottom: 12 }}>
+            <button className="btn" type="button" onClick={loadAutoWestTestLead}>
+              Load Auto West test lead
+            </button>
+          </div>
+
           <div className="grid two compact-form">
             <div className="field">
               <label>Dealership name</label>
@@ -266,7 +294,7 @@ export function LeadsPage() {
                 className="text-input"
                 value={manualForm.name}
                 onChange={(event) => updateManualField("name", event.target.value)}
-                placeholder="Auto West London OMODA & JAECOO"
+                placeholder="Type dealership name"
               />
             </div>
             <div className="field">
@@ -291,7 +319,7 @@ export function LeadsPage() {
                 className="text-input"
                 value={manualForm.address}
                 onChange={(event) => updateManualField("address", event.target.value)}
-                placeholder="109 Devonshire Rd, Chiswick, London W4 2AN"
+                placeholder="Type full street address"
               />
             </div>
             <div className="field">
@@ -301,7 +329,7 @@ export function LeadsPage() {
                 className="text-input"
                 value={manualForm.website}
                 onChange={(event) => updateManualField("website", event.target.value)}
-                placeholder="autowestlondon.co.uk"
+                placeholder="Optional website"
               />
             </div>
             <div className="field">
@@ -311,7 +339,7 @@ export function LeadsPage() {
                 className="text-input"
                 value={manualForm.phone}
                 onChange={(event) => updateManualField("phone", event.target.value)}
-                placeholder="02039 317860"
+                placeholder="Optional phone"
               />
             </div>
             <div className="field">
@@ -321,7 +349,7 @@ export function LeadsPage() {
                 className="text-input"
                 value={manualForm.roleHint}
                 onChange={(event) => updateManualField("roleHint", event.target.value)}
-                placeholder="Showroom manager or dealer principal"
+                placeholder="Optional role hint"
               />
             </div>
             <div className="field">
@@ -331,7 +359,7 @@ export function LeadsPage() {
                 className="text-input"
                 value={manualForm.contactHint}
                 onChange={(event) => updateManualField("contactHint", event.target.value)}
-                placeholder="Met on site, brochure already sent"
+                placeholder="Optional contact hint"
               />
             </div>
           </div>
