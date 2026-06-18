@@ -16,6 +16,11 @@ function defaultFields(selectedDealership, latestContact) {
   };
 }
 
+function formatMiles(value) {
+  if (!Number.isFinite(value)) return "";
+  return `${value.toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1")} mi`;
+}
+
 export function LeadsPage() {
   const navigate = useNavigate();
   const {
@@ -25,15 +30,10 @@ export function LeadsPage() {
     selectedDealership,
     getDealershipsForCluster,
     getLatestContact,
-    getLatestVisit,
-    getLatestMedia,
     settings,
     dispatch,
   } = useAppState();
-  const dealers = getDealershipsForCluster(selectedCluster.id);
   const latestContact = getLatestContact(selectedDealership.id);
-  const latestVisit = getLatestVisit(selectedDealership.id);
-  const latestMedia = getLatestMedia(selectedDealership.id);
   const [capturedFileName, setCapturedFileName] = useState("");
   const [capturedImageUrl, setCapturedImageUrl] = useState("");
   const [ocrBusy, setOcrBusy] = useState(false);
@@ -56,6 +56,7 @@ export function LeadsPage() {
     if (selectedGroupId === "__unclustered") return unclusteredDealerships;
     return getDealershipsForCluster(selectedGroupId);
   }, [getDealershipsForCluster, selectedGroupId, unclusteredDealerships]);
+  const selectedDealershipInGroup = selectedGroupDealerships.some((dealership) => dealership.id === selectedDealership.id);
   const nearestSuggestion = locationSuggestion && locationSuggestion.id !== dismissedSuggestionId ? locationSuggestion : null;
 
   useEffect(() => {
@@ -74,11 +75,6 @@ export function LeadsPage() {
       ...current,
       [key]: value,
     }));
-  }
-
-  function formatMiles(value) {
-    if (!Number.isFinite(value)) return "";
-    return `${value.toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1")} mi`;
   }
 
   function handleGroupChange(groupId) {
@@ -169,6 +165,15 @@ export function LeadsPage() {
     setLocationStatus("Suggestion dismissed. Choose the dealership manually below.");
   }
 
+  async function copyAsk() {
+    const text = `${selectedDealership.roleHint || "Ask for showroom manager"}. If unavailable, ask for the Dealer Principal or owner.`;
+    try {
+      await window.navigator.clipboard.writeText(text);
+    } catch {
+      // Clipboard may be unavailable in some mobile browsers.
+    }
+  }
+
   async function onCaptureFile(event) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -177,7 +182,7 @@ export function LeadsPage() {
     reader.onload = () => {
       setCapturedFileName(file.name);
       setCapturedImageUrl(String(reader.result || ""));
-      setOcrStatus("Contact media ready");
+      setOcrStatus("Contact media ready. Run OCR to populate the form.");
       setOcrError("");
       setOcrFields(defaultFields(selectedDealership, latestContact));
     };
@@ -186,7 +191,7 @@ export function LeadsPage() {
 
   async function runOcr() {
     if (!capturedImageUrl) {
-      setOcrError("Capture a business card or contact photo first");
+      setOcrError("Capture or upload a business card first");
       return;
     }
     if (!settings?.openRouterApiKey) {
@@ -196,7 +201,7 @@ export function LeadsPage() {
 
     setOcrBusy(true);
     setOcrError("");
-    setOcrStatus("Running Qwen OCR");
+    setOcrStatus("Reading card with Qwen OCR");
     try {
       const result = await runOpenRouterBusinessCardOcr({
         apiKey: settings.openRouterApiKey,
@@ -205,7 +210,7 @@ export function LeadsPage() {
         dealershipName: selectedDealership.name,
       });
       setOcrFields(result);
-      setOcrStatus("OCR extraction ready for review");
+      setOcrStatus("OCR populated the fields. Check them, then save.");
     } catch (error) {
       setOcrError(error.message || "OCR failed");
       setOcrStatus("OCR failed");
@@ -231,29 +236,15 @@ export function LeadsPage() {
   }
 
   return (
-    <AppLayout statusLine={`Geolocation dealership intel - ${selectedCluster.name} route`}>
+    <AppLayout statusLine={`Lead capture - ${selectedCluster.name}`}>
       <section className="title-row">
         <div>
           <div className="kicker">Leads intel</div>
-          <h1>Detect the nearest dealership and capture the right contact material.</h1>
-        </div>
-        <div className="action-row">
-          <label className="btn" htmlFor="contact-upload-input">
-            Upload photo
-          </label>
-          <label className="btn primary" htmlFor="contact-camera-input">
-            Use camera
-          </label>
+          <h1>Choose the dealership, capture the card, save the contact.</h1>
         </div>
       </section>
 
-      <input
-        id="contact-upload-input"
-        className="sr-only-input"
-        type="file"
-        accept="image/*"
-        onChange={onCaptureFile}
-      />
+      <input id="contact-upload-input" className="sr-only-input" type="file" accept="image/*" onChange={onCaptureFile} />
       <input
         id="contact-camera-input"
         className="sr-only-input"
@@ -263,208 +254,75 @@ export function LeadsPage() {
         onChange={onCaptureFile}
       />
 
-      <section className="grid two" style={{ marginBottom: 14 }}>
-        <article className="panel pad">
-          <div className="section-head">
-            <div>
-              <div className="kicker">Choose active dealership</div>
-              <h2>{selectedDealership.name}</h2>
-            </div>
-            <span className={`pill${selectedDealership.isManual ? " active" : ""}`}>
-              {selectedDealership.isManual ? "Manual pin" : "Mapped pin"}
-            </span>
+      <section className="panel pad" style={{ marginBottom: 14 }}>
+        <div className="section-head">
+          <div>
+            <div className="kicker">Active dealership</div>
+            <h2>{selectedDealership.name}</h2>
           </div>
-          <p className="subtle-copy">
-            Pick the dealership before adding contact data. The OCR, notes, email draft, and report row all attach to this active lead.
-          </p>
+          <span className={`pill${selectedDealership.isManual ? " active" : ""}`}>
+            {selectedDealership.isManual ? "Manual pin" : "Mapped pin"}
+          </span>
+        </div>
 
-          <div className="grid two compact-form">
-            <div className="field">
-              <label>Cluster or standalone dealership</label>
-              <select className="text-input" value={selectedGroupId} onChange={(event) => handleGroupChange(event.target.value)}>
-                {clusters.map((cluster) => (
-                  <option key={cluster.id} value={cluster.id}>
-                    {cluster.name}
-                  </option>
-                ))}
-                {unclusteredDealerships.length ? <option value="__unclustered">Unclustered dealerships</option> : null}
-              </select>
-            </div>
-            <div className="field">
-              <label>Dealership</label>
-              <select
-                className="text-input"
-                value={selectedDealership.id}
-                onChange={(event) => handleDealershipChange(event.target.value)}
-                disabled={!selectedGroupDealerships.length}
-              >
-                {selectedGroupDealerships.map((dealership) => (
-                  <option key={dealership.id} value={dealership.id}>
-                    {dealership.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <div className="grid two compact-form">
+          <div className="field">
+            <label>Cluster or standalone dealership</label>
+            <select className="text-input" value={selectedGroupId} onChange={(event) => handleGroupChange(event.target.value)}>
+              {clusters.map((cluster) => (
+                <option key={cluster.id} value={cluster.id}>
+                  {cluster.name}
+                </option>
+              ))}
+              {unclusteredDealerships.length ? <option value="__unclustered">Unclustered dealerships</option> : null}
+            </select>
           </div>
-
-          <div className="feed-forward">
-            <span className={`flow-dot${locationBusy ? " active" : ""}`}></span>
-            <div>
-              <b>Location suggestion</b>
-              <small>{locationStatus}</small>
-            </div>
-          </div>
-
-          {nearestSuggestion ? (
-            <div className="inline-alert">
-              Suggested: {nearestSuggestion.name} ({formatMiles(nearestSuggestion.distanceMiles)})
-            </div>
-          ) : null}
-
-          <div className="action-row">
-            <button className="btn" type="button" disabled={locationBusy} onClick={suggestNearestDealership}>
-              {locationBusy ? "Checking location" : "Use my location"}
-            </button>
-            <button className="btn primary" type="button" disabled={!nearestSuggestion} onClick={confirmSuggestion}>
-              Confirm suggestion
-            </button>
-            <button className="btn" type="button" disabled={!nearestSuggestion} onClick={dismissSuggestion}>
-              Not this one
-            </button>
-          </div>
-        </article>
-
-        <aside className="panel table">
-          <div className="row selected">
-            <span className="number">01</span>
-            <div>
-              <h3>Active lead</h3>
-              <small>{selectedDealership.address || "No address saved yet."}</small>
-            </div>
-            <span className="pill active">{selectedCluster.name}</span>
-          </div>
-          <div className="row">
-            <span className="number">02</span>
-            <div>
-              <h3>Known contact</h3>
-              <small>
-                {latestContact
-                  ? `${latestContact.name}, ${latestContact.role} - ${latestContact.email || latestContact.phone || "saved contact"}`
-                  : "No contact saved yet. Capture or upload a card below."}
-              </small>
-            </div>
-            <span className={`pill${latestContact ? " active" : ""}`}>{latestContact ? "Saved" : "Empty"}</span>
-          </div>
-          <div className="row">
-            <span className="number">03</span>
-            <div>
-              <h3>Next data step</h3>
-              <small>{latestContact ? "Review/update contact details or open an email draft." : "Capture contact media and run OCR."}</small>
-            </div>
-            <span className="pill">Lead data</span>
-          </div>
-        </aside>
-      </section>
-
-      <section className="grid two">
-        <div className="panel pad">
-          <div className="section-head">
-            <div>
-              <div className="kicker">Nearest detected</div>
-              <h2>{selectedDealership.name}</h2>
-            </div>
-            <span className="pill active">{selectedDealership.intelDistance || "82 m"}</span>
-          </div>
-          <p>GPS and scraped map pins place you beside {selectedDealership.name}. Use this intel before walking through the door.</p>
-          <div className="geo-radar">
-            <span className="scan-ring"></span>
-            <span className="scan-ring two"></span>
-            <span className="user-dot"></span>
-            {dealers.slice(0, 3).map((dealer) => (
-              <button
-                key={dealer.id}
-                className={`dealer-pin${dealer.id === selectedDealership.id ? " warm" : dealer.status === "Follow-up due" ? " due" : ""}`}
-                style={{ left: `${dealer.radar.left}%`, top: `${dealer.radar.top}%` }}
-                type="button"
-                onClick={() => dispatch({ type: "select-dealership", dealershipId: dealer.id })}
-              >
-                {dealer.shortName}
-              </button>
-            ))}
-          </div>
-          <div className="action-row">
-            <label className="btn" htmlFor="contact-upload-input">
-              Upload card
-            </label>
-            <label className="btn primary" htmlFor="contact-camera-input">
-              Camera
-            </label>
+          <div className="field">
+            <label>Dealership</label>
+            <select
+              className="text-input"
+              value={selectedDealershipInGroup ? selectedDealership.id : ""}
+              onChange={(event) => handleDealershipChange(event.target.value)}
+              disabled={!selectedGroupDealerships.length}
+            >
+              {!selectedGroupDealerships.length ? <option value="">No dealerships in this group</option> : null}
+              {selectedGroupDealerships.map((dealership) => (
+                <option key={dealership.id} value={dealership.id}>
+                  {dealership.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
-        <aside className="panel table">
-          <div className="row selected">
-            <span className="number">01</span>
-            <div>
-              <h3>Scraped contact / intel</h3>
-              <small>
-                {selectedDealership.contactHint}. {selectedDealership.parentGroup}.
-              </small>
-            </div>
-            <span className="pill active">High fit</span>
+        <div className="feed-forward">
+          <span className={`flow-dot${locationBusy ? " active" : ""}`}></span>
+          <div>
+            <b>Location suggestion</b>
+            <small>{locationStatus}</small>
           </div>
-          <div className="row">
-            <span className="number">02</span>
-            <div>
-              <h3>Who to ask for</h3>
-              <small>
-                {selectedDealership.roleHint}. If unavailable, ask for the Dealer Principal or owner.
-              </small>
-            </div>
-            <button className="btn" type="button">
-              Copy ask
-            </button>
+        </div>
+
+        {nearestSuggestion ? (
+          <div className="inline-alert">
+            Suggested: {nearestSuggestion.name} ({formatMiles(nearestSuggestion.distanceMiles)})
           </div>
-          <div className="row">
-            <span className="number">03</span>
-            <div>
-              <h3>Property angle</h3>
-              <small>{selectedDealership.pitch}</small>
-            </div>
-            <span className="pill">Pitch</span>
-          </div>
-          <div className="row">
-            <span className="number">04</span>
-            <div>
-              <h3>Latest captured contact</h3>
-              <small>
-                {latestContact
-                  ? `${latestContact.name}, ${latestContact.role} - ${latestContact.email}`
-                  : "No verified contact yet. Capture card recommended."}
-              </small>
-            </div>
-            <span className={`pill${latestContact ? " active" : ""}`}>{latestContact ? "Synced" : "Pending"}</span>
-          </div>
-          <div className="row">
-            <span className="number">05</span>
-            <div>
-              <h3>Last visit input</h3>
-              <small>{latestVisit ? latestVisit.outcomes.join(", ") : "No visit captured for this dealership yet."}</small>
-            </div>
-            <span className="pill">Visit</span>
-          </div>
-          <div className="row">
-            <span className="number">06</span>
-            <div>
-              <h3>Latest media record</h3>
-              <small>{latestMedia ? `${latestMedia.fileName || latestMedia.type} - ${latestMedia.status}` : "No media logged yet."}</small>
-            </div>
-            <span className={`pill${latestMedia ? " active" : ""}`}>{latestMedia ? "Captured" : "Empty"}</span>
-          </div>
-        </aside>
+        ) : null}
+
+        <div className="action-row">
+          <button className="btn" type="button" disabled={locationBusy} onClick={suggestNearestDealership}>
+            {locationBusy ? "Checking location" : "Use my location"}
+          </button>
+          <button className="btn primary" type="button" disabled={!nearestSuggestion} onClick={confirmSuggestion}>
+            Confirm suggestion
+          </button>
+          <button className="btn" type="button" disabled={!nearestSuggestion} onClick={dismissSuggestion}>
+            Not this one
+          </button>
+        </div>
       </section>
 
-      <section className="grid two" style={{ marginTop: 14 }}>
+      <section className="grid two">
         <article className="panel pad capture-card">
           <div className="section-head">
             <div>
@@ -475,7 +333,7 @@ export function LeadsPage() {
               {settings?.openRouterApiKey ? settings.ocrModel : "Configure OCR in Settings"}
             </span>
           </div>
-          <p>Capture contact media on your phone, then run OCR and correct any fields before saving the contact.</p>
+          <p>Capture the card first. OCR fills the contact fields beside this panel, then you check and save.</p>
 
           <div className="capture-preview">
             {capturedImageUrl ? (
@@ -497,13 +355,13 @@ export function LeadsPage() {
 
           <div className="action-row">
             <label className="btn" htmlFor="contact-upload-input">
-              Upload another
+              Upload photo
             </label>
-            <label className="btn" htmlFor="contact-camera-input">
-              Replace image
+            <label className="btn primary" htmlFor="contact-camera-input">
+              Use camera
             </label>
             <button className="btn primary" type="button" onClick={runOcr} disabled={!capturedImageUrl || ocrBusy}>
-              {ocrBusy ? "Running OCR" : "Run Qwen OCR"}
+              {ocrBusy ? "Reading card" : "Run OCR"}
             </button>
           </div>
         </article>
@@ -511,7 +369,7 @@ export function LeadsPage() {
         <article className="panel pad capture-card">
           <div className="section-head">
             <div>
-              <div className="kicker">Verify extracted fields</div>
+              <div className="kicker">Auto-filled contact</div>
               <h2>Review before saving</h2>
             </div>
             <span className="pill">Editable</span>
@@ -555,6 +413,12 @@ export function LeadsPage() {
             />
           </div>
 
+          <div className="inline-alert">
+            {latestContact
+              ? `Saved contact on this lead: ${latestContact.name}, ${latestContact.role}.`
+              : "No saved contact yet. Saving here attaches the contact to this dealership."}
+          </div>
+
           <div className="action-row">
             <button
               className="btn"
@@ -562,7 +426,7 @@ export function LeadsPage() {
               onClick={() => saveContact(false)}
               disabled={!ocrFields.name && !ocrFields.email && !ocrFields.phone}
             >
-              Save contact to lead
+              Save contact
             </button>
             <button
               className="btn primary"
@@ -574,6 +438,37 @@ export function LeadsPage() {
             </button>
           </div>
         </article>
+      </section>
+
+      <section className="panel table" style={{ marginTop: 14 }}>
+        <div className="row selected">
+          <span className="number">01</span>
+          <div>
+            <h3>Dealership intel</h3>
+            <small>
+              {selectedDealership.contactHint}. {selectedDealership.parentGroup}.
+            </small>
+          </div>
+          <span className="pill active">Context</span>
+        </div>
+        <div className="row">
+          <span className="number">02</span>
+          <div>
+            <h3>Who to ask for</h3>
+            <small>{selectedDealership.roleHint}. If unavailable, ask for the Dealer Principal or owner.</small>
+          </div>
+          <button className="btn" type="button" onClick={copyAsk}>
+            Copy ask
+          </button>
+        </div>
+        <div className="row">
+          <span className="number">03</span>
+          <div>
+            <h3>Property angle</h3>
+            <small>{selectedDealership.pitch}</small>
+          </div>
+          <span className="pill">Pitch</span>
+        </div>
       </section>
     </AppLayout>
   );
