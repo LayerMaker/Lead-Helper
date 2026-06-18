@@ -12,12 +12,12 @@ app.use(express.json({ limit: "12mb" }));
 app.get("/api/openrouter/status", (_request, response) => {
   response.json({
     configured: Boolean(process.env.OPENROUTER_API_KEY),
-    ocrModel: process.env.OPENROUTER_OCR_MODEL || "qwen/qwen-vl-plus",
+    ocrModel: process.env.OPENROUTER_OCR_MODEL || "qwen/qwen3.7-plus",
     emailModel: process.env.OPENROUTER_EMAIL_MODEL || "openai/gpt-5-mini",
   });
 });
 
-app.post("/api/openrouter/chat", async (request, response) => {
+async function proxyOpenRouterChat(request, response, modelOverride) {
   const apiKey = process.env.OPENROUTER_API_KEY;
 
   if (!apiKey) {
@@ -28,6 +28,11 @@ app.post("/api/openrouter/chat", async (request, response) => {
   }
 
   try {
+    const payload = {
+      ...request.body,
+      model: modelOverride || request.body?.model,
+    };
+
     const openRouterResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -36,7 +41,7 @@ app.post("/api/openrouter/chat", async (request, response) => {
         "HTTP-Referer": request.get("origin") || "https://lead-helper.onrender.com",
         "X-Title": "Lead Helper",
       },
-      body: JSON.stringify(request.body),
+      body: JSON.stringify(payload),
     });
 
     const responseText = await openRouterResponse.text();
@@ -49,6 +54,18 @@ app.post("/api/openrouter/chat", async (request, response) => {
       error: error?.message || "OpenRouter request failed.",
     });
   }
+}
+
+app.post("/api/openrouter/ocr", async (request, response) => {
+  await proxyOpenRouterChat(request, response, process.env.OPENROUTER_OCR_MODEL || "qwen/qwen3.7-plus");
+});
+
+app.post("/api/openrouter/email", async (request, response) => {
+  await proxyOpenRouterChat(request, response, process.env.OPENROUTER_EMAIL_MODEL || "openai/gpt-5-mini");
+});
+
+app.post("/api/openrouter/chat", async (request, response) => {
+  await proxyOpenRouterChat(request, response);
 });
 
 app.use(express.static(distDir));

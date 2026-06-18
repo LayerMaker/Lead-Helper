@@ -5,8 +5,6 @@ import { STORAGE_KEY } from "../lib/leadHelperModel";
 
 export function SettingsPage() {
   const { dispatch, settings } = useAppState();
-  const [ocrModel, setOcrModel] = useState(settings?.ocrModel || "qwen/qwen-vl-plus");
-  const [emailModel, setEmailModel] = useState(settings?.emailModel || "openai/gpt-5-mini");
   const [emailGenerationMode, setEmailGenerationMode] = useState(settings?.emailGenerationMode || "template");
   const [workEmail, setWorkEmail] = useState(settings?.workEmail || "");
   const [preferredSendMode, setPreferredSendMode] = useState(settings?.preferredSendMode || "mailto");
@@ -45,10 +43,8 @@ export function SettingsPage() {
       type: "save-settings",
       payload: {
         openRouterApiKey: "",
-        ocrModel,
         ocrProvider: "openrouter",
         emailProvider: "openrouter",
-        emailModel,
         emailGenerationMode,
         workEmail,
         preferredSendMode,
@@ -151,16 +147,10 @@ export function SettingsPage() {
           </div>
 
           <div className="field">
-            <label>OCR model slug</label>
-            <input
-              className="text-input"
-              value={ocrModel}
-              onChange={(event) => {
-                setOcrModel(event.target.value);
-                setSaveState("Unsaved");
-              }}
-              placeholder="qwen/qwen-vl-plus"
-            />
+            <label>Server OCR model</label>
+            <div className="draft small-draft">
+              {serverStatus.ocrModel || "Set OPENROUTER_OCR_MODEL in Render"}
+            </div>
           </div>
 
           <div className="draft settings-preview">
@@ -213,16 +203,10 @@ export function SettingsPage() {
           </div>
 
           <div className="field">
-            <label>Email model slug</label>
-            <input
-              className="text-input"
-              value={emailModel}
-              onChange={(event) => {
-                setEmailModel(event.target.value);
-                setSaveState("Unsaved");
-              }}
-              placeholder="openai/gpt-5-mini"
-            />
+            <label>Server email model</label>
+            <div className="draft small-draft">
+              {serverStatus.emailModel || "Set OPENROUTER_EMAIL_MODEL in Render"}
+            </div>
           </div>
 
           <div className="draft settings-preview">

@@ -33,7 +33,6 @@ function compact(value) {
 }
 
 export async function generateOpenRouterEmailDraft({
-  model,
   dealership,
   contact,
   latestVisit,
@@ -69,13 +68,12 @@ export async function generateOpenRouterEmailDraft({
       ? `Write a complete follow-up email from the context below.\n${JSON.stringify(context, null, 2)}`
       : `Polish this email using the context below. Keep it concise and natural.\n${JSON.stringify(context, null, 2)}`;
 
-  const response = await fetch("/api/openrouter/chat", {
+  const response = await fetch("/api/openrouter/email", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: model || "openai/gpt-5-mini",
       temperature: mode === "generate" ? 0.5 : 0.25,
       max_tokens: 700,
       messages: [

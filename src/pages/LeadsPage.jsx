@@ -30,7 +30,6 @@ export function LeadsPage() {
     selectedDealership,
     getDealershipsForCluster,
     getLatestContact,
-    settings,
     dispatch,
   } = useAppState();
   const latestContact = getLatestContact(selectedDealership.id);
@@ -289,7 +288,6 @@ export function LeadsPage() {
     setOcrStatus("Reading card with server-side Qwen OCR");
     try {
       const result = await runOpenRouterBusinessCardOcr({
-        model: settings.ocrModel,
         imageDataUrl: capturedImageUrl,
         dealershipName: selectedDealership.name,
       });

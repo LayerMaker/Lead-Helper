@@ -163,7 +163,6 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
 
     try {
       const result = await generateOpenRouterEmailDraft({
-        model: settings?.emailModel,
         dealership: selectedDealership,
         contact,
         latestVisit,

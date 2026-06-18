@@ -39,18 +39,17 @@ function normalizeOcrPayload(payload, rawText = "") {
   };
 }
 
-export async function runOpenRouterBusinessCardOcr({ model, imageDataUrl, dealershipName }) {
+export async function runOpenRouterBusinessCardOcr({ imageDataUrl, dealershipName }) {
   if (!imageDataUrl) {
     throw new Error("No image supplied for OCR");
   }
 
-  const response = await fetch("/api/openrouter/chat", {
+  const response = await fetch("/api/openrouter/ocr", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: model || "qwen/qwen-vl-plus",
       max_tokens: 350,
       temperature: 0,
       messages: [
