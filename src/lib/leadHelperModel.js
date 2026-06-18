@@ -960,13 +960,17 @@ export function buildMailtoDraftUrl({ toAddress = "", subject = "", body = "", c
 }
 
 export function buildOutlookAppComposeUrl({ toAddress = "", subject = "", body = "", cc = "", bcc = "" }) {
-  const params = new URLSearchParams();
-  if (toAddress) params.set("to", toAddress);
-  if (subject) params.set("subject", subject);
-  if (body) params.set("body", body);
-  if (cc) params.set("cc", cc);
-  if (bcc) params.set("bcc", bcc);
-  return `ms-outlook://compose?${params.toString()}`;
+  const params = [
+    ["to", toAddress],
+    ["subject", subject],
+    ["body", body],
+    ["cc", cc],
+    ["bcc", bcc],
+  ]
+    .filter(([, value]) => value)
+    .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+    .join("&");
+  return `ms-outlook://compose?${params}`;
 }
 
 export function buildOutlookWebComposeUrl({ toAddress = "", subject = "", body = "", cc = "", bcc = "" }) {
