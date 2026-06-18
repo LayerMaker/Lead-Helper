@@ -5,6 +5,7 @@ import { useAppState } from "../state/AppState";
 const navItems = [
   { to: "/", label: "Dash" },
   { to: "/map", label: "Map" },
+  { to: "/location", label: "+ Location" },
   { to: "/route", label: "Route" },
   { to: "/leads", label: "Leads" },
   { to: "/email", label: "Email" },

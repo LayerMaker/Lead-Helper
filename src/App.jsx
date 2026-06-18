@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { DashboardPage } from "./pages/DashboardPage";
 import { EmailPage } from "./pages/EmailPage";
 import { LeadsPage } from "./pages/LeadsPage";
+import { LocationPage } from "./pages/LocationPage";
 import { MapPage } from "./pages/MapPage";
 import { ReportPrintPage } from "./pages/ReportPrintPage";
 import { ReportsPage } from "./pages/ReportsPage";
@@ -13,6 +14,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<DashboardPage />} />
       <Route path="/map" element={<MapPage />} />
+      <Route path="/location" element={<LocationPage />} />
       <Route path="/route" element={<RoutePage />} />
       <Route path="/leads" element={<LeadsPage />} />
       <Route path="/email" element={<EmailPage />} />

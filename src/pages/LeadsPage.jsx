@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "../components/AppLayout";
 import { runOpenRouterBusinessCardOcr } from "../lib/ocrService";
-import { geocodeAddress } from "../lib/osmService";
 import { useAppState } from "../state/AppState";
 
 function defaultFields(selectedDealership, latestContact) {
@@ -16,19 +15,9 @@ function defaultFields(selectedDealership, latestContact) {
   };
 }
 
-const AUTO_WEST_TEST_LEAD = {
-  name: "Auto West London OMODA & JAECOO",
-  address: "109 Devonshire Rd, Chiswick, London W4 2AN",
-  website: "autowestlondon.co.uk",
-  phone: "02039 317860",
-  roleHint: "Showroom manager",
-  contactHint: "Met on site, brochure already sent",
-};
-
 export function LeadsPage() {
   const navigate = useNavigate();
   const {
-    clusters,
     selectedCluster,
     selectedDealership,
     getDealershipsForCluster,
@@ -49,25 +38,6 @@ export function LeadsPage() {
   const [ocrError, setOcrError] = useState("");
   const [ocrFields, setOcrFields] = useState(() => defaultFields(selectedDealership, latestContact));
   const previousDealershipIdRef = useRef(selectedDealership.id);
-  const [manualBusy, setManualBusy] = useState(false);
-  const [manualStatus, setManualStatus] = useState("Add an off-map dealership when you find a real lead outside the scraped pins.");
-  const [manualError, setManualError] = useState("");
-  const manualNameInputRef = useRef(null);
-  const manualAddressInputRef = useRef(null);
-  const manualClusterSelectRef = useRef(null);
-  const manualWebsiteInputRef = useRef(null);
-  const manualPhoneInputRef = useRef(null);
-  const manualRoleInputRef = useRef(null);
-  const manualHintInputRef = useRef(null);
-  const [manualForm, setManualForm] = useState({
-    name: "",
-    address: "",
-    clusterId: selectedCluster.id,
-    website: "",
-    phone: "",
-    roleHint: "",
-    contactHint: "",
-  });
 
   const suggestedDomain = useMemo(() => selectedDealership.website || "", [selectedDealership.website]);
 
@@ -86,22 +56,6 @@ export function LeadsPage() {
       ...current,
       [key]: value,
     }));
-  }
-
-  function updateManualField(key, value) {
-    setManualForm((current) => ({
-      ...current,
-      [key]: value,
-    }));
-  }
-
-  function loadAutoWestTestLead() {
-    setManualError("");
-    setManualStatus("Auto West test lead loaded. Add it straight to the map or tweak any field first.");
-    setManualForm({
-      ...AUTO_WEST_TEST_LEAD,
-      clusterId: selectedCluster.id,
-    });
   }
 
   async function onCaptureFile(event) {
@@ -165,70 +119,6 @@ export function LeadsPage() {
     if (openEmail) navigate("/email");
   }
 
-  async function addManualDealership() {
-    const name = String(manualNameInputRef.current?.value ?? manualForm.name).trim();
-    const address = String(manualAddressInputRef.current?.value ?? manualForm.address).trim();
-    const clusterId = String(manualClusterSelectRef.current?.value ?? manualForm.clusterId ?? selectedCluster.id).trim();
-    const website = String(manualWebsiteInputRef.current?.value ?? manualForm.website).trim();
-    const phone = String(manualPhoneInputRef.current?.value ?? manualForm.phone).trim();
-    const roleHint = String(manualRoleInputRef.current?.value ?? manualForm.roleHint).trim();
-    const contactHint = String(manualHintInputRef.current?.value ?? manualForm.contactHint).trim();
-
-    setManualForm({
-      name,
-      address,
-      clusterId: clusterId || selectedCluster.id,
-      website,
-      phone,
-      roleHint,
-      contactHint,
-    });
-
-    if (!name || !address) {
-      setManualError("Dealership name and street address are required. The faint example text is only a prompt unless you tap Load Auto West test lead.");
-      return;
-    }
-
-    setManualBusy(true);
-    setManualError("");
-    setManualStatus("Resolving address against OpenStreetMap");
-
-    try {
-      const [bestMatch] = await geocodeAddress(address);
-      dispatch({
-        type: "upsert-manual-dealership",
-        payload: {
-          name,
-          address,
-          clusterId: clusterId || selectedCluster.id,
-          website,
-          phone,
-          roleHint,
-          contactHint,
-          location: [bestMatch.lat, bestMatch.lng],
-          geocodeLabel: bestMatch.displayName,
-          intelDistance: "Manual add",
-          nextAction: "Capture contact and log visit outcomes",
-        },
-      });
-      setManualStatus(`Pinned to the map from: ${bestMatch.displayName}`);
-      setManualForm((current) => ({
-        ...current,
-        name: "",
-        address: "",
-        website: "",
-        phone: "",
-        roleHint: "",
-        contactHint: "",
-      }));
-    } catch (error) {
-      setManualError(error.message || "Address lookup failed.");
-      setManualStatus("Manual add needs a valid map match before it can join the cluster.");
-    } finally {
-      setManualBusy(false);
-    }
-  }
-
   return (
     <AppLayout statusLine={`Geolocation dealership intel - ${selectedCluster.name} route`}>
       <section className="title-row">
@@ -261,160 +151,6 @@ export function LeadsPage() {
         capture="environment"
         onChange={onCaptureFile}
       />
-
-      <section className="grid two" style={{ marginBottom: 14 }}>
-        <article className="panel pad">
-          <div className="section-head">
-            <div>
-              <div className="kicker">Off-map dealership</div>
-              <h2>Add a real-world lead into the live cluster</h2>
-            </div>
-            <span className="pill">Manual intake</span>
-          </div>
-          <p>
-            Use this when you physically find a showroom that missed the scrape. We geocode the address, pin it to the map, and
-            make it behave like every other dealership in route, email, and reports.
-          </p>
-
-          <div className="inline-alert">
-            The sample text in these fields is only an example prompt. Use the button below to load your real Auto West test case.
-          </div>
-
-          <div className="action-row" style={{ marginTop: 12, marginBottom: 12 }}>
-            <button className="btn" type="button" onClick={loadAutoWestTestLead}>
-              Load Auto West test lead
-            </button>
-          </div>
-
-          <div className="grid two compact-form">
-            <div className="field">
-              <label>Dealership name</label>
-              <input
-                ref={manualNameInputRef}
-                className="text-input"
-                value={manualForm.name}
-                onChange={(event) => updateManualField("name", event.target.value)}
-                placeholder="Type dealership name"
-              />
-            </div>
-            <div className="field">
-              <label>Assign to cluster</label>
-              <select
-                ref={manualClusterSelectRef}
-                className="text-input"
-                value={manualForm.clusterId}
-                onChange={(event) => updateManualField("clusterId", event.target.value)}
-              >
-                {clusters.map((cluster) => (
-                  <option key={cluster.id} value={cluster.id}>
-                    {cluster.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field" style={{ gridColumn: "1 / -1" }}>
-              <label>Street address</label>
-              <input
-                ref={manualAddressInputRef}
-                className="text-input"
-                value={manualForm.address}
-                onChange={(event) => updateManualField("address", event.target.value)}
-                placeholder="Type full street address"
-              />
-            </div>
-            <div className="field">
-              <label>Website</label>
-              <input
-                ref={manualWebsiteInputRef}
-                className="text-input"
-                value={manualForm.website}
-                onChange={(event) => updateManualField("website", event.target.value)}
-                placeholder="Optional website"
-              />
-            </div>
-            <div className="field">
-              <label>Phone</label>
-              <input
-                ref={manualPhoneInputRef}
-                className="text-input"
-                value={manualForm.phone}
-                onChange={(event) => updateManualField("phone", event.target.value)}
-                placeholder="Optional phone"
-              />
-            </div>
-            <div className="field">
-              <label>Who to ask for</label>
-              <input
-                ref={manualRoleInputRef}
-                className="text-input"
-                value={manualForm.roleHint}
-                onChange={(event) => updateManualField("roleHint", event.target.value)}
-                placeholder="Optional role hint"
-              />
-            </div>
-            <div className="field">
-              <label>Contact hint</label>
-              <input
-                ref={manualHintInputRef}
-                className="text-input"
-                value={manualForm.contactHint}
-                onChange={(event) => updateManualField("contactHint", event.target.value)}
-                placeholder="Optional contact hint"
-              />
-            </div>
-          </div>
-
-          <div className="feed-forward">
-            <span className={`flow-dot${manualBusy ? " active" : ""}`}></span>
-            <div>
-              <b>Manual pin status</b>
-              <small>{manualStatus}</small>
-            </div>
-          </div>
-
-          {manualError ? <div className="inline-alert error">{manualError}</div> : null}
-
-          <div className="action-row">
-            <button className="btn primary" type="button" disabled={manualBusy} onClick={addManualDealership}>
-              {manualBusy ? "Pinning dealership" : "Add dealership to map"}
-            </button>
-          </div>
-        </article>
-
-        <article className="panel pad">
-          <div className="section-head">
-            <div>
-              <div className="kicker">Active lead card</div>
-              <h2>{selectedDealership.name}</h2>
-            </div>
-            <span className={`pill${selectedDealership.isManual ? " active" : ""}`}>
-              {selectedDealership.isManual ? "Manual pin" : "Scraped pin"}
-            </span>
-          </div>
-          <p>
-            {selectedDealership.address}
-            {selectedDealership.geocodeLabel ? ` - ${selectedDealership.geocodeLabel}` : ""}
-          </p>
-          <div className="grid two compact-form">
-            <div className="field">
-              <label>Cluster</label>
-              <div className="draft small-draft">{selectedCluster.name}</div>
-            </div>
-            <div className="field">
-              <label>Map source</label>
-              <div className="draft small-draft">{selectedDealership.sourceLabel || selectedDealership.sourceType || "Scrape"}</div>
-            </div>
-            <div className="field">
-              <label>Website</label>
-              <div className="draft small-draft">{selectedDealership.website || "No website saved yet."}</div>
-            </div>
-            <div className="field">
-              <label>Phone</label>
-              <div className="draft small-draft">{selectedDealership.phone || "No phone saved yet."}</div>
-            </div>
-          </div>
-        </article>
-      </section>
 
       <section className="grid two">
         <div className="panel pad">
