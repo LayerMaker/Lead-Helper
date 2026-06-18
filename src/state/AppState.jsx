@@ -23,6 +23,7 @@ import {
   saveOcrCapture,
   setDiscoveryAreaParked,
   sameOutcomes,
+  upsertManualDealership,
   upsertDraft,
 } from "../lib/leadHelperModel";
 
@@ -66,6 +67,11 @@ function reducer(state, action) {
 
   if (action.type === "save-ocr-contact") {
     saveOcrCapture(next, action.dealershipId, action.payload);
+    return next;
+  }
+
+  if (action.type === "upsert-manual-dealership") {
+    upsertManualDealership(next, action.payload);
     return next;
   }
 

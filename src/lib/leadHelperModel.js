@@ -267,6 +267,7 @@ export const initialState = {
   currentDealershipId: "hni-motors",
   acceptedClusters: [],
   parkedDiscoveryAreaIds: [],
+  manualDealerships: [],
   settings: {
     ocrProvider: "openrouter",
     openRouterApiKey: defaultOpenRouterApiKey,
@@ -677,9 +678,13 @@ function getAcceptedClusterDealerships(state, clusterId) {
     .filter(Boolean);
 }
 
+function getManualDealerships(state) {
+  return Array.isArray(state?.manualDealerships) ? state.manualDealerships : [];
+}
+
 export function getAllDealerships(state) {
   const acceptedDealerships = getAcceptedClusters(state).flatMap((cluster) => getAcceptedClusterDealerships(state, cluster.id));
-  return [...dealerships, ...acceptedDealerships];
+  return [...dealerships, ...acceptedDealerships, ...getManualDealerships(state)];
 }
 
 export function getDealershipStatic(dealershipId) {
@@ -701,8 +706,74 @@ export function mergeDealership(state, dealershipId) {
 export function getDealershipsForCluster(state, clusterId) {
   return getAllDealerships(state)
     .filter((dealership) => dealership.clusterId === clusterId)
-    .sort((left, right) => left.order - right.order)
+    .sort((left, right) => (left.order ?? Number.MAX_SAFE_INTEGER) - (right.order ?? Number.MAX_SAFE_INTEGER) || left.name.localeCompare(right.name))
     .map((dealership) => ({ ...dealership, ...(getDealershipRuntime(state, dealership.id) || {}) }));
+}
+
+export function upsertManualDealership(state, payload = {}) {
+  const name = String(payload.name || "").trim();
+  const address = String(payload.address || "").trim();
+  if (!name || !address) {
+    throw new Error("Manual dealership requires both a name and an address.");
+  }
+
+  const clusterId = payload.clusterId || state.selectedClusterId || baseClusters[0].id;
+  const currentManual = getManualDealerships(state);
+  const existing = currentManual.find((item) => item.id === payload.id) ||
+    currentManual.find(
+      (item) =>
+        slugify(item.name) === slugify(name) &&
+        slugify(item.address) === slugify(address),
+    ) ||
+    null;
+
+  const nextOrder =
+    existing?.order ||
+    getAllDealerships(state)
+      .filter((dealership) => dealership.clusterId === clusterId)
+      .reduce((highest, dealership) => Math.max(highest, Number(dealership.order) || 0), 0) +
+      1;
+
+  const nextDealership = {
+    ...existing,
+    id: existing?.id || payload.id || `manual-${slugify(name)}-${Date.now().toString(36).slice(-4)}`,
+    clusterId,
+    order: nextOrder,
+    name,
+    shortName:
+      String(payload.shortName || existing?.shortName || "")
+        .trim() || name.split(/\s+/).slice(0, 2).join(" "),
+    address,
+    roleHint: String(payload.roleHint || existing?.roleHint || "Ask for showroom manager or dealer principal").trim(),
+    contactHint: String(payload.contactHint || existing?.contactHint || "Manual add - decision-maker not yet confirmed").trim(),
+    parentGroup: String(payload.parentGroup || existing?.parentGroup || "Manufacturer or branded dealership").trim(),
+    brands: Array.isArray(payload.brands) ? payload.brands : existing?.brands || [],
+    phone: String(payload.phone || existing?.phone || "").trim(),
+    website: String(payload.website || existing?.website || "").trim(),
+    pitch: String(
+      payload.pitch ||
+        existing?.pitch ||
+        "Visited manually outside the scraped pin set. Test appetite for Battersea overflow, handover, or stock staging use.",
+    ).trim(),
+    location: Array.isArray(payload.location) ? payload.location : existing?.location || null,
+    radar: payload.radar || existing?.radar || { left: 52, top: 48 },
+    intelDistance: String(payload.intelDistance || existing?.intelDistance || "Manual add").trim(),
+    status: String(payload.status || existing?.status || "Not visited").trim(),
+    leadScore: Number(payload.leadScore ?? existing?.leadScore ?? 40),
+    nextAction: String(payload.nextAction || existing?.nextAction || "Visit and capture contact details").trim(),
+    sourceType: "manual",
+    sourceLabel: String(payload.sourceLabel || existing?.sourceLabel || "Manual intake").trim(),
+    geocodeLabel: String(payload.geocodeLabel || existing?.geocodeLabel || "").trim(),
+    isManual: true,
+  };
+
+  state.manualDealerships = [
+    nextDealership,
+    ...currentManual.filter((item) => item.id !== nextDealership.id),
+  ];
+  state.selectedClusterId = clusterId;
+  state.currentDealershipId = nextDealership.id;
+  return nextDealership;
 }
 
 export function createOperationalClusterFromDiscoveryArea(state, areaId, preferredName) {
