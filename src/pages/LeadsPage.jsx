@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "../components/AppLayout";
+import { getDistanceMilesBetweenPoints } from "../lib/leadHelperModel";
 import { runOpenRouterBusinessCardOcr } from "../lib/ocrService";
 import { useAppState } from "../state/AppState";
 
@@ -18,6 +19,8 @@ function defaultFields(selectedDealership, latestContact) {
 export function LeadsPage() {
   const navigate = useNavigate();
   const {
+    clusters,
+    dealerships,
     selectedCluster,
     selectedDealership,
     getDealershipsForCluster,
@@ -38,12 +41,27 @@ export function LeadsPage() {
   const [ocrError, setOcrError] = useState("");
   const [ocrFields, setOcrFields] = useState(() => defaultFields(selectedDealership, latestContact));
   const previousDealershipIdRef = useRef(selectedDealership.id);
+  const [selectedGroupId, setSelectedGroupId] = useState(selectedCluster.id);
+  const [locationBusy, setLocationBusy] = useState(false);
+  const [locationStatus, setLocationStatus] = useState("Use location to suggest the nearest dealership.");
+  const [locationSuggestion, setLocationSuggestion] = useState(null);
+  const [dismissedSuggestionId, setDismissedSuggestionId] = useState("");
 
   const suggestedDomain = useMemo(() => selectedDealership.website || "", [selectedDealership.website]);
+  const unclusteredDealerships = useMemo(
+    () => dealerships.filter((dealership) => !dealership.clusterId),
+    [dealerships],
+  );
+  const selectedGroupDealerships = useMemo(() => {
+    if (selectedGroupId === "__unclustered") return unclusteredDealerships;
+    return getDealershipsForCluster(selectedGroupId);
+  }, [getDealershipsForCluster, selectedGroupId, unclusteredDealerships]);
+  const nearestSuggestion = locationSuggestion && locationSuggestion.id !== dismissedSuggestionId ? locationSuggestion : null;
 
   useEffect(() => {
     if (previousDealershipIdRef.current === selectedDealership.id) return;
     previousDealershipIdRef.current = selectedDealership.id;
+    setSelectedGroupId(selectedDealership.clusterId || "__unclustered");
     setOcrFields(defaultFields(selectedDealership, latestContact));
     setCapturedFileName("");
     setCapturedImageUrl("");
@@ -56,6 +74,99 @@ export function LeadsPage() {
       ...current,
       [key]: value,
     }));
+  }
+
+  function formatMiles(value) {
+    if (!Number.isFinite(value)) return "";
+    return `${value.toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1")} mi`;
+  }
+
+  function handleGroupChange(groupId) {
+    setSelectedGroupId(groupId);
+    setDismissedSuggestionId("");
+
+    if (groupId === "__unclustered") {
+      if (unclusteredDealerships[0]) {
+        dispatch({ type: "select-dealership", dealershipId: unclusteredDealerships[0].id });
+      }
+      return;
+    }
+
+    const nextDealers = getDealershipsForCluster(groupId);
+    if (nextDealers[0]) {
+      dispatch({ type: "select-dealership", dealershipId: nextDealers[0].id });
+    } else {
+      dispatch({ type: "select-cluster", clusterId: groupId });
+    }
+  }
+
+  function handleDealershipChange(dealershipId) {
+    if (!dealershipId) return;
+    setDismissedSuggestionId("");
+    dispatch({ type: "select-dealership", dealershipId });
+  }
+
+  function suggestNearestDealership() {
+    if (!("geolocation" in navigator)) {
+      setLocationStatus("Geolocation is not available on this device.");
+      return;
+    }
+
+    setLocationBusy(true);
+    setLocationStatus("Checking nearby dealership pins");
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const userLocation = [position.coords.latitude, position.coords.longitude];
+        const nearest =
+          dealerships
+            .filter((dealership) => Array.isArray(dealership.location))
+            .map((dealership) => ({
+              ...dealership,
+              distanceMiles: getDistanceMilesBetweenPoints(userLocation, dealership.location),
+            }))
+            .sort((left, right) => left.distanceMiles - right.distanceMiles)[0] || null;
+
+        setLocationBusy(false);
+        setLocationSuggestion(nearest);
+        setDismissedSuggestionId("");
+        setLocationStatus(
+          nearest
+            ? `Nearest suggestion: ${nearest.name}, ${formatMiles(nearest.distanceMiles)} away.`
+            : "No dealership pins with coordinates are available yet.",
+        );
+      },
+      (error) => {
+        setLocationBusy(false);
+        if (error.code === error.PERMISSION_DENIED) {
+          setLocationStatus("Location permission denied.");
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          setLocationStatus("Location unavailable.");
+        } else if (error.code === error.TIMEOUT) {
+          setLocationStatus("Location request timed out.");
+        } else {
+          setLocationStatus("Location check failed.");
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 15000,
+        timeout: 12000,
+      },
+    );
+  }
+
+  function confirmSuggestion() {
+    if (!nearestSuggestion) return;
+    setSelectedGroupId(nearestSuggestion.clusterId || "__unclustered");
+    dispatch({ type: "select-dealership", dealershipId: nearestSuggestion.id });
+    setLocationStatus(`${nearestSuggestion.name} confirmed as the active lead.`);
+  }
+
+  function dismissSuggestion() {
+    if (!nearestSuggestion) return;
+    setDismissedSuggestionId(nearestSuggestion.id);
+    setLocationStatus("Suggestion dismissed. Choose the dealership manually below.");
   }
 
   async function onCaptureFile(event) {
@@ -151,6 +262,109 @@ export function LeadsPage() {
         capture="environment"
         onChange={onCaptureFile}
       />
+
+      <section className="grid two" style={{ marginBottom: 14 }}>
+        <article className="panel pad">
+          <div className="section-head">
+            <div>
+              <div className="kicker">Choose active dealership</div>
+              <h2>{selectedDealership.name}</h2>
+            </div>
+            <span className={`pill${selectedDealership.isManual ? " active" : ""}`}>
+              {selectedDealership.isManual ? "Manual pin" : "Mapped pin"}
+            </span>
+          </div>
+          <p className="subtle-copy">
+            Pick the dealership before adding contact data. The OCR, notes, email draft, and report row all attach to this active lead.
+          </p>
+
+          <div className="grid two compact-form">
+            <div className="field">
+              <label>Cluster or standalone dealership</label>
+              <select className="text-input" value={selectedGroupId} onChange={(event) => handleGroupChange(event.target.value)}>
+                {clusters.map((cluster) => (
+                  <option key={cluster.id} value={cluster.id}>
+                    {cluster.name}
+                  </option>
+                ))}
+                {unclusteredDealerships.length ? <option value="__unclustered">Unclustered dealerships</option> : null}
+              </select>
+            </div>
+            <div className="field">
+              <label>Dealership</label>
+              <select
+                className="text-input"
+                value={selectedDealership.id}
+                onChange={(event) => handleDealershipChange(event.target.value)}
+                disabled={!selectedGroupDealerships.length}
+              >
+                {selectedGroupDealerships.map((dealership) => (
+                  <option key={dealership.id} value={dealership.id}>
+                    {dealership.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="feed-forward">
+            <span className={`flow-dot${locationBusy ? " active" : ""}`}></span>
+            <div>
+              <b>Location suggestion</b>
+              <small>{locationStatus}</small>
+            </div>
+          </div>
+
+          {nearestSuggestion ? (
+            <div className="inline-alert">
+              Suggested: {nearestSuggestion.name} ({formatMiles(nearestSuggestion.distanceMiles)})
+            </div>
+          ) : null}
+
+          <div className="action-row">
+            <button className="btn" type="button" disabled={locationBusy} onClick={suggestNearestDealership}>
+              {locationBusy ? "Checking location" : "Use my location"}
+            </button>
+            <button className="btn primary" type="button" disabled={!nearestSuggestion} onClick={confirmSuggestion}>
+              Confirm suggestion
+            </button>
+            <button className="btn" type="button" disabled={!nearestSuggestion} onClick={dismissSuggestion}>
+              Not this one
+            </button>
+          </div>
+        </article>
+
+        <aside className="panel table">
+          <div className="row selected">
+            <span className="number">01</span>
+            <div>
+              <h3>Active lead</h3>
+              <small>{selectedDealership.address || "No address saved yet."}</small>
+            </div>
+            <span className="pill active">{selectedCluster.name}</span>
+          </div>
+          <div className="row">
+            <span className="number">02</span>
+            <div>
+              <h3>Known contact</h3>
+              <small>
+                {latestContact
+                  ? `${latestContact.name}, ${latestContact.role} - ${latestContact.email || latestContact.phone || "saved contact"}`
+                  : "No contact saved yet. Capture or upload a card below."}
+              </small>
+            </div>
+            <span className={`pill${latestContact ? " active" : ""}`}>{latestContact ? "Saved" : "Empty"}</span>
+          </div>
+          <div className="row">
+            <span className="number">03</span>
+            <div>
+              <h3>Next data step</h3>
+              <small>{latestContact ? "Review/update contact details or open an email draft." : "Capture contact media and run OCR."}</small>
+            </div>
+            <span className="pill">Lead data</span>
+          </div>
+        </aside>
+      </section>
 
       <section className="grid two">
         <div className="panel pad">
