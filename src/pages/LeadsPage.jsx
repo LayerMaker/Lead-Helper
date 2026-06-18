@@ -125,7 +125,6 @@ export function LeadsPage() {
         className="sr-only-input"
         type="file"
         accept="image/*"
-        capture="environment"
         onChange={onCaptureFile}
       />
 
