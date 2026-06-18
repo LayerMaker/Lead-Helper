@@ -371,37 +371,46 @@ export function LeadsPage() {
     if (!ocrFields.name && !ocrFields.email && !ocrFields.phone) return;
 
     saveContact(false);
-    setPhoneContactStatus("");
-
-    const vcard = buildVcard(ocrFields, selectedDealership);
-    const fileName = buildContactFileName(ocrFields, selectedDealership);
-    const blob = new Blob([vcard], { type: "text/vcard;charset=utf-8" });
+    setPhoneContactStatus("Preparing iPhone contact card");
 
     try {
-      if (typeof File !== "undefined" && navigator.canShare && navigator.share) {
-        const file = new File([blob], fileName, { type: "text/vcard" });
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: ocrFields.name || selectedDealership.name,
-            text: "Lead Helper contact card",
-          });
-          setPhoneContactStatus("Contact card opened in your phone share sheet.");
-          return;
-        }
+      const response = await fetch("/api/contact-card", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contact: ocrFields,
+          dealership: {
+            name: selectedDealership.name,
+            address: selectedDealership.address,
+            website: selectedDealership.website,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
       }
 
+      const payload = await response.json();
+      if (!payload.url) throw new Error("Contact card URL was not created.");
+      setPhoneContactStatus("Opening iPhone contact card. Use Add Contact when it appears.");
+      window.location.assign(payload.url);
+    } catch {
+      const vcard = buildVcard(ocrFields, selectedDealership);
+      const fileName = buildContactFileName(ocrFields, selectedDealership);
+      const blob = new Blob([vcard], { type: "text/x-vcard;charset=utf-8" });
       const url = window.URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
       anchor.download = fileName;
+      anchor.target = "_blank";
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
       window.setTimeout(() => window.URL.revokeObjectURL(url), 30000);
-      setPhoneContactStatus("Contact card downloaded. Open the .vcf file to add it to Contacts.");
-    } catch (error) {
-      setPhoneContactStatus(error?.message || "Could not open the phone contact card.");
+      setPhoneContactStatus("Contact card downloaded. Open the .vcf file, then choose Add Contact.");
     }
   }
 
