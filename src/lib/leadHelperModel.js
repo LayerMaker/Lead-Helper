@@ -959,7 +959,17 @@ export function buildMailtoDraftUrl({ toAddress = "", subject = "", body = "", c
   return `mailto:${encodeURIComponent(toAddress)}${params.toString() ? `?${params.toString()}` : ""}`;
 }
 
-export function buildOutlookComposeUrl({ toAddress = "", subject = "", body = "", cc = "", bcc = "" }) {
+export function buildOutlookAppComposeUrl({ toAddress = "", subject = "", body = "", cc = "", bcc = "" }) {
+  const params = new URLSearchParams();
+  if (toAddress) params.set("to", toAddress);
+  if (subject) params.set("subject", subject);
+  if (body) params.set("body", body);
+  if (cc) params.set("cc", cc);
+  if (bcc) params.set("bcc", bcc);
+  return `ms-outlook://compose?${params.toString()}`;
+}
+
+export function buildOutlookWebComposeUrl({ toAddress = "", subject = "", body = "", cc = "", bcc = "" }) {
   const params = new URLSearchParams();
   if (toAddress) params.set("to", toAddress);
   if (subject) params.set("subject", subject);

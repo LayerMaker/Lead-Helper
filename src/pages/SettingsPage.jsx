@@ -7,7 +7,6 @@ export function SettingsPage() {
   const { dispatch, settings } = useAppState();
   const [emailGenerationMode, setEmailGenerationMode] = useState(settings?.emailGenerationMode || "template");
   const [workEmail, setWorkEmail] = useState(settings?.workEmail || "");
-  const [preferredSendMode, setPreferredSendMode] = useState(settings?.preferredSendMode || "mailto");
   const [notificationsEnabled, setNotificationsEnabled] = useState(Boolean(settings?.notificationsEnabled));
   const [notificationLeadMinutes, setNotificationLeadMinutes] = useState(String(settings?.notificationLeadMinutes || 30));
   const [notificationPermission, setNotificationPermission] = useState(
@@ -47,7 +46,7 @@ export function SettingsPage() {
         emailProvider: "openrouter",
         emailGenerationMode,
         workEmail,
-        preferredSendMode,
+        preferredSendMode: "outlook-app",
         notificationsEnabled,
         notificationLeadMinutes: Math.max(1, Number(notificationLeadMinutes || 30)),
       },
@@ -230,26 +229,8 @@ export function SettingsPage() {
           </div>
 
           <div className="field">
-            <label>Preferred send handoff</label>
-            <div className="segmented three-way">
-              {[
-                { value: "mailto", label: "Mail app" },
-                { value: "outlook", label: "Outlook web" },
-                { value: "self", label: "Send to self" },
-              ].map((option) => (
-                <button
-                  key={option.value}
-                  className={preferredSendMode === option.value ? "active" : ""}
-                  type="button"
-                  onClick={() => {
-                    setPreferredSendMode(option.value);
-                    setSaveState("Unsaved");
-                  }}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+            <label>Send handoff</label>
+            <div className="draft small-draft">Drafts open directly in the Outlook mobile app.</div>
           </div>
 
           <div className="action-row">

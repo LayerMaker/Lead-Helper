@@ -3,8 +3,7 @@ import { Link } from "react-router-dom";
 import {
   buildAdminEntries,
   buildEmailDraft,
-  buildMailtoDraftUrl,
-  buildOutlookComposeUrl,
+  buildOutlookAppComposeUrl,
   buildSuggestedRecipientOptions,
   deriveEmailType,
   emailIntentCatalog,
@@ -140,28 +139,15 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
     }
   }
 
-  function openSendSurface(modeOverride) {
-    const mode = modeOverride || settings?.preferredSendMode || "mailto";
-    const to = mode === "self" ? settings?.workEmail || toAddress : toAddress;
-    const mailtoUrl = buildMailtoDraftUrl({
-      toAddress: to,
-      subject,
-      body,
-    });
-    const outlookUrl = buildOutlookComposeUrl({
-      toAddress: to,
+  function openOutlookApp() {
+    const outlookUrl = buildOutlookAppComposeUrl({
+      toAddress,
       subject,
       body,
     });
 
-    if (mode === "outlook") {
-      window.open(outlookUrl, "_blank", "noopener,noreferrer");
-      setSaveState("Opened in Outlook");
-      return;
-    }
-
-    window.location.href = mailtoUrl;
-    setSaveState(mode === "self" ? "Sent to self handoff opened" : "Mail app opened");
+    window.location.href = outlookUrl;
+    setSaveState("Opened Outlook app");
   }
 
   async function runAi(mode) {
@@ -359,7 +345,7 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
           <span className="pill">Cluster: {selectedCluster.name}</span>
           <span className="pill">{latestMedia?.rawText ? "OCR linked" : "No OCR text linked"}</span>
           <span className={`pill${contact?.email ? " active" : ""}`}>{contact?.email ? "Recipient ready" : "Recipient unverified"}</span>
-          <span className="pill">Send: {settings?.preferredSendMode || "mailto"}</span>
+          <span className="pill">Send: Outlook app</span>
         </div>
 
         {busyState ? <div className="inline-alert">{busyState}</div> : null}
@@ -419,14 +405,8 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
           <button className="btn" type="button" onClick={copyDraft}>
             Copy
           </button>
-          <button className="btn" type="button" onClick={() => openSendSurface("mailto")}>
-            Open mail app
-          </button>
-          <button className="btn" type="button" onClick={() => openSendSurface("outlook")}>
-            Outlook web
-          </button>
-          <button className="btn" type="button" disabled={!settings?.workEmail} onClick={() => openSendSurface("self")}>
-            Send to self
+          <button className="btn primary" type="button" onClick={openOutlookApp}>
+            Open Outlook app
           </button>
           <button
             className="btn"
