@@ -39,21 +39,15 @@ function normalizeOcrPayload(payload, rawText = "") {
   };
 }
 
-export async function runOpenRouterBusinessCardOcr({ apiKey, model, imageDataUrl, dealershipName }) {
-  if (!apiKey) {
-    throw new Error("OpenRouter API key missing");
-  }
+export async function runOpenRouterBusinessCardOcr({ model, imageDataUrl, dealershipName }) {
   if (!imageDataUrl) {
     throw new Error("No image supplied for OCR");
   }
 
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+  const response = await fetch("/api/openrouter/chat", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": window.location.origin,
-      "X-Title": "Lead Helper",
     },
     body: JSON.stringify({
       model: model || "qwen/qwen-vl-plus",

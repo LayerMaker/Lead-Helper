@@ -33,7 +33,6 @@ function compact(value) {
 }
 
 export async function generateOpenRouterEmailDraft({
-  apiKey,
   model,
   dealership,
   contact,
@@ -45,10 +44,6 @@ export async function generateOpenRouterEmailDraft({
   selectedAddress,
   mode = "polish",
 }) {
-  if (!apiKey) {
-    throw new Error("OpenRouter API key missing");
-  }
-
   const context = compact({
     dealership_name: dealership?.name,
     dealership_address: dealership?.address,
@@ -74,13 +69,10 @@ export async function generateOpenRouterEmailDraft({
       ? `Write a complete follow-up email from the context below.\n${JSON.stringify(context, null, 2)}`
       : `Polish this email using the context below. Keep it concise and natural.\n${JSON.stringify(context, null, 2)}`;
 
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+  const response = await fetch("/api/openrouter/chat", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": window.location.origin,
-      "X-Title": "Lead Helper",
     },
     body: JSON.stringify({
       model: model || "openai/gpt-5-mini",

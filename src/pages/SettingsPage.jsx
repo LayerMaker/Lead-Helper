@@ -1,11 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppLayout } from "../components/AppLayout";
 import { useAppState } from "../state/AppState";
 import { STORAGE_KEY } from "../lib/leadHelperModel";
 
 export function SettingsPage() {
   const { dispatch, settings } = useAppState();
-  const [openRouterApiKey, setOpenRouterApiKey] = useState(settings?.openRouterApiKey || "");
   const [ocrModel, setOcrModel] = useState(settings?.ocrModel || "qwen/qwen-vl-plus");
   const [emailModel, setEmailModel] = useState(settings?.emailModel || "openai/gpt-5-mini");
   const [emailGenerationMode, setEmailGenerationMode] = useState(settings?.emailGenerationMode || "template");
@@ -17,12 +16,35 @@ export function SettingsPage() {
     typeof window !== "undefined" && "Notification" in window ? window.Notification.permission : "unsupported",
   );
   const [saveState, setSaveState] = useState("Unsaved");
+  const [serverStatus, setServerStatus] = useState({ checked: false, configured: false });
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/openrouter/status")
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error("Status unavailable"))))
+      .then((payload) => {
+        if (!active) return;
+        setServerStatus({
+          checked: true,
+          configured: Boolean(payload.configured),
+          ocrModel: payload.ocrModel,
+          emailModel: payload.emailModel,
+        });
+      })
+      .catch(() => {
+        if (!active) return;
+        setServerStatus({ checked: true, configured: false, unavailable: true });
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function saveAll() {
     dispatch({
       type: "save-settings",
       payload: {
-        openRouterApiKey,
+        openRouterApiKey: "",
         ocrModel,
         ocrProvider: "openrouter",
         emailProvider: "openrouter",
@@ -83,8 +105,8 @@ export function SettingsPage() {
           <span>Follow-up SLA after warm visit</span>
         </article>
         <article className="panel metric">
-          <strong>{openRouterApiKey ? "Live" : "Manual"}</strong>
-          <span>LLM features currently configured</span>
+          <strong>{serverStatus.configured ? "Live" : "Server"}</strong>
+          <span>{serverStatus.configured ? "LLM proxy configured" : "Set Render env key"}</span>
         </article>
       </section>
 
@@ -123,21 +145,9 @@ export function SettingsPage() {
               <div className="kicker">OCR provider</div>
               <h2>OpenRouter + Qwen vision</h2>
             </div>
-            <span className={`pill${openRouterApiKey ? " active" : ""}`}>{openRouterApiKey ? "Key present" : "Key needed"}</span>
-          </div>
-
-          <div className="field">
-            <label>OpenRouter API key</label>
-            <input
-              className="text-input"
-              type="password"
-              value={openRouterApiKey}
-              onChange={(event) => {
-                setOpenRouterApiKey(event.target.value);
-                setSaveState("Unsaved");
-              }}
-              placeholder="sk-or-v1-..."
-            />
+            <span className={`pill${serverStatus.configured ? " active" : ""}`}>
+              {serverStatus.configured ? "Server key live" : "Render key required"}
+            </span>
           </div>
 
           <div className="field">
@@ -157,6 +167,7 @@ export function SettingsPage() {
             Recommended default for this build:
             {"\n"}- provider: OpenRouter
             {"\n"}- model: qwen/qwen-vl-plus
+            {"\n"}- key: stored as OPENROUTER_API_KEY in Render, never in phone storage
             {"\n"}- workflow: capture image in Leads, run OCR, then verify fields before saving
           </div>
 
@@ -173,7 +184,9 @@ export function SettingsPage() {
               <div className="kicker">Email engine</div>
               <h2>Template-first, with optional OpenRouter polish</h2>
             </div>
-            <span className={`pill${openRouterApiKey ? " active" : ""}`}>{openRouterApiKey ? "Ready" : "Template only"}</span>
+            <span className={`pill${serverStatus.configured ? " active" : ""}`}>
+              {serverStatus.configured ? "AI ready" : "Template ready"}
+            </span>
           </div>
 
           <div className="field">

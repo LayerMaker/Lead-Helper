@@ -51,10 +51,9 @@ export function LeadsPage() {
   const [guidedCameraOpen, setGuidedCameraOpen] = useState(false);
   const [cameraStream, setCameraStream] = useState(null);
   const [cameraError, setCameraError] = useState("");
-  const [inlineApiKey, setInlineApiKey] = useState("");
+  const [ocrCompleted, setOcrCompleted] = useState(false);
 
   const suggestedDomain = useMemo(() => selectedDealership.website || "", [selectedDealership.website]);
-  const effectiveOpenRouterKey = settings?.openRouterApiKey || inlineApiKey.trim();
   const unclusteredDealerships = useMemo(
     () => dealerships.filter((dealership) => !dealership.clusterId),
     [dealerships],
@@ -74,6 +73,7 @@ export function LeadsPage() {
     setCapturedFileName("");
     setCapturedImageUrl("");
     setOcrError("");
+    setOcrCompleted(false);
     setOcrStatus("No contact media captured yet");
   }, [latestContact, selectedDealership]);
 
@@ -193,30 +193,6 @@ export function LeadsPage() {
     }
   }
 
-  function saveInlineApiKey() {
-    const key = inlineApiKey.trim();
-    if (!key) {
-      setOcrError("Paste an OpenRouter API key before saving.");
-      return;
-    }
-    dispatch({
-      type: "save-settings",
-      payload: {
-        ...(settings || {}),
-        openRouterApiKey: key,
-        ocrProvider: "openrouter",
-      },
-    });
-    setInlineApiKey("");
-    setOcrError("");
-    setOcrStatus("OpenRouter key saved locally. OCR is ready.");
-  }
-
-  function continueManually() {
-    setOcrError("");
-    setOcrStatus("Manual entry mode. Type the contact details, then save.");
-  }
-
   function stopGuidedCamera() {
     if (cameraStream) {
       cameraStream.getTracks().forEach((track) => track.stop());
@@ -280,6 +256,7 @@ export function LeadsPage() {
     setCapturedImageUrl(imageDataUrl);
     setOcrStatus("Cropped card image ready. Run OCR to populate the form.");
     setOcrError("");
+    setOcrCompleted(false);
     setCameraError("");
     setOcrFields(defaultFields(selectedDealership, latestContact));
     stopGuidedCamera();
@@ -295,6 +272,7 @@ export function LeadsPage() {
       setCapturedImageUrl(String(reader.result || ""));
       setOcrStatus("Contact media ready. Run OCR to populate the form.");
       setOcrError("");
+      setOcrCompleted(false);
       setOcrFields(defaultFields(selectedDealership, latestContact));
     };
     reader.readAsDataURL(file);
@@ -305,25 +283,22 @@ export function LeadsPage() {
       setOcrError("Capture or upload a business card first");
       return;
     }
-    if (!effectiveOpenRouterKey) {
-      setOcrError("Paste your OpenRouter key here, or continue manually.");
-      return;
-    }
 
     setOcrBusy(true);
     setOcrError("");
-    setOcrStatus("Reading card with Qwen OCR");
+    setOcrStatus("Reading card with server-side Qwen OCR");
     try {
       const result = await runOpenRouterBusinessCardOcr({
-        apiKey: effectiveOpenRouterKey,
         model: settings.ocrModel,
         imageDataUrl: capturedImageUrl,
         dealershipName: selectedDealership.name,
       });
       setOcrFields(result);
+      setOcrCompleted(true);
       setOcrStatus("OCR populated the fields. Check them, then save.");
     } catch (error) {
       setOcrError(error.message || "OCR failed");
+      setOcrCompleted(false);
       setOcrStatus("OCR failed");
     } finally {
       setOcrBusy(false);
@@ -338,7 +313,7 @@ export function LeadsPage() {
         ...ocrFields,
         fileName: capturedFileName || "captured-contact",
         mediaType: "business_card",
-        source: effectiveOpenRouterKey ? "openrouter-qwen" : "manual",
+        source: ocrCompleted ? "server-qwen" : "manual",
       },
     });
     setOcrStatus(openEmail ? "Contact saved and email draft primed" : "Contact saved into lead card");
@@ -433,34 +408,9 @@ export function LeadsPage() {
               <div className="kicker">Qwen OCR capture</div>
               <h2>Business card or contact photo</h2>
             </div>
-            <span className={`pill${effectiveOpenRouterKey ? " active" : ""}`}>
-              {effectiveOpenRouterKey ? settings.ocrModel : "Key needed"}
-            </span>
+            <span className="pill active">Server OCR</span>
           </div>
           <p>Capture the card first. OCR fills the contact fields beside this panel, then you check and save.</p>
-
-          {!settings?.openRouterApiKey ? (
-            <div className="inline-alert api-key-inline">
-              <div className="field">
-                <label>OpenRouter API key</label>
-                <input
-                  className="text-input"
-                  type="password"
-                  value={inlineApiKey}
-                  onChange={(event) => setInlineApiKey(event.target.value)}
-                  placeholder="sk-or-v1-..."
-                />
-              </div>
-              <div className="action-row">
-                <button className="btn primary" type="button" onClick={saveInlineApiKey}>
-                  Save key
-                </button>
-                <button className="btn" type="button" onClick={continueManually}>
-                  Continue manually
-                </button>
-              </div>
-            </div>
-          ) : null}
 
           <div className="capture-preview">
             {capturedImageUrl ? (

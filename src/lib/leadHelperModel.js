@@ -7,7 +7,7 @@ import discoveryData from "../../data/candidates/london-newcar.discovery.json";
 
 export const STORAGE_KEY = "lead-helper-shell-v1";
 export const STATE_VERSION = 2;
-const defaultOpenRouterApiKey = import.meta.env.VITE_OPENROUTER_API_KEY || "";
+const defaultOpenRouterApiKey = "";
 const defaultOcrModel = import.meta.env.VITE_OPENROUTER_OCR_MODEL || "qwen/qwen-vl-plus";
 const defaultEmailModel = import.meta.env.VITE_OPENROUTER_EMAIL_MODEL || "openai/gpt-5-mini";
 

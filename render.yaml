@@ -1,11 +1,16 @@
 services:
   - type: web
     name: lead-helper
-    runtime: static
+    runtime: node
     buildCommand: npm ci && npm run build
-    staticPublishPath: ./dist
+    startCommand: npm start
     autoDeployTrigger: commit
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+    envVars:
+      - key: NODE_VERSION
+        value: 24
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_OCR_MODEL
+        value: qwen/qwen-vl-plus
+      - key: OPENROUTER_EMAIL_MODEL
+        value: openai/gpt-5-mini

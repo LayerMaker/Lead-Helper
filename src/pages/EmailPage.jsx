@@ -163,7 +163,6 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
 
     try {
       const result = await generateOpenRouterEmailDraft({
-        apiKey: settings?.openRouterApiKey,
         model: settings?.emailModel,
         dealership: selectedDealership,
         contact,
@@ -405,7 +404,7 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
           <button
             className="btn"
             type="button"
-            disabled={!settings?.openRouterApiKey || Boolean(busyState)}
+            disabled={Boolean(busyState)}
             onClick={() => runAi("polish")}
           >
             AI polish
@@ -413,7 +412,7 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
           <button
             className="btn"
             type="button"
-            disabled={!settings?.openRouterApiKey || Boolean(busyState)}
+            disabled={Boolean(busyState)}
             onClick={() => runAi("generate")}
           >
             AI generate

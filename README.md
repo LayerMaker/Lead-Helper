@@ -18,9 +18,10 @@ It helps you:
 - React
 - Vite
 - React Router
+- Node / Express production server
 - Leaflet / OpenStreetMap
 - Turf.js for cluster geometry
-- OpenRouter for OCR and optional email generation
+- OpenRouter for server-side OCR and optional email generation
 
 ## Local Development
 
@@ -42,10 +43,17 @@ Build for production:
 npm run build
 ```
 
-Preview the production build locally:
+Preview the production build locally without the secure API proxy:
 
 ```bash
 npm run preview
+```
+
+Run the production server locally:
+
+```bash
+npm run build
+npm start
 ```
 
 ## Data Commands
@@ -64,45 +72,37 @@ npm run data:collect:london:newcar
 
 ## Deploy To Render
 
-This app is ready to deploy as a Render static site.
+This app is ready to deploy as a Render Web Service.
 
 ### Recommended setup
 
 1. Create a new GitHub repo from this folder:
    `C:\Users\crock\Documents\Lead-Helper\WebApp\lead-helper-shell`
 2. Push this folder as the repo root
-3. In Render, create a new Static Site from that GitHub repo
+3. In Render, create a new Web Service from that GitHub repo
 4. Render will detect `render.yaml`
-5. Deploy
-
-### Important for React Router
-
-This app uses client-side routing.
-
-Render therefore needs a rewrite rule:
-
-- Source: `/*`
-- Destination: `/index.html`
-- Action: `Rewrite`
-
-That rule is already defined in `render.yaml`.
+5. Add the `OPENROUTER_API_KEY` environment variable before using OCR or AI email generation
+6. Deploy
 
 ### Build settings
 
 If you configure Render manually instead of using the blueprint:
 
 - Build Command: `npm ci && npm run build`
-- Publish Directory: `dist`
+- Start Command: `npm start`
 
 ## Environment Variables
 
-The app can run without build-time secrets because OpenRouter keys can also be entered in-app and stored locally.
+OpenRouter is called through the Node server so the API key is not exposed to the phone/browser.
 
-Optional build-time variables:
+Required runtime variable for OCR and AI email generation:
 
-- `VITE_OPENROUTER_API_KEY`
-- `VITE_OPENROUTER_OCR_MODEL`
-- `VITE_OPENROUTER_EMAIL_MODEL`
+- `OPENROUTER_API_KEY`
+
+Optional runtime variables:
+
+- `OPENROUTER_OCR_MODEL`
+- `OPENROUTER_EMAIL_MODEL`
 
 ## Current Product Status
 
