@@ -21,6 +21,52 @@ function formatMiles(value) {
   return `${value.toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1")} mi`;
 }
 
+function escapeVcardValue(value = "") {
+  return String(value || "")
+    .replace(/\\/g, "\\\\")
+    .replace(/\n/g, "\\n")
+    .replace(/,/g, "\\,")
+    .replace(/;/g, "\\;")
+    .trim();
+}
+
+function buildContactFileName(contact, dealership) {
+  const name = contact.name || dealership.name || "lead-helper-contact";
+  return `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "lead-helper-contact"}.vcf`;
+}
+
+function buildVcard(contact, dealership) {
+  const nameParts = String(contact.name || "").trim().split(/\s+/).filter(Boolean);
+  const firstName = nameParts.length > 1 ? nameParts.slice(0, -1).join(" ") : nameParts[0] || "";
+  const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
+  const company = contact.company || dealership.name || "";
+  const note = [
+    `Captured from Lead Helper at ${dealership.name}.`,
+    dealership.address ? `Dealership address: ${dealership.address}` : "",
+    contact.rawText ? `OCR text: ${contact.rawText}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return [
+    "BEGIN:VCARD",
+    "VERSION:3.0",
+    `N:${escapeVcardValue(lastName)};${escapeVcardValue(firstName)};;;`,
+    `FN:${escapeVcardValue(contact.name || company || dealership.name)}`,
+    company ? `ORG:${escapeVcardValue(company)}` : "",
+    contact.role ? `TITLE:${escapeVcardValue(contact.role)}` : "",
+    contact.email ? `EMAIL;TYPE=INTERNET,WORK:${escapeVcardValue(contact.email)}` : "",
+    contact.phone ? `TEL;TYPE=WORK,VOICE:${escapeVcardValue(contact.phone)}` : "",
+    dealership.website ? `URL:${escapeVcardValue(dealership.website)}` : "",
+    dealership.address ? `ADR;TYPE=WORK:;;${escapeVcardValue(dealership.address)};;;;` : "",
+    note ? `NOTE:${escapeVcardValue(note)}` : "",
+    `REV:${new Date().toISOString()}`,
+    "END:VCARD",
+  ]
+    .filter(Boolean)
+    .join("\r\n");
+}
+
 export function LeadsPage() {
   const navigate = useNavigate();
   const {
@@ -51,6 +97,7 @@ export function LeadsPage() {
   const [cameraStream, setCameraStream] = useState(null);
   const [cameraError, setCameraError] = useState("");
   const [ocrCompleted, setOcrCompleted] = useState(false);
+  const [phoneContactStatus, setPhoneContactStatus] = useState("");
 
   const suggestedDomain = useMemo(() => selectedDealership.website || "", [selectedDealership.website]);
   const unclusteredDealerships = useMemo(
@@ -73,6 +120,7 @@ export function LeadsPage() {
     setCapturedImageUrl("");
     setOcrError("");
     setOcrCompleted(false);
+    setPhoneContactStatus("");
     setOcrStatus("No contact media captured yet");
   }, [latestContact, selectedDealership]);
 
@@ -319,6 +367,44 @@ export function LeadsPage() {
     if (openEmail) navigate("/email");
   }
 
+  async function savePhoneContact() {
+    if (!ocrFields.name && !ocrFields.email && !ocrFields.phone) return;
+
+    saveContact(false);
+    setPhoneContactStatus("");
+
+    const vcard = buildVcard(ocrFields, selectedDealership);
+    const fileName = buildContactFileName(ocrFields, selectedDealership);
+    const blob = new Blob([vcard], { type: "text/vcard;charset=utf-8" });
+
+    try {
+      if (typeof File !== "undefined" && navigator.canShare && navigator.share) {
+        const file = new File([blob], fileName, { type: "text/vcard" });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: ocrFields.name || selectedDealership.name,
+            text: "Lead Helper contact card",
+          });
+          setPhoneContactStatus("Contact card opened in your phone share sheet.");
+          return;
+        }
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => window.URL.revokeObjectURL(url), 30000);
+      setPhoneContactStatus("Contact card downloaded. Open the .vcf file to add it to Contacts.");
+    } catch (error) {
+      setPhoneContactStatus(error?.message || "Could not open the phone contact card.");
+    }
+  }
+
   return (
     <AppLayout statusLine={`Lead capture - ${selectedCluster.name}`}>
       <section className="title-row">
@@ -516,6 +602,7 @@ export function LeadsPage() {
               ? `Saved contact on this lead: ${latestContact.name}, ${latestContact.role}.`
               : "No saved contact yet. Saving here attaches the contact to this dealership."}
           </div>
+          {phoneContactStatus ? <div className="inline-alert">{phoneContactStatus}</div> : null}
 
           <div className="action-row">
             <button
@@ -524,7 +611,15 @@ export function LeadsPage() {
               onClick={() => saveContact(false)}
               disabled={!ocrFields.name && !ocrFields.email && !ocrFields.phone}
             >
-              Save contact
+              Save to lead
+            </button>
+            <button
+              className="btn"
+              type="button"
+              onClick={savePhoneContact}
+              disabled={!ocrFields.name && !ocrFields.email && !ocrFields.phone}
+            >
+              Save + phone contact
             </button>
             <button
               className="btn primary"
