@@ -246,7 +246,11 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
   box-shadow: 0 0 28px oklch(72% 0.13 150 / 0.3);
 }
 .action-row { display: flex; flex-wrap: wrap; gap: 9px; }
-.map-shell { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr); gap: 14px; align-items: stretch; }
+.map-shell { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr); gap: 14px; align-items: start; }
+.map-v2-workspace {
+  display: grid;
+  gap: 14px;
+}
 .live-map-panel {
   min-height: 640px;
   overflow: hidden;
@@ -399,6 +403,18 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
 .dealer-pin.warm { border-color: oklch(80% 0.12 150 / 0.8); }
 .dealer-pin.due { border-color: oklch(80% 0.16 80 / 0.78); }
 .cluster-drawer { display: grid; gap: 14px; align-content: start; }
+.map-v2-lasso-panel {
+  position: relative;
+}
+.map-v2-lasso-actions {
+  align-items: center;
+}
+.map-v2-lasso-actions .btn {
+  min-height: 44px;
+}
+.map-v2-lasso-list {
+  max-height: 230px;
+}
 .stat-strip { margin: 4px 0; }
 .visit-panel { margin-top: 12px; padding: 14px; border-top: 1px solid oklch(100% 0 0 / 0.07); }
 .visit-panel p { margin-top: 10px; }

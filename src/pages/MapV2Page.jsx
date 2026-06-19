@@ -423,30 +423,93 @@ export function MapV2Page() {
         <div className="action-row">
           <span className="pill active">{pins.length} pins</span>
           <span className="pill">{unassignedPins.length} unassigned</span>
-          <button className={`btn${drawMode ? " primary" : ""}`} type="button" onClick={drawMode ? cancelDrawing : startDrawing}>
-            {drawMode ? "Cancel drawing" : "Draw selection"}
-          </button>
         </div>
       </section>
 
       <section className="map-shell">
-        <div className="panel map live-map-panel">
-          {selectedCluster ? (
-            <MapV2Canvas
-              state={state}
-              clusters={clusters}
-              pins={pins}
-              selectedCluster={selectedCluster}
-              selectedPinId={selectedPin?.id || ""}
-              onSelectCluster={setSelectedClusterId}
-              onSelectPin={setSelectedPinId}
-              lassoPinIds={lassoPinIds}
-              drawMode={drawMode}
-              onDrawComplete={handleDrawComplete}
-            />
-          ) : (
-            <div className="workflow-empty">Map V2 has no clusters yet.</div>
-          )}
+        <div className="map-v2-workspace">
+          <div className="panel map live-map-panel">
+            {selectedCluster ? (
+              <MapV2Canvas
+                state={state}
+                clusters={clusters}
+                pins={pins}
+                selectedCluster={selectedCluster}
+                selectedPinId={selectedPin?.id || ""}
+                onSelectCluster={setSelectedClusterId}
+                onSelectPin={setSelectedPinId}
+                lassoPinIds={lassoPinIds}
+                drawMode={drawMode}
+                onDrawComplete={handleDrawComplete}
+              />
+            ) : (
+              <div className="workflow-empty">Map V2 has no clusters yet.</div>
+            )}
+          </div>
+
+          <div className={`prospect-summary map-v2-lasso-panel${drawMode ? " selected" : ""}`}>
+            <div className="section-head">
+              <div>
+                <div className="kicker">Lasso cluster selection</div>
+                <h3>{drawMode ? "Drawing mode active" : `${lassoPins.length} pins selected`}</h3>
+              </div>
+              <span className={`pill${drawMode || lassoPins.length ? " active" : ""}`}>{drawMode ? "Draw" : "Review"}</span>
+            </div>
+            <p>
+              {drawMode
+                ? "Map pan and zoom are paused. Draw around the pins you want, then release to review them."
+                : lassoPins.length
+                  ? "Review the selected pins before creating a new manual cluster."
+                  : "Use Draw selection to safely select several pins without accidental cluster edits."}
+            </p>
+            <div className="field">
+              <label>New cluster name</label>
+              <input
+                className="text-input"
+                value={manualClusterName}
+                onChange={(event) => setManualClusterName(event.target.value)}
+                placeholder="Wandsworth north field cluster"
+              />
+            </div>
+            <div className="action-row map-v2-lasso-actions">
+              <button className={`btn${drawMode ? " primary" : ""}`} type="button" onClick={drawMode ? cancelDrawing : startDrawing}>
+                {drawMode ? "Cancel drawing" : "Draw selection"}
+              </button>
+              <button className="btn primary" type="button" onClick={createClusterFromLasso} disabled={!lassoPins.length}>
+                Create cluster from selection
+              </button>
+              <button className="btn" type="button" onClick={clearLassoSelection} disabled={!drawMode && !lassoPins.length}>
+                Clear
+              </button>
+            </div>
+
+            {lassoPins.length ? (
+              <div className="admin-actions discovery-list map-v2-lasso-list">
+                <div className="workflow-list-head">
+                  <div>
+                    <div className="kicker">Selected by lasso</div>
+                    <h3>Cluster preview pins</h3>
+                  </div>
+                  <span className="pill active">{lassoPins.length}</span>
+                </div>
+                {lassoPins.map((pin) => (
+                  <button
+                    key={pin.id}
+                    className={`row${pin.id === selectedPin?.id ? " selected" : ""}`}
+                    type="button"
+                    onClick={() => setSelectedPinId(pin.id)}
+                  >
+                    <span className="number">LS</span>
+                    <div>
+                      <h3>{pin.name}</h3>
+                      <small>{pin.address}</small>
+                    </div>
+                    <span className={`pill${pin.id === selectedPin?.id ? " active" : ""}`}>Selected</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
         </div>
 
         <aside className="panel pad cluster-drawer">
@@ -483,67 +546,6 @@ export function MapV2Page() {
               ))}
             </select>
           </div>
-
-          <div className={`prospect-summary${drawMode ? " selected" : ""}`}>
-            <div className="section-head">
-              <div>
-                <div className="kicker">Lasso cluster selection</div>
-                <h3>{drawMode ? "Drawing mode active" : `${lassoPins.length} pins selected`}</h3>
-              </div>
-              <span className={`pill${drawMode || lassoPins.length ? " active" : ""}`}>{drawMode ? "Draw" : "Review"}</span>
-            </div>
-            <p>
-              {drawMode
-                ? "Map pan and zoom are paused. Draw around the pins you want, then release to review them."
-                : lassoPins.length
-                  ? "Review the selected pins before creating a new manual cluster."
-                  : "Use Draw selection to safely select several pins without accidental cluster edits."}
-            </p>
-            <div className="field">
-              <label>New cluster name</label>
-              <input
-                className="text-input"
-                value={manualClusterName}
-                onChange={(event) => setManualClusterName(event.target.value)}
-                placeholder="Wandsworth north field cluster"
-              />
-            </div>
-            <div className="action-row">
-              <button className="btn primary" type="button" onClick={createClusterFromLasso} disabled={!lassoPins.length}>
-                Create cluster from selection
-              </button>
-              <button className="btn" type="button" onClick={clearLassoSelection} disabled={!drawMode && !lassoPins.length}>
-                Clear
-              </button>
-            </div>
-          </div>
-
-          {lassoPins.length ? (
-            <div className="admin-actions discovery-list">
-              <div className="workflow-list-head">
-                <div>
-                  <div className="kicker">Selected by lasso</div>
-                  <h3>Cluster preview pins</h3>
-                </div>
-                <span className="pill active">{lassoPins.length}</span>
-              </div>
-              {lassoPins.map((pin) => (
-                <button
-                  key={pin.id}
-                  className={`row${pin.id === selectedPin?.id ? " selected" : ""}`}
-                  type="button"
-                  onClick={() => setSelectedPinId(pin.id)}
-                >
-                  <span className="number">LS</span>
-                  <div>
-                    <h3>{pin.name}</h3>
-                    <small>{pin.address}</small>
-                  </div>
-                  <span className={`pill${pin.id === selectedPin?.id ? " active" : ""}`}>Selected</span>
-                </button>
-              ))}
-            </div>
-          ) : null}
 
           <div className="prospect-summary">
             <div className="section-head">
