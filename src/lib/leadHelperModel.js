@@ -1086,6 +1086,15 @@ export function buildEmailSubject(state, dealershipId, emailType) {
   return `Good to meet you - ${dealership.name}`;
 }
 
+function formatEmailBody(greeting, paragraphs, signoffName = "Charlie") {
+  return [
+    greeting,
+    ...paragraphs.map((paragraph) => String(paragraph || "").trim()).filter(Boolean),
+    "Best regards,",
+    signoffName,
+  ].join("\n\n");
+}
+
 export function getEmailIntentDetails(intentIds = []) {
   return intentIds
     .map((intentId) => emailIntentCatalog.find((item) => item.id === intentId || item.label === intentId))
@@ -1101,7 +1110,6 @@ export function buildEmailDraft(state, dealershipId, outcomes, options = {}) {
   const greeting = contact ? `Hi ${contact.name.split(" ")[0]},` : "Hi,";
   const emailType = deriveEmailType(outcomes, options.emailType || intentDetails[0]?.emailType || "");
   const subject = buildEmailSubject(state, dealershipId, emailType);
-  const closing = "Best regards,\nConnor";
   const noteLine = latestVisit?.note ? ` ${latestVisit.note}` : "";
   const mediaLine = latestMedia?.rawText ? " I have also logged the contact details captured on site." : "";
 
@@ -1111,7 +1119,7 @@ export function buildEmailDraft(state, dealershipId, outcomes, options = {}) {
     return {
       emailType,
       subject,
-      body: `${greeting}\n\n${bodyBlocks.join("\n\n")}${contextLine}\n\nBest regards,\nConnor`,
+      body: formatEmailBody(greeting, [...bodyBlocks, contextLine]),
       emailIntents: intentDetails.map((intent) => intent.id),
     };
   }
@@ -1120,7 +1128,9 @@ export function buildEmailDraft(state, dealershipId, outcomes, options = {}) {
     return {
       emailType,
       subject,
-      body: `${greeting} thanks again for your time today at ${dealership.name}. I have noted the site walk and can hold a Thursday 10:30 slot for the Battersea viewing. I will send over the access notes, yard dimensions, and a short pre-market pack so the visit is useful from the outset.${noteLine}${mediaLine}\n\n${closing}`,
+      body: formatEmailBody(greeting, [
+        `Thanks again for your time today at ${dealership.name}. I have noted the site walk and can hold a Thursday 10:30 slot for the Battersea viewing. I will send over the access notes, yard dimensions, and a short pre-market pack so the visit is useful from the outset.${noteLine}${mediaLine}`,
+      ]),
     };
   }
 
@@ -1128,7 +1138,9 @@ export function buildEmailDraft(state, dealershipId, outcomes, options = {}) {
     return {
       emailType,
       subject,
-      body: `${greeting} thanks again for taking a few minutes today at ${dealership.name}. As discussed, if the property decision sits with the owner or another decision-maker, I would be grateful if you could point me in the right direction. I can then send a short Battersea pack covering access, frontage, and how the unit may work for overflow stock or handover use.${noteLine}${mediaLine}\n\n${closing}`,
+      body: formatEmailBody(greeting, [
+        `Thanks again for taking a few minutes today at ${dealership.name}. As discussed, if the property decision sits with the owner or another decision-maker, I would be grateful if you could point me in the right direction. I can then send a short Battersea pack covering access, frontage, and how the unit may work for overflow stock or handover use.${noteLine}${mediaLine}`,
+      ]),
     };
   }
 
@@ -1136,7 +1148,9 @@ export function buildEmailDraft(state, dealershipId, outcomes, options = {}) {
     return {
       emailType,
       subject,
-      body: `${greeting} thanks again for the quick conversation today. I have noted your details from the card I captured and will send a short Battersea summary once I have confirmed the best email address for the right person internally.\n\n${closing}`,
+      body: formatEmailBody(greeting, [
+        "Thanks again for the quick conversation today. I have noted your details from the card I captured and will send a short Battersea summary once I have confirmed the best email address for the right person internally.",
+      ]),
     };
   }
 
@@ -1144,7 +1158,9 @@ export function buildEmailDraft(state, dealershipId, outcomes, options = {}) {
     return {
       emailType,
       subject,
-      body: `${greeting} thanks for taking the time earlier today. I appreciate the clarity on your current property position. I will close the loop on my side for now, but if your requirements change and a Battersea base, overflow unit, or handover space becomes relevant, I would be happy to pick the conversation back up.\n\n${closing}`,
+      body: formatEmailBody(greeting, [
+        "Thanks for taking the time earlier today. I appreciate the clarity on your current property position. I will close the loop on my side for now, but if your requirements change and a Battersea base, overflow unit, or handover space becomes relevant, I would be happy to pick the conversation back up.",
+      ]),
     };
   }
 
@@ -1152,14 +1168,18 @@ export function buildEmailDraft(state, dealershipId, outcomes, options = {}) {
     return {
       emailType,
       subject,
-      body: `${greeting} great meeting you today at ${dealership.name}. As discussed, I can send over the Battersea site details, including access, yard dimensions, frontage, and how the unit could work for overflow storage, handover use, or stock staging.${noteLine}${mediaLine} If helpful, I can also arrange a short walk-through this week.\n\n${closing}`,
+      body: formatEmailBody(greeting, [
+        `Great meeting you today at ${dealership.name}. As discussed, I can send over the Battersea site details, including access, yard dimensions, frontage, and how the unit could work for overflow storage, handover use, or stock staging.${noteLine}${mediaLine} If helpful, I can also arrange a short walk-through this week.`,
+      ]),
     };
   }
 
   return {
     emailType,
     subject,
-    body: `${greeting} great meeting you today at ${dealership.name}. I just wanted to touch base on email and keep the conversation moving.${noteLine}${mediaLine} If useful, I can send across a short Battersea overview and suggest the next practical step from here.\n\n${closing}`,
+    body: formatEmailBody(greeting, [
+      `Great meeting you today at ${dealership.name}. I just wanted to touch base on email and keep the conversation moving.${noteLine}${mediaLine} If useful, I can send across a short Battersea overview and suggest the next practical step from here.`,
+    ]),
   };
 }
 
