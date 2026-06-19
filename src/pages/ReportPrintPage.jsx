@@ -1,27 +1,59 @@
 import { useEffect, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ClusterReportTemplate } from "../components/ClusterReportTemplate";
-import { buildClusterReportModel } from "../lib/reporting";
+import {
+  buildClusterReportModel,
+  buildDealershipsFromReportPins,
+  getDefaultReportClusterId,
+  getReportClusters,
+  getReportPinsForCluster,
+  isMapV2ReportCluster,
+} from "../lib/reporting";
 import { useAppState } from "../state/AppState";
 
 export function ReportPrintPage() {
   const [searchParams] = useSearchParams();
-  const { clusters, selectedCluster, state, getDealershipsForCluster, getDraftForDealership, getLatestContact, getLatestMedia } = useAppState();
-  const clusterId = searchParams.get("cluster") || selectedCluster.id;
+  const {
+    dealerships,
+    state,
+    getDealershipsForCluster,
+    getDealershipById,
+    getDraftForDealership,
+    getLatestContact,
+    getLatestMedia,
+  } = useAppState();
+  const clusters = useMemo(() => getReportClusters(state), [state]);
+  const clusterId = searchParams.get("cluster") || getDefaultReportClusterId(state);
   const autoprint = searchParams.get("autoprint") === "1";
-  const cluster = clusters.find((item) => item.id === clusterId) || selectedCluster;
+  const cluster = clusters.find((item) => item.id === clusterId) || clusters[0];
+  const reportPins = useMemo(() => getReportPinsForCluster(state, cluster?.id), [cluster?.id, state]);
+  const reportDealerships = useMemo(
+    () =>
+      reportPins.length
+        ? buildDealershipsFromReportPins({
+            pins: reportPins,
+            clusterId: cluster?.id,
+            allDealerships: dealerships,
+            getDealershipById,
+          })
+        : isMapV2ReportCluster(state, cluster?.id)
+          ? []
+          : getDealershipsForCluster(cluster?.id),
+    [cluster?.id, dealerships, getDealershipById, getDealershipsForCluster, reportPins, state],
+  );
 
   const reportModel = useMemo(
     () =>
       buildClusterReportModel({
         state,
         cluster,
-        dealerships: getDealershipsForCluster(cluster.id),
+        dealerships: reportDealerships,
+        mapPins: reportPins,
         getDraftForDealership,
         getLatestContact,
         getLatestMedia,
       }),
-    [cluster, getDealershipsForCluster, getDraftForDealership, getLatestContact, getLatestMedia, state],
+    [cluster, getDraftForDealership, getLatestContact, getLatestMedia, reportDealerships, reportPins, state],
   );
 
   useEffect(() => {

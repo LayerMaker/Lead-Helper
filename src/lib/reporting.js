@@ -1,4 +1,5 @@
 import { canonicalDealershipId, getClusterCoveragePolygon, getEmailIntentDetails } from "./leadHelperModel";
+import { getMapV2BoundaryForPins } from "./mapV2Model";
 
 const MAP_WIDTH = 980;
 const MAP_HEIGHT = 320;
@@ -10,6 +11,74 @@ function slugify(value) {
     .replace(/&/g, " and ")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+function sameTextIdentity(left, right) {
+  return slugify(left) === slugify(right);
+}
+
+export function getReportClusters(state) {
+  const mapClusters = state?.mapV2?.clusters || [];
+  return mapClusters.length ? mapClusters : state?.clusters || [];
+}
+
+export function getReportPinsForCluster(state, clusterId) {
+  const mapV2 = state?.mapV2;
+  if (!mapV2?.pins?.length) return [];
+  const assignedPinIds = new Set(
+    (mapV2.assignments || [])
+      .filter((assignment) => assignment.clusterId === clusterId && assignment.assignmentType !== "rejected")
+      .map((assignment) => assignment.pinId),
+  );
+  return mapV2.pins.filter((pin) => assignedPinIds.has(pin.id));
+}
+
+export function isMapV2ReportCluster(state, clusterId) {
+  return Boolean(state?.mapV2?.clusters?.some((cluster) => cluster.id === clusterId));
+}
+
+export function getDefaultReportClusterId(state) {
+  const clusters = getReportClusters(state);
+  return clusters.find((cluster) => getReportPinsForCluster(state, cluster.id).length)?.id || clusters[0]?.id || "";
+}
+
+export function buildDealershipsFromReportPins({ pins = [], clusterId, allDealerships = [], getDealershipById }) {
+  return pins.map((pin, index) => {
+    const matchedById = pin.legacyDealershipId ? getDealershipById?.(pin.legacyDealershipId) : null;
+    const matchedByIdentity =
+      matchedById?.id
+        ? null
+        : allDealerships.find(
+            (dealership) =>
+              (pin.name && sameTextIdentity(dealership.name, pin.name)) ||
+              (pin.address && sameTextIdentity(dealership.address, pin.address)),
+          );
+    const matched = matchedById?.id ? matchedById : matchedByIdentity || {};
+    const id = matched.id || pin.legacyDealershipId || pin.id;
+
+    return {
+      ...matched,
+      id,
+      clusterId,
+      order: matched.order || index + 1,
+      name: matched.name || pin.name,
+      shortName: matched.shortName || pin.name?.split(/\s+/).slice(0, 2).join(" ") || "Map pin",
+      address: matched.address || pin.address || "Address not captured",
+      roleHint: matched.roleHint || "Ask for showroom manager or dealer principal",
+      contactHint: matched.contactHint || "Decision-maker not yet confirmed",
+      parentGroup: matched.parentGroup || "Dealership",
+      brands: matched.brands?.length ? matched.brands : pin.brands || [],
+      phone: matched.phone || pin.phone || "",
+      website: matched.website || pin.website || "",
+      pitch: matched.pitch || "Map pin selected for field coverage.",
+      location: Array.isArray(pin.location) ? pin.location : matched.location || null,
+      sourceType: matched.sourceType || pin.source || "map-v2",
+      status: matched.status || "Not visited",
+      leadScore: Number(matched.leadScore ?? 0),
+      nextAction: matched.nextAction || "Visit and capture contact details",
+      mapPinId: pin.id,
+    };
+  });
 }
 
 function formatDate(value) {
@@ -33,6 +102,16 @@ function formatDateTime(value) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function formatClusterReportTitle(clusterName) {
+  const name = String(clusterName || "Cluster").trim();
+  return /\bcluster\b/i.test(name) ? `${name} Report` : `${name} Cluster Report`;
+}
+
+function formatClusterCoverageTitle(clusterName) {
+  const name = String(clusterName || "Cluster").trim();
+  return /\bcluster\b/i.test(name) ? `${name} coverage` : `${name} cluster coverage`;
 }
 
 function getEmailProofLabel(draft) {
@@ -124,6 +203,16 @@ function getBounds(points) {
     };
   }
 
+  if (points.length === 1) {
+    const [lat, lng] = points[0];
+    return {
+      minLat: lat - 0.005,
+      maxLat: lat + 0.005,
+      minLng: lng - 0.005,
+      maxLng: lng + 0.005,
+    };
+  }
+
   return points.reduce(
     (bounds, [lat, lng]) => ({
       minLat: Math.min(bounds.minLat, lat),
@@ -167,18 +256,24 @@ export function buildClusterReportModel({
   state,
   cluster,
   dealerships,
+  mapPins = [],
   getDraftForDealership,
   getLatestContact,
   getLatestMedia,
 }) {
   const clusterId = cluster.id;
-  const clusterVisits = state.visits.filter((visit) => visit.clusterId === clusterId);
+  const dealershipIds = new Set(dealerships.map((dealership) => canonicalDealershipId(dealership.id)));
+  const clusterVisits = state.visits.filter(
+    (visit) => visit.clusterId === clusterId || dealershipIds.has(canonicalDealershipId(visit.dealershipId)),
+  );
   const clusterActions = state.actions.filter((action) =>
     dealerships.some((dealership) => canonicalDealershipId(dealership.id) === canonicalDealershipId(action.dealershipId)),
   );
-  const clusterPolygon = getClusterCoveragePolygon(state, clusterId) || [];
+  const mapV2Polygon = getMapV2BoundaryForPins(mapPins);
+  const usingMapV2Pins = mapPins.length > 0;
+  const clusterPolygon = mapV2Polygon.length ? mapV2Polygon : usingMapV2Pins ? [] : getClusterCoveragePolygon(state, clusterId) || [];
   const dealershipLocations = dealerships.map((dealership) => dealership.location).filter(Boolean);
-  const allGeoPoints = [...clusterPolygon, ...dealershipLocations].filter(Boolean);
+  const allGeoPoints = [...clusterPolygon, ...dealershipLocations, ...mapPins.map((pin) => pin.location)].filter(Boolean);
   const bounds = getBounds(allGeoPoints);
 
   const rows = dealerships.map((dealership) => {
@@ -253,7 +348,8 @@ export function buildClusterReportModel({
   return {
     clusterId,
     clusterName: cluster.name,
-    exportTitle: `${cluster.name} Cluster Report`,
+    exportTitle: formatClusterReportTitle(cluster.name),
+    coverageTitle: formatClusterCoverageTitle(cluster.name),
     exportDateLabel: formatDate(exportDate.toISOString()),
     exportDateIso: exportDate.toISOString(),
     fileName: `${slugify(cluster.name)}-cluster-report-${exportDate.toISOString().slice(0, 10)}.pdf`,
@@ -296,6 +392,7 @@ export function buildClusterReportModel({
     map: {
       width: MAP_WIDTH,
       height: MAP_HEIGHT,
+      sourceLabel: usingMapV2Pins ? "Map pin assignments" : "Operational cluster data",
       polygon: projectedPolygon,
       route: projectedRoute,
       points: rows
@@ -310,7 +407,7 @@ export function buildClusterReportModel({
         })),
       labels: [
         { text: cluster.name.toUpperCase(), x: 46, y: 50 },
-        { text: "BATTERSEA SEARCH", x: MAP_WIDTH - 190, y: MAP_HEIGHT - 30 },
+        { text: usingMapV2Pins ? "PIN-FIRST FIELD CLUSTER" : "BATTERSEA SEARCH", x: MAP_WIDTH - 250, y: MAP_HEIGHT - 30 },
       ],
     },
     dealershipCards: visitedRows.length

@@ -818,6 +818,12 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
   justify-content: space-between;
   gap: 14px;
 }
+.report-export-map-head small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
 .report-export-map {
   position: relative;
   min-height: 320px;
@@ -861,8 +867,23 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
 }
 .report-export-polygon {
   fill: oklch(68% 0.18 15 / 0.16);
+  stroke: oklch(70% 0.18 18 / 0.26);
+  stroke-width: 1.5;
+}
+.report-export-boundary-line {
+  fill: none;
   stroke: oklch(70% 0.18 18);
   stroke-width: 4;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+.report-export-boundary-vertex {
+  fill: oklch(76% 0.18 18);
+  stroke: oklch(95% 0.02 80 / 0.9);
+  stroke-width: 2;
+}
+.report-export-boundary-vertex-core {
+  fill: oklch(100% 0 0 / 0.95);
 }
 .report-export-route {
   fill: none;

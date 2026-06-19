@@ -49,7 +49,7 @@ function getRequestBaseUrl(request) {
 }
 
 function getClusterNameFromState(state, clusterId) {
-  const clusters = [...(state?.clusters || []), ...(state?.manualClusters || [])];
+  const clusters = [...(state?.mapV2?.clusters || []), ...(state?.clusters || []), ...(state?.manualClusters || [])];
   return clusters.find((cluster) => cluster.id === clusterId)?.name || "cluster";
 }
 

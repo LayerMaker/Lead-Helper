@@ -10,6 +10,7 @@ export function ClusterReportTemplate({ report, exportRef = null, mode = "previe
   if (!report) return null;
 
   const polygonPoints = report.map.polygon.map(([x, y]) => `${x},${y}`).join(" ");
+  const closedPolygonPoints = polygonPoints && report.map.polygon[0] ? `${polygonPoints} ${report.map.polygon[0][0]},${report.map.polygon[0][1]}` : "";
   const routePoints = report.map.route.map(([x, y]) => `${x},${y}`).join(" ");
   const sheetClassName = `report-export-sheet${mode === "print" ? " print-mode" : ""}`;
 
@@ -37,7 +38,8 @@ export function ClusterReportTemplate({ report, exportRef = null, mode = "previe
         <div className="report-export-map-head">
           <div>
             <div className="kicker">Territory proof</div>
-            <h3>{report.clusterName} cluster coverage</h3>
+            <h3>{report.coverageTitle || `${report.clusterName} cluster coverage`}</h3>
+            <small>{report.map.sourceLabel}</small>
           </div>
           <span className="pill active">Generated {report.exportDateLabel}</span>
         </div>
@@ -50,7 +52,14 @@ export function ClusterReportTemplate({ report, exportRef = null, mode = "previe
 
           <svg className="report-export-svg" viewBox={`0 0 ${report.map.width} ${report.map.height}`} aria-hidden="true">
             {polygonPoints ? <polygon className="report-export-polygon" points={polygonPoints} /> : null}
+            {closedPolygonPoints ? <polyline className="report-export-boundary-line" points={closedPolygonPoints} /> : null}
             {routePoints ? <polyline className="report-export-route" points={routePoints} /> : null}
+            {report.map.polygon.map(([x, y], index) => (
+              <g key={`boundary-${index}-${x}-${y}`} transform={`translate(${x} ${y})`}>
+                <circle className="report-export-boundary-vertex" r="7" />
+                <circle className="report-export-boundary-vertex-core" r="2.5" />
+              </g>
+            ))}
             {report.map.points.map((point) => (
               <g key={point.id} transform={`translate(${point.x} ${point.y})`}>
                 <circle className={`report-export-node${point.visited ? " visited" : ""}`} r="10" />

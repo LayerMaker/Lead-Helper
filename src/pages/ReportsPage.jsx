@@ -2,35 +2,71 @@ import { useMemo, useRef, useState } from "react";
 import { ClusterReportTemplate } from "../components/ClusterReportTemplate";
 import { canonicalDealershipId, getEmailIntentDetails } from "../lib/leadHelperModel";
 import { AppLayout } from "../components/AppLayout";
-import { buildClusterReportModel, buildEmailProofSummary, buildReportPdfUrl, buildReportPrintUrl } from "../lib/reporting";
+import {
+  buildClusterReportModel,
+  buildDealershipsFromReportPins,
+  buildEmailProofSummary,
+  buildReportPdfUrl,
+  buildReportPrintUrl,
+  getDefaultReportClusterId,
+  getReportClusters,
+  getReportPinsForCluster,
+  isMapV2ReportCluster,
+} from "../lib/reporting";
 import { useAppState } from "../state/AppState";
 
 export function ReportsPage() {
   const {
-    clusters,
+    dealerships,
     state,
-    selectedCluster,
-    dispatch,
     getDealershipsForCluster,
+    getDealershipById,
     getDraftForDealership,
     getLatestContact,
     getLatestMedia,
   } = useAppState();
   const [exportState, setExportState] = useState("idle");
   const [exportMessage, setExportMessage] = useState("");
+  const reportClusters = useMemo(() => getReportClusters(state), [state]);
+  const [selectedReportClusterId, setSelectedReportClusterId] = useState(() => getDefaultReportClusterId(state));
   const reportRef = useRef(null);
+  const defaultReportClusterId = useMemo(() => getDefaultReportClusterId(state), [state]);
+  const selectedReportCluster =
+    reportClusters.find((cluster) => cluster.id === selectedReportClusterId) ||
+    reportClusters.find((cluster) => cluster.id === defaultReportClusterId) ||
+    reportClusters[0];
+
+  const selectedReportPins = useMemo(
+    () => getReportPinsForCluster(state, selectedReportCluster?.id),
+    [selectedReportCluster?.id, state],
+  );
+  const selectedReportDealerships = useMemo(
+    () =>
+      selectedReportPins.length
+        ? buildDealershipsFromReportPins({
+            pins: selectedReportPins,
+            clusterId: selectedReportCluster?.id,
+            allDealerships: dealerships,
+            getDealershipById,
+          })
+        : isMapV2ReportCluster(state, selectedReportCluster?.id)
+          ? []
+          : getDealershipsForCluster(selectedReportCluster?.id),
+    [dealerships, getDealershipById, getDealershipsForCluster, selectedReportCluster?.id, selectedReportPins, state],
+  );
 
   const reportModel = useMemo(
     () =>
       buildClusterReportModel({
         state,
-        cluster: selectedCluster,
-        dealerships: getDealershipsForCluster(selectedCluster.id),
+        cluster: selectedReportCluster,
+        dealerships: selectedReportDealerships,
+        mapPins: selectedReportPins,
         getDraftForDealership,
         getLatestContact,
         getLatestMedia,
       }),
-    [getDealershipsForCluster, getDraftForDealership, getLatestContact, getLatestMedia, selectedCluster, state],
+    [getDraftForDealership, getLatestContact, getLatestMedia, selectedReportCluster, selectedReportDealerships, selectedReportPins, state],
   );
 
   async function handleExportVisibleCluster() {
@@ -110,9 +146,22 @@ export function ReportsPage() {
       </section>
 
       <section className="report-accordion">
-        {clusters.map((cluster, index) => {
-          const dealers = getDealershipsForCluster(cluster.id);
-          const visits = state.visits.filter((visit) => visit.clusterId === cluster.id);
+        {reportClusters.map((cluster, index) => {
+          const clusterPins = getReportPinsForCluster(state, cluster.id);
+          const dealers = clusterPins.length
+            ? buildDealershipsFromReportPins({
+                pins: clusterPins,
+                clusterId: cluster.id,
+                allDealerships: dealerships,
+                getDealershipById,
+              })
+            : isMapV2ReportCluster(state, cluster.id)
+              ? []
+              : getDealershipsForCluster(cluster.id);
+          const dealerIds = new Set(dealers.map((dealer) => canonicalDealershipId(dealer.id)));
+          const visits = state.visits.filter(
+            (visit) => visit.clusterId === cluster.id || dealerIds.has(canonicalDealershipId(visit.dealershipId)),
+          );
           const latestVisits = dealers
             .map((dealer) => visits.find((visit) => canonicalDealershipId(visit.dealershipId) === canonicalDealershipId(dealer.id)))
             .filter(Boolean);
@@ -121,16 +170,16 @@ export function ReportsPage() {
               action.status === "pending" &&
               dealers.some((dealer) => canonicalDealershipId(dealer.id) === canonicalDealershipId(action.dealershipId)),
           ).length;
-          const isOpen = selectedCluster.id === cluster.id;
+          const isOpen = selectedReportCluster?.id === cluster.id;
 
           return (
             <article className={`panel report-cluster${isOpen ? " open" : ""}`} key={cluster.id}>
-              <button className="cluster-head" type="button" onClick={() => dispatch({ type: "select-cluster", clusterId: cluster.id })}>
+              <button className="cluster-head" type="button" onClick={() => setSelectedReportClusterId(cluster.id)}>
                 <span>
                   <span className="kicker">Cluster {String(index + 1).padStart(2, "0")}</span>
                   <b>{cluster.name}</b>
                   <small>
-                    {dealers.length} scraped pins, {latestVisits.length} visits, {openActions} open actions
+                    {dealers.length} map pins, {latestVisits.length} visits, {openActions} open actions
                   </small>
                 </span>
                 <span className={`pill${isOpen ? " active" : ""}`}>{isOpen ? "Open" : "Closed"}</span>
