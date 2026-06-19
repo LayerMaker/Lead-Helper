@@ -13,11 +13,10 @@ const AUTO_WEST_TEST_LEAD = {
   contactHint: "Met on site, brochure already sent",
 };
 
-function emptyLocationForm(clusterId) {
+function emptyLocationForm() {
   return {
     name: "",
     address: "",
-    clusterId,
     website: "",
     phone: "",
     roleHint: "",
@@ -25,19 +24,30 @@ function emptyLocationForm(clusterId) {
   };
 }
 
+function slugify(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function createManualDealershipId(name, address) {
+  return `manual-${slugify(name)}-${slugify(address).slice(0, 32)}`;
+}
+
 export function LocationPage() {
-  const { clusters, selectedCluster, selectedDealership, dispatch } = useAppState();
+  const { selectedDealership, dispatch } = useAppState();
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("Add a dealership first, then capture contact details on the Leads page.");
   const [error, setError] = useState("");
   const nameInputRef = useRef(null);
   const addressInputRef = useRef(null);
-  const clusterSelectRef = useRef(null);
   const websiteInputRef = useRef(null);
   const phoneInputRef = useRef(null);
   const roleInputRef = useRef(null);
   const hintInputRef = useRef(null);
-  const [form, setForm] = useState(() => emptyLocationForm(selectedCluster.id));
+  const [form, setForm] = useState(() => emptyLocationForm());
 
   function updateField(key, value) {
     setForm((current) => ({
@@ -51,14 +61,12 @@ export function LocationPage() {
     setStatus("Auto West test lead loaded. Add it to the map or edit the fields first.");
     setForm({
       ...AUTO_WEST_TEST_LEAD,
-      clusterId: selectedCluster.id,
     });
   }
 
   async function addLocation() {
     const name = String(nameInputRef.current?.value ?? form.name).trim();
     const address = String(addressInputRef.current?.value ?? form.address).trim();
-    const clusterId = String(clusterSelectRef.current?.value ?? form.clusterId ?? selectedCluster.id).trim();
     const website = String(websiteInputRef.current?.value ?? form.website).trim();
     const phone = String(phoneInputRef.current?.value ?? form.phone).trim();
     const roleHint = String(roleInputRef.current?.value ?? form.roleHint).trim();
@@ -67,7 +75,6 @@ export function LocationPage() {
     setForm({
       name,
       address,
-      clusterId: clusterId || selectedCluster.id,
       website,
       phone,
       roleHint,
@@ -85,12 +92,13 @@ export function LocationPage() {
 
     try {
       const [bestMatch] = await geocodeAddress(address);
+      const manualDealershipId = createManualDealershipId(name, address);
       dispatch({
         type: "upsert-manual-dealership",
         payload: {
+          id: manualDealershipId,
           name,
           address,
-          clusterId: clusterId || selectedCluster.id,
           website,
           phone,
           roleHint,
@@ -104,6 +112,7 @@ export function LocationPage() {
       dispatch({
         type: "upsert-map-v2-pin",
         payload: {
+          legacyDealershipId: manualDealershipId,
           name,
           address,
           website,
@@ -112,8 +121,8 @@ export function LocationPage() {
           sourceRef: "add-location",
         },
       });
-      setStatus(`Pinned to the map from: ${bestMatch.displayName}`);
-      setForm(emptyLocationForm(clusterId || selectedCluster.id));
+      setStatus(`Pinned to Map as an unassigned location from: ${bestMatch.displayName}`);
+      setForm(emptyLocationForm());
     } catch (addError) {
       setError(addError.message || "Address lookup failed.");
       setStatus("Location needs a valid map match before it can join the dealership database.");
@@ -129,7 +138,7 @@ export function LocationPage() {
           <div className="kicker">+ Location</div>
           <h1>Add a dealership to the map before working the lead.</h1>
           <p className="subtle-copy">
-            This creates the place record: name, address, map pin, and cluster. Contact names and business cards belong on the Leads page after the location exists.
+            This creates the place record and an unassigned map pin. Contact names and business cards belong on the Leads page after the location exists.
           </p>
         </div>
         <div className="action-row">
@@ -168,21 +177,6 @@ export function LocationPage() {
                 onChange={(event) => updateField("name", event.target.value)}
                 placeholder="Type dealership name"
               />
-            </div>
-            <div className="field">
-              <label>Assign to cluster</label>
-              <select
-                ref={clusterSelectRef}
-                className="text-input"
-                value={form.clusterId}
-                onChange={(event) => updateField("clusterId", event.target.value)}
-              >
-                {clusters.map((cluster) => (
-                  <option key={cluster.id} value={cluster.id}>
-                    {cluster.name}
-                  </option>
-                ))}
-              </select>
             </div>
             <div className="field" style={{ gridColumn: "1 / -1" }}>
               <label>Street address</label>
@@ -278,7 +272,7 @@ export function LocationPage() {
             <span className="number">03</span>
             <div>
               <h3>Map result</h3>
-              <small>The new pin joins the selected cluster and flows into route planning and reports.</small>
+              <small>The new pin appears on the map as unassigned. Use lasso selection to add it to the right field cluster.</small>
             </div>
             <Link className="btn" to="/map">
               Map
