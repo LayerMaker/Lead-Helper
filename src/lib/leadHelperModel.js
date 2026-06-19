@@ -4,6 +4,7 @@ import { convex } from "@turf/convex";
 import { featureCollection, lineString, point } from "@turf/helpers";
 import dealershipsData from "../data/dealerships.normalized.json";
 import discoveryData from "../../data/candidates/london-newcar.discovery.json";
+import { createInitialMapV2State } from "./mapV2Model";
 
 export const STORAGE_KEY = "lead-helper-shell-v1";
 export const STATE_VERSION = 2;
@@ -346,6 +347,7 @@ export const initialState = {
   acceptedClusters: [],
   parkedDiscoveryAreaIds: [],
   manualDealerships: [],
+  mapV2: createInitialMapV2State(),
   settings: {
     ocrProvider: "openrouter",
     openRouterApiKey: defaultOpenRouterApiKey,

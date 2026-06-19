@@ -26,6 +26,12 @@ import {
   upsertManualDealership,
   upsertDraft,
 } from "../lib/leadHelperModel";
+import {
+  assignMapV2PinToCluster,
+  createMapV2PinFromManualPayload,
+  ensureMapV2State,
+  upsertMapV2Pin,
+} from "../lib/mapV2Model";
 
 const AppStateContext = createContext(null);
 
@@ -72,6 +78,16 @@ function reducer(state, action) {
 
   if (action.type === "upsert-manual-dealership") {
     upsertManualDealership(next, action.payload);
+    return next;
+  }
+
+  if (action.type === "upsert-map-v2-pin") {
+    next.mapV2 = upsertMapV2Pin(ensureMapV2State(next), action.pin || createMapV2PinFromManualPayload(action.payload || {}));
+    return next;
+  }
+
+  if (action.type === "assign-map-v2-pin") {
+    next.mapV2 = assignMapV2PinToCluster(ensureMapV2State(next), action.pinId, action.clusterId, action.options || {});
     return next;
   }
 
@@ -190,6 +206,7 @@ function loadInitialState() {
     return {
       ...defaults,
       ...parsed,
+      mapV2: parsed.mapV2?.version ? parsed.mapV2 : defaults.mapV2,
       actions: (parsed.actions || defaults.actions || []).map((action) => normalizeActionRecord(action)),
       settings: {
         ...defaults.settings,
@@ -233,6 +250,7 @@ export function AppStateProvider({ children }) {
 
     return {
       state,
+      mapV2: ensureMapV2State(state),
       selectedCluster,
       selectedDealership,
       dealerships: getAllDealerships(state),

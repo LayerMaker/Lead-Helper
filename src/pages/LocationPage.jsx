@@ -101,6 +101,17 @@ export function LocationPage() {
           nextAction: "Capture contact and log visit outcomes",
         },
       });
+      dispatch({
+        type: "upsert-map-v2-pin",
+        payload: {
+          name,
+          address,
+          website,
+          phone,
+          location: [bestMatch.lat, bestMatch.lng],
+          sourceRef: "add-location",
+        },
+      });
       setStatus(`Pinned to the map from: ${bestMatch.displayName}`);
       setForm(emptyLocationForm(clusterId || selectedCluster.id));
     } catch (addError) {

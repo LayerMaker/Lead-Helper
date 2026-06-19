@@ -4,6 +4,7 @@ import { EmailPage } from "./pages/EmailPage";
 import { LeadsPage } from "./pages/LeadsPage";
 import { LocationPage } from "./pages/LocationPage";
 import { MapPage } from "./pages/MapPage";
+import { MapV2Page } from "./pages/MapV2Page";
 import { ReportPrintPage } from "./pages/ReportPrintPage";
 import { ReportsPage } from "./pages/ReportsPage";
 import { RoutePage } from "./pages/RoutePage";
@@ -14,6 +15,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<DashboardPage />} />
       <Route path="/map" element={<MapPage />} />
+      <Route path="/map-v2" element={<MapV2Page />} />
       <Route path="/location" element={<LocationPage />} />
       <Route path="/route" element={<RoutePage />} />
       <Route path="/leads" element={<LeadsPage />} />
