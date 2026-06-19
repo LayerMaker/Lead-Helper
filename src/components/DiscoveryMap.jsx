@@ -8,7 +8,7 @@ function buildAreaColorMap(areas) {
   return Object.fromEntries(areas.map((area, index) => [area.id, discoveryPalette[index % discoveryPalette.length]]));
 }
 
-function FitToDiscovery({ areas, selectedArea, selectedProspects, manualDealerships, userLocation }) {
+function FitToDiscovery({ areas, selectedArea, selectedProspects, userLocation }) {
   const map = useMap();
 
   useEffect(() => {
@@ -18,11 +18,10 @@ function FitToDiscovery({ areas, selectedArea, selectedProspects, manualDealersh
           ...areas.flatMap((area) => area.polygon),
           ...areas.map((area) => area.center).filter(Boolean),
         ];
-    points.push(...manualDealerships.map((dealership) => dealership.location).filter(Boolean));
     if (userLocation) points.push(userLocation);
     if (!points.length) return;
     map.fitBounds(latLngBounds(points), { padding: [32, 32], maxZoom: selectedArea ? 14 : 11 });
-  }, [areas, manualDealerships, map, selectedArea, selectedProspects, userLocation]);
+  }, [areas, map, selectedArea, selectedProspects, userLocation]);
 
   return null;
 }
@@ -35,9 +34,6 @@ export function DiscoveryMap({
   selectedProspectId,
   onSelectArea,
   onSelectProspect,
-  manualDealerships = [],
-  selectedManualDealershipId = null,
-  onSelectManualDealership = () => {},
   userLocation,
   parkedAreaIds = [],
   promotedAreaIds = [],
@@ -53,13 +49,7 @@ export function DiscoveryMap({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <FitToDiscovery
-        areas={areas}
-        selectedArea={selectedArea}
-        selectedProspects={selectedProspects}
-        manualDealerships={manualDealerships}
-        userLocation={userLocation}
-      />
+      <FitToDiscovery areas={areas} selectedArea={selectedArea} selectedProspects={selectedProspects} userLocation={userLocation} />
 
       {areas.map((area) => {
         const isSelected = area.id === selectedArea?.id;
@@ -119,35 +109,6 @@ export function DiscoveryMap({
           >
             <Tooltip direction="top" offset={[0, -8]} className="map-tooltip marker">
               {prospect.name}
-            </Tooltip>
-          </CircleMarker>
-        );
-      })}
-
-      {manualDealerships.map((dealership) => {
-        if (!Array.isArray(dealership.location)) return null;
-        const isCurrent = dealership.id === selectedManualDealershipId;
-        const isAssigned = Boolean(dealership.clusterId);
-
-        return (
-          <CircleMarker
-            key={dealership.id}
-            center={dealership.location}
-            radius={isCurrent ? 10 : 7}
-            pathOptions={{
-              color: isCurrent ? "#fff4df" : isAssigned ? "#7ae3b8" : "#f7c66f",
-              weight: isCurrent ? 3 : 2,
-              fillColor: isAssigned ? "#2fd4d4" : "#f3a53d",
-              fillOpacity: isAssigned ? 0.76 : 0.95,
-              opacity: 1,
-              dashArray: isAssigned ? undefined : "5 5",
-            }}
-            eventHandlers={{
-              click: () => onSelectManualDealership(dealership.id),
-            }}
-          >
-            <Tooltip direction="top" offset={[0, -8]} className={`map-tooltip marker ${isCurrent ? "selected" : ""}`}>
-              {dealership.name} {isAssigned ? "" : "(unclustered)"}
             </Tooltip>
           </CircleMarker>
         );

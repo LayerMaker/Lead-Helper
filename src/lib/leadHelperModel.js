@@ -711,7 +711,6 @@ export function getDiscoveryOverview() {
 function getAcceptedClusters(state) {
   return (state?.acceptedClusters || []).map((cluster, index) => ({
     ...cluster,
-    lifecycle: cluster.lifecycle || (cluster.sourceType === "manual" ? "Manual" : "Accepted"),
     colorClass: cluster.colorClass || acceptedClusterPalette[index % acceptedClusterPalette.length],
     routeTime: cluster.routeTime || `${Math.max(18, (cluster.prospectIds?.length || 1) * 7)} min`,
   }));
@@ -783,18 +782,10 @@ export function mergeDealership(state, dealershipId) {
 }
 
 export function getDealershipsForCluster(state, clusterId) {
-  if (!clusterId) return [];
-
   return getAllDealerships(state)
     .filter((dealership) => dealership.clusterId === clusterId)
     .sort((left, right) => (left.order ?? Number.MAX_SAFE_INTEGER) - (right.order ?? Number.MAX_SAFE_INTEGER) || left.name.localeCompare(right.name))
     .map((dealership) => ({ ...dealership, ...(getDealershipRuntime(state, dealership.id) || {}) }));
-}
-
-export function getUnclusteredDealerships(state) {
-  return getAllDealerships(state)
-    .filter((dealership) => !dealership.clusterId)
-    .sort((left, right) => String(left.name || "").localeCompare(String(right.name || "")));
 }
 
 export function upsertManualDealership(state, payload = {}) {
@@ -804,7 +795,7 @@ export function upsertManualDealership(state, payload = {}) {
     throw new Error("Manual dealership requires both a name and an address.");
   }
 
-  const clusterId = String(payload.clusterId ?? "").trim();
+  const clusterId = payload.clusterId || state.selectedClusterId || baseClusters[0].id;
   const currentManual = getManualDealerships(state);
   const existing = currentManual.find((item) => item.id === payload.id) ||
     currentManual.find(
@@ -851,7 +842,6 @@ export function upsertManualDealership(state, payload = {}) {
     sourceType: "manual",
     sourceLabel: String(payload.sourceLabel || existing?.sourceLabel || "Manual intake").trim(),
     geocodeLabel: String(payload.geocodeLabel || existing?.geocodeLabel || "").trim(),
-    clusterStatus: clusterId ? "assigned" : "unclustered",
     isManual: true,
   };
 
@@ -859,87 +849,9 @@ export function upsertManualDealership(state, payload = {}) {
     nextDealership,
     ...currentManual.filter((item) => item.id !== nextDealership.id),
   ];
-  if (clusterId) state.selectedClusterId = clusterId;
+  state.selectedClusterId = clusterId;
   state.currentDealershipId = nextDealership.id;
   return nextDealership;
-}
-
-export function assignDealershipToCluster(state, dealershipId, clusterId) {
-  const nextClusterId = String(clusterId || "").trim();
-  if (!dealershipId || !nextClusterId) return null;
-
-  const manualIndex = getManualDealerships(state).findIndex((dealership) => dealership.id === dealershipId);
-  if (manualIndex >= 0) {
-    const nextOrder =
-      getAllDealerships(state)
-        .filter((dealership) => dealership.clusterId === nextClusterId && dealership.id !== dealershipId)
-        .reduce((highest, dealership) => Math.max(highest, Number(dealership.order) || 0), 0) + 1;
-    state.manualDealerships[manualIndex] = {
-      ...state.manualDealerships[manualIndex],
-      clusterId: nextClusterId,
-      order: nextOrder,
-      clusterStatus: "assigned",
-    };
-    state.selectedClusterId = nextClusterId;
-    state.currentDealershipId = dealershipId;
-    return state.manualDealerships[manualIndex];
-  }
-
-  state.dealerships = (state.dealerships || []).map((dealership) =>
-    dealership.id === dealershipId
-      ? {
-          ...dealership,
-          clusterId: nextClusterId,
-        }
-      : dealership,
-  );
-  state.selectedClusterId = nextClusterId;
-  state.currentDealershipId = dealershipId;
-  return mergeDealership(state, dealershipId);
-}
-
-export function unassignDealershipFromCluster(state, dealershipId) {
-  if (!dealershipId) return null;
-
-  const manualIndex = getManualDealerships(state).findIndex((dealership) => dealership.id === dealershipId);
-  if (manualIndex >= 0) {
-    state.manualDealerships[manualIndex] = {
-      ...state.manualDealerships[manualIndex],
-      clusterId: "",
-      order: Number.MAX_SAFE_INTEGER,
-      clusterStatus: "unclustered",
-    };
-    state.currentDealershipId = dealershipId;
-    return state.manualDealerships[manualIndex];
-  }
-
-  return null;
-}
-
-export function createManualClusterFromDealerships(state, dealershipIds = [], preferredName = "") {
-  const ids = [...new Set((dealershipIds || []).filter(Boolean))];
-  if (!ids.length) return null;
-
-  const firstDealership = mergeDealership(state, ids[0]);
-  const clusterName = String(preferredName || "").trim() || `${firstDealership.name || "Manual"} field cluster`;
-  const clusterId = `manual-${slugify(clusterName)}-${Date.now().toString(36).slice(-4)}`;
-  const nextCluster = {
-    id: clusterId,
-    name: clusterName,
-    sourceType: "manual",
-    lifecycle: "Manual",
-    prospectIds: [],
-    createdFromDealershipIds: ids,
-    colorClass: acceptedClusterPalette[(state.acceptedClusters || []).length % acceptedClusterPalette.length],
-    routeTime: `${Math.max(18, ids.length * 10)} min`,
-    createdAt: new Date().toISOString(),
-  };
-
-  state.acceptedClusters = [...(state.acceptedClusters || []), nextCluster];
-  ids.forEach((dealershipId) => assignDealershipToCluster(state, dealershipId, clusterId));
-  state.selectedClusterId = clusterId;
-  state.currentDealershipId = ids[0];
-  return nextCluster;
 }
 
 export function createOperationalClusterFromDiscoveryArea(state, areaId, preferredName) {

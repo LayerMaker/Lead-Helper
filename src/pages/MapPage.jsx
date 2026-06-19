@@ -7,10 +7,10 @@ import {
   discoveryAreas,
   discoveryProspects,
   getCluster,
+  getDealershipsForCluster as getStaticDealershipsForCluster,
   getDiscoveryOverview,
   getDiscoveryProspectsForArea,
   getDistanceMilesBetweenPoints,
-  getClusterCenter,
 } from "../lib/leadHelperModel";
 import { AppLayout } from "../components/AppLayout";
 import { useAppState } from "../state/AppState";
@@ -21,45 +21,17 @@ function formatMiles(value) {
   return `${rounded} mi`;
 }
 
-function formatClusterLabel(name) {
-  return String(name || "").toLowerCase().includes("cluster") ? name : `${name} cluster`;
-}
-
 export function MapPage() {
-  const {
-    state,
-    dealerships,
-    unclusteredDealerships,
-    clusters,
-    selectedCluster,
-    selectedDealership,
-    dispatch,
-    getDealershipsForCluster: getRuntimeDealershipsForCluster,
-  } = useAppState();
+  const { state, dealerships, clusters, selectedCluster, selectedDealership, dispatch, getDealershipsForCluster: getRuntimeDealershipsForCluster } = useAppState();
   const [mapMode, setMapMode] = useState("discovery");
   const [selectedDiscoveryAreaId, setSelectedDiscoveryAreaId] = useState(discoveryAreas[0]?.id || null);
   const [selectedDiscoveryProspectId, setSelectedDiscoveryProspectId] = useState(null);
-  const [selectedManualDealershipId, setSelectedManualDealershipId] = useState(null);
-  const [manualAssignClusterId, setManualAssignClusterId] = useState("");
-  const [manualClusterName, setManualClusterName] = useState("");
   const [clusterDrafts, setClusterDrafts] = useState({});
   const [userLocation, setUserLocation] = useState(null);
   const [locationEnabled, setLocationEnabled] = useState(false);
   const [locationStatus, setLocationStatus] = useState("Location off");
   const watchIdRef = useRef(null);
   const selectedDealers = getRuntimeDealershipsForCluster(selectedCluster.id);
-  const manualDealerships = useMemo(
-    () => dealerships.filter((dealership) => dealership.isManual || dealership.sourceType === "manual"),
-    [dealerships],
-  );
-  const selectedManualDealership = useMemo(
-    () =>
-      manualDealerships.find((dealership) => dealership.id === selectedManualDealershipId) ||
-      unclusteredDealerships[0] ||
-      manualDealerships[0] ||
-      null,
-    [manualDealerships, selectedManualDealershipId, unclusteredDealerships],
-  );
   const warmCount = selectedDealers.filter((dealer) => dealer.status === "Interested" || dealer.status === "Site walk booked").length;
   const mapsRouteUrl = buildGoogleMapsRouteUrl(state, selectedCluster.id);
   const discoveryOverview = useMemo(() => getDiscoveryOverview(), []);
@@ -76,26 +48,12 @@ export function MapPage() {
     [selectedDiscoveryProspectId, selectedDiscoveryProspects],
   );
   const allOperationalDealers = useMemo(
-    () => dealerships.filter((dealer) => Array.isArray(dealer.location)),
-    [dealerships],
+    () =>
+      clusters.flatMap((cluster) =>
+        getStaticDealershipsForCluster(state, cluster.id),
+      ),
+    [clusters, state],
   );
-  const nearestManualCluster = useMemo(() => {
-    if (!selectedManualDealership?.location) return null;
-
-    return clusters
-      .map((cluster) => {
-        const center = getClusterCenter(state, cluster.id);
-        return {
-          ...cluster,
-          distanceMiles: getDistanceMilesBetweenPoints(selectedManualDealership.location, center),
-        };
-      })
-      .filter((cluster) => Number.isFinite(cluster.distanceMiles))
-      .sort((left, right) => left.distanceMiles - right.distanceMiles)[0] || null;
-  }, [clusters, selectedManualDealership, state]);
-  const effectiveManualAssignClusterId = manualAssignClusterId || selectedManualDealership?.clusterId || nearestManualCluster?.id || selectedCluster.id;
-  const effectiveManualClusterName =
-    manualClusterName || (selectedManualDealership ? `${selectedManualDealership.shortName || selectedManualDealership.name} field cluster` : "");
   const nearestDiscoveryProspect = useMemo(() => {
     if (!userLocation) return null;
 
@@ -205,34 +163,6 @@ export function MapPage() {
     setLocationStatus("Location off");
   }
 
-  function selectManualDealership(dealershipId) {
-    const dealership = manualDealerships.find((item) => item.id === dealershipId);
-    setSelectedManualDealershipId(dealershipId);
-    setManualAssignClusterId(dealership?.clusterId || nearestManualCluster?.id || selectedCluster.id);
-    setManualClusterName(dealership ? `${dealership.shortName || dealership.name} field cluster` : "");
-    dispatch({ type: "select-dealership", dealershipId });
-  }
-
-  function assignManualDealershipToCluster(clusterId = effectiveManualAssignClusterId) {
-    if (!selectedManualDealership || !clusterId) return;
-    dispatch({
-      type: "assign-dealership-cluster",
-      dealershipId: selectedManualDealership.id,
-      clusterId,
-    });
-    setMapMode("operational");
-  }
-
-  function createManualCluster() {
-    if (!selectedManualDealership) return;
-    dispatch({
-      type: "create-manual-cluster",
-      dealershipIds: [selectedManualDealership.id],
-      name: effectiveManualClusterName,
-    });
-    setMapMode("operational");
-  }
-
   return (
     <AppLayout statusLine={mapMode === "discovery" ? "Discovery coverage for new-car showroom prospects" : "Southwest and west London operational clusters"}>
       <section className="title-row">
@@ -262,7 +192,7 @@ export function MapPage() {
                 Open in Google Maps
               </a>
               <Link className="btn primary" to="/route">
-                Start {formatClusterLabel(selectedCluster.name)} route
+                Start {selectedCluster.name} route
               </Link>
             </>
           ) : null}
@@ -280,9 +210,6 @@ export function MapPage() {
               selectedProspectId={selectedDiscoveryProspect?.id || null}
               onSelectArea={setSelectedDiscoveryAreaId}
               onSelectProspect={setSelectedDiscoveryProspectId}
-              manualDealerships={manualDealerships}
-              selectedManualDealershipId={selectedManualDealership?.id || null}
-              onSelectManualDealership={selectManualDealership}
               userLocation={userLocation}
               parkedAreaIds={parkedAreaIds}
               promotedAreaIds={promotedAreaIds}
@@ -359,104 +286,6 @@ export function MapPage() {
                   <small>{discoveryOverview.topBrands.join(", ")}</small>
                 </div>
               </div>
-              <div className="prospect-summary">
-                <div className="section-head">
-                  <div>
-                    <div className="kicker">Manual pin inbox</div>
-                    <h3>{selectedManualDealership ? selectedManualDealership.name : "No manual pins yet"}</h3>
-                  </div>
-                  <span className={`pill${unclusteredDealerships.length ? " active" : ""}`}>
-                    {unclusteredDealerships.length} unclustered
-                  </span>
-                </div>
-                {selectedManualDealership ? (
-                  <>
-                    <p>
-                      {selectedManualDealership.address}.{" "}
-                      {selectedManualDealership.clusterId
-                        ? `Currently assigned to ${getCluster(selectedManualDealership.clusterId, state)?.name || "a field cluster"}.`
-                        : "Waiting to be accepted into a field cluster."}
-                    </p>
-                    {nearestManualCluster ? (
-                      <div className="feed-forward">
-                        <span className="flow-dot active"></span>
-                        <div>
-                          <b>Nearest suggested cluster</b>
-                          <small>
-                            {nearestManualCluster.name} is {formatMiles(nearestManualCluster.distanceMiles)} from this pin.
-                          </small>
-                        </div>
-                      </div>
-                    ) : null}
-                    <div className="field">
-                      <label>Accept into cluster</label>
-                      <select
-                        className="text-input"
-                        value={effectiveManualAssignClusterId}
-                        onChange={(event) => setManualAssignClusterId(event.target.value)}
-                      >
-                        {clusters.map((cluster) => (
-                          <option key={cluster.id} value={cluster.id}>
-                            {cluster.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="field">
-                      <label>Or create manual cluster</label>
-                      <input
-                        className="text-input"
-                        value={effectiveManualClusterName}
-                        onChange={(event) => setManualClusterName(event.target.value)}
-                        placeholder="Auto West / Chiswick field cluster"
-                      />
-                    </div>
-                    <div className="action-row">
-                      <button className="btn primary" type="button" onClick={() => assignManualDealershipToCluster()}>
-                        Accept into cluster
-                      </button>
-                      <button className="btn" type="button" onClick={createManualCluster}>
-                        Create manual cluster
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <p>Add a dealership from + Location and it will appear here before it is accepted into a field cluster.</p>
-                )}
-              </div>
-              {manualDealerships.length ? (
-                <div className="admin-actions discovery-list">
-                  <div className="workflow-list-head">
-                    <div>
-                      <div className="kicker">Manual locations</div>
-                      <h3>Added from field discovery</h3>
-                    </div>
-                    <span className="pill">{manualDealerships.length}</span>
-                  </div>
-                  {manualDealerships.map((dealership) => (
-                    <button
-                      key={dealership.id}
-                      className={`row${dealership.id === selectedManualDealership?.id ? " selected" : ""}`}
-                      type="button"
-                      onClick={() => selectManualDealership(dealership.id)}
-                    >
-                      <span className="number">{dealership.clusterId ? "IN" : "UC"}</span>
-                      <div>
-                        <h3>{dealership.name}</h3>
-                        <small>
-                          {dealership.clusterId
-                            ? `${getCluster(dealership.clusterId, state)?.name || "Field cluster"}.`
-                            : "Unclustered inbox."}{" "}
-                          {dealership.address}
-                        </small>
-                      </div>
-                      <span className={`pill${dealership.id === selectedManualDealership?.id ? " active" : ""}`}>
-                        {dealership.clusterId ? "Assigned" : "Intake"}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ) : null}
               <div className="prospect-summary">
                 <div className="section-head">
                   <div>
@@ -678,7 +507,7 @@ export function MapPage() {
               <div className="section-head">
                 <div>
                   <div className="kicker">Selected territory</div>
-                  <h2>{formatClusterLabel(selectedCluster.name)}</h2>
+                  <h2>{selectedCluster.name} cluster</h2>
                 </div>
                 <span className="pill active">Route ready</span>
               </div>

@@ -4,10 +4,8 @@ import {
   STORAGE_KEY,
   STATE_VERSION,
   applyVisitOutcomes,
-  assignDealershipToCluster,
   captureMockContact,
   cloneState,
-  createManualClusterFromDealerships,
   createOperationalClusterFromDiscoveryArea,
   getAllDealerships,
   ensureEmailAction,
@@ -19,7 +17,6 @@ import {
   getDraftForDealership,
   getLatestMedia,
   getLatestVisit,
-  getUnclusteredDealerships,
   initialState,
   normalizeActionRecord,
   mergeDealership,
@@ -59,8 +56,7 @@ function reducer(state, action) {
 
   if (action.type === "select-dealership") {
     next.currentDealershipId = action.dealershipId;
-    const clusterId = mergeDealership(next, action.dealershipId).clusterId;
-    if (clusterId) next.selectedClusterId = clusterId;
+    next.selectedClusterId = mergeDealership(next, action.dealershipId).clusterId;
     return next;
   }
 
@@ -76,16 +72,6 @@ function reducer(state, action) {
 
   if (action.type === "upsert-manual-dealership") {
     upsertManualDealership(next, action.payload);
-    return next;
-  }
-
-  if (action.type === "assign-dealership-cluster") {
-    assignDealershipToCluster(next, action.dealershipId, action.clusterId);
-    return next;
-  }
-
-  if (action.type === "create-manual-cluster") {
-    createManualClusterFromDealerships(next, action.dealershipIds, action.name);
     return next;
   }
 
@@ -250,7 +236,6 @@ export function AppStateProvider({ children }) {
       selectedCluster,
       selectedDealership,
       dealerships: getAllDealerships(state),
-      unclusteredDealerships: getUnclusteredDealerships(state),
       clusters,
       settings: state.settings || initialState.settings,
       actions: normalizedActions,
