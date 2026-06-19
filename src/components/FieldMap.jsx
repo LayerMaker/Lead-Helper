@@ -11,6 +11,7 @@ const colorClassMap = {
 };
 
 function getClusterColor(cluster) {
+  if (!cluster) return "#b8c0cc";
   return colorClassMap[cluster?.colorClass] || "#f3a53d";
 }
 
@@ -115,11 +116,13 @@ export function FieldMap({ state, clusters, selectedCluster, selectedDealershipI
         </>
       ) : null}
 
-      {allDealers.map((dealer) => {
+      {allDealers.filter((dealer) => Array.isArray(dealer.location)).map((dealer) => {
         const isCurrent = dealer.id === selectedDealershipId;
-        const clusterColor = getClusterColor(clusters.find((cluster) => cluster.id === dealer.clusterId) || selectedCluster);
+        const assignedCluster = clusters.find((cluster) => cluster.id === dealer.clusterId);
+        const clusterColor = getClusterColor(assignedCluster);
         const isWarm = dealer.status === "Interested" || dealer.status === "Site walk booked";
         const isDue = dealer.status === "Follow-up due";
+        const isUnclustered = !dealer.clusterId;
         const radius = isCurrent ? 10 : 7;
 
         return (
@@ -130,15 +133,16 @@ export function FieldMap({ state, clusters, selectedCluster, selectedDealershipI
             pathOptions={{
               color: isCurrent ? "#fff4df" : clusterColor,
               weight: isCurrent ? 3 : 2,
-              fillColor: isWarm ? "#f7c66f" : isDue ? "#f0df88" : clusterColor,
-              fillOpacity: dealer.clusterId === selectedCluster.id ? 0.95 : 0.7,
+              fillColor: isUnclustered ? "#f3a53d" : isWarm ? "#f7c66f" : isDue ? "#f0df88" : clusterColor,
+              fillOpacity: isUnclustered ? 0.88 : dealer.clusterId === selectedCluster.id ? 0.95 : 0.7,
+              dashArray: isUnclustered ? "5 5" : undefined,
             }}
             eventHandlers={{
               click: () => onSelectDealership(dealer.id),
             }}
           >
             <Tooltip direction="top" offset={[0, -8]} className="map-tooltip marker">
-              {dealer.order}. {dealer.name}
+              {dealer.order ? `${dealer.order}. ` : ""}{dealer.name}{isUnclustered ? " (unclustered)" : ""}
             </Tooltip>
           </CircleMarker>
         );
