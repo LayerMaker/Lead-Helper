@@ -1,13 +1,8 @@
-import { featureCollection, lineString, point } from "@turf/helpers";
-import { buffer } from "@turf/buffer";
+import { featureCollection, point } from "@turf/helpers";
 import { centerOfMass } from "@turf/center-of-mass";
-import { convex } from "@turf/convex";
 import dealershipsData from "../data/dealerships.normalized.json";
 
 const MAP_V2_VERSION = 1;
-const POINT_BUFFER_KM = 0.45;
-const LINE_BUFFER_KM = 0.32;
-const POLYGON_BUFFER_KM = 0.22;
 const LONDON_CENTER = [51.4838, -0.2153];
 
 const clusterSeed = [
@@ -31,31 +26,6 @@ function nowIso() {
 
 function toGeoPoint(location, properties = {}) {
   return point([location[1], location[0]], properties);
-}
-
-function toLeafletCoordinates(geoCoordinates) {
-  return geoCoordinates.map(([lng, lat]) => [lat, lng]);
-}
-
-function polygonArea(ring) {
-  let area = 0;
-  for (let index = 0; index < ring.length; index += 1) {
-    const [x1, y1] = ring[index];
-    const [x2, y2] = ring[(index + 1) % ring.length];
-    area += x1 * y2 - x2 * y1;
-  }
-  return Math.abs(area / 2);
-}
-
-function getLargestOuterRing(geometry) {
-  if (!geometry) return [];
-  if (geometry.type === "Polygon") return geometry.coordinates[0] || [];
-  if (geometry.type === "MultiPolygon") {
-    return geometry.coordinates
-      .map((polygonCoordinates) => polygonCoordinates[0] || [])
-      .sort((left, right) => polygonArea(right) - polygonArea(left))[0] || [];
-  }
-  return [];
 }
 
 export function getMapV2PinIdFromLegacyId(legacyId) {
@@ -167,27 +137,17 @@ export function getMapV2CenterForPins(pins) {
 }
 
 export function getMapV2BoundaryForPins(pins) {
-  const locations = pins.map((pin) => pin.location).filter((location) => Array.isArray(location));
-  if (!locations.length) return [];
+  const pinsWithLocations = pins.filter((pin) => Array.isArray(pin.location));
+  if (pinsWithLocations.length < 3) return [];
 
-  let coverageFeature;
-  if (locations.length === 1) {
-    coverageFeature = buffer(toGeoPoint(locations[0]), POINT_BUFFER_KM, { units: "kilometers", steps: 24 });
-  } else if (locations.length === 2) {
-    coverageFeature = buffer(lineString(locations.map(([lat, lng]) => [lng, lat])), LINE_BUFFER_KM, { units: "kilometers", steps: 24 });
-  } else {
-    const hull = convex(featureCollection(locations.map((location) => toGeoPoint(location))));
-    coverageFeature = hull ? buffer(hull, POLYGON_BUFFER_KM, { units: "kilometers", steps: 24 }) || hull : null;
-  }
-
-  const ring = getLargestOuterRing(coverageFeature?.geometry);
-  if (!ring.length) return [];
-
-  const leafletCoordinates = toLeafletCoordinates(ring);
-  const [firstLat, firstLng] = leafletCoordinates[0] || [];
-  const [lastLat, lastLng] = leafletCoordinates[leafletCoordinates.length - 1] || [];
-  if (firstLat === lastLat && firstLng === lastLng) return leafletCoordinates.slice(0, -1);
-  return leafletCoordinates;
+  const center = getMapV2CenterForPins(pinsWithLocations);
+  return [...pinsWithLocations]
+    .sort((left, right) => {
+      const leftAngle = Math.atan2(left.location[0] - center[0], left.location[1] - center[1]);
+      const rightAngle = Math.atan2(right.location[0] - center[0], right.location[1] - center[1]);
+      return leftAngle - rightAngle || left.name.localeCompare(right.name);
+    })
+    .map((pin) => pin.location);
 }
 
 export function createMapV2PinFromManualPayload(payload = {}) {

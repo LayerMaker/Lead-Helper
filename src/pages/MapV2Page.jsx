@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { CircleMarker, MapContainer, Polygon, Polyline, TileLayer, Tooltip, useMap } from "react-leaflet";
 import { latLngBounds } from "leaflet";
 import { useEffect } from "react";
@@ -54,7 +54,7 @@ function MapV2Canvas({ state, clusters, pins, selectedCluster, selectedPinId, on
       }),
     [clusters, state],
   );
-  const routeLine = selectedClusterPins.map((pin) => pin.location).filter((location) => Array.isArray(location));
+  const selectedBoundary = getMapV2BoundaryForPins(selectedClusterPins);
 
   return (
     <MapContainer center={center} zoom={11} scrollWheelZoom className="field-map" attributionControl>
@@ -64,38 +64,55 @@ function MapV2Canvas({ state, clusters, pins, selectedCluster, selectedPinId, on
       />
       <FitToMapV2 pins={pins} selectedClusterPins={selectedClusterPins} />
 
-      {clusterGeometry.map(({ cluster, boundary }) => {
+      {clusterGeometry.map(({ cluster, boundary, pins: clusterPins }) => {
         const isSelected = cluster.id === selectedCluster.id;
         const colour = getClusterColour(cluster);
-        if (!boundary.length) return null;
+        const linePositions = boundary.length ? boundary : clusterPins.map((pin) => pin.location).filter((location) => Array.isArray(location));
 
         return (
-          <Polygon
-            key={cluster.id}
-            positions={boundary}
-            pathOptions={{
-              color: colour,
-              weight: isSelected ? 4 : 2,
-              fillColor: colour,
-              fillOpacity: isSelected ? 0.2 : 0.08,
-              opacity: isSelected ? 0.95 : 0.48,
-            }}
-            eventHandlers={{
-              click: () => onSelectCluster(cluster.id),
-            }}
-          >
-            <Tooltip sticky direction="center" className={`map-tooltip ${isSelected ? "selected" : ""}`}>
-              {cluster.name}
-            </Tooltip>
-          </Polygon>
+          <Fragment key={cluster.id}>
+            {boundary.length ? (
+              <Polygon
+                positions={boundary}
+                pathOptions={{
+                  color: colour,
+                  weight: isSelected ? 5 : 3,
+                  fillColor: colour,
+                  fillOpacity: isSelected ? 0.2 : 0.08,
+                  opacity: isSelected ? 0.98 : 0.52,
+                  lineJoin: "miter",
+                }}
+                eventHandlers={{
+                  click: () => onSelectCluster(cluster.id),
+                }}
+              >
+                <Tooltip sticky direction="center" className={`map-tooltip ${isSelected ? "selected" : ""}`}>
+                  {cluster.name} pin-to-pin boundary
+                </Tooltip>
+              </Polygon>
+            ) : linePositions.length > 1 ? (
+              <Polyline
+                positions={linePositions}
+                pathOptions={{
+                  color: colour,
+                  weight: isSelected ? 5 : 3,
+                  opacity: isSelected ? 0.95 : 0.5,
+                }}
+                eventHandlers={{
+                  click: () => onSelectCluster(cluster.id),
+                }}
+              />
+            ) : null}
+          </Fragment>
         );
       })}
 
-      {routeLine.length > 1 ? (
-        <>
-          <Polyline positions={routeLine} pathOptions={{ color: "#1c140e", weight: 10, opacity: 0.35 }} />
-          <Polyline positions={routeLine} pathOptions={{ color: getClusterColour(selectedCluster), weight: 5, opacity: 0.85, dashArray: "10 10" }} />
-        </>
+      {selectedBoundary.length ? (
+        <Polyline
+          positions={[...selectedBoundary, selectedBoundary[0]]}
+          pathOptions={{ color: "#fff4df", weight: 1, opacity: 0.8, dashArray: "2 8" }}
+          interactive={false}
+        />
       ) : null}
 
       {pins
@@ -127,6 +144,21 @@ function MapV2Canvas({ state, clusters, pins, selectedCluster, selectedPinId, on
             </CircleMarker>
           );
         })}
+
+      {selectedBoundary.map((location, index) => (
+        <CircleMarker
+          key={`${selectedCluster.id}-boundary-vertex-${index}`}
+          center={location}
+          radius={5}
+          pathOptions={{
+            color: "#fff4df",
+            weight: 2,
+            fillColor: "#ff9dcb",
+            fillOpacity: 1,
+          }}
+          interactive={false}
+        />
+      ))}
     </MapContainer>
   );
 }
@@ -164,7 +196,7 @@ export function MapV2Page() {
           <div className="kicker">Map V2</div>
           <h1>Pin-first cluster architecture running beside the stable map.</h1>
           <p className="subtle-copy">
-            This page proves the new model: pins stay independent, assignments control cluster membership, and boundaries are generated from assigned pins.
+            This page proves the new model: pins stay independent, assignments control cluster membership, and boundaries connect assigned pins directly.
           </p>
         </div>
         <div className="action-row">
@@ -305,4 +337,3 @@ export function MapV2Page() {
     </AppLayout>
   );
 }
-
