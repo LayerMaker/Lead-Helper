@@ -101,7 +101,7 @@ export function ClusterReportTemplate({ report, exportRef = null, mode = "previe
                 </div>
                 <div>
                   <label>Email status</label>
-                  <strong>{row.emailProofLabel}</strong>
+                  <strong>{row.emailProof ? row.emailProofHeadline : row.emailProofLabel}</strong>
                 </div>
                 <div>
                   <label>Next action</label>
@@ -129,7 +129,7 @@ export function ClusterReportTemplate({ report, exportRef = null, mode = "previe
                     {row.contact ? `Contact ${row.contact.name}${row.contact.role ? `, ${row.contact.role}` : ""}. ` : ""}
                     {row.media ? `Media capture recorded. ` : ""}
                     {row.emailProof
-                      ? `${row.emailProofLabel} ${row.emailProofTime}. ${row.emailIntentLabels.length ? `Intent: ${row.emailIntentLabels.join(", ")}.` : ""}`
+                      ? `${row.emailProofDetail} Recorded ${row.emailProofTime}.`
                       : row.draft
                         ? `Email draft ready: ${row.draft.emailType}.`
                         : "No email evidence yet."}

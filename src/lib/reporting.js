@@ -43,6 +43,77 @@ function getEmailProofLabel(draft) {
   return "Draft ready";
 }
 
+function formatRecipient(contact, draft) {
+  const name = contact?.name || draft?.toName || draft?.toAddress || "contact";
+  return contact?.role ? `${name} - ${contact.role}` : name;
+}
+
+function getActionPhraseFromIntent(label) {
+  const normalized = String(label || "").toLowerCase();
+  if (normalized.includes("brochure")) return "site brochure to be sent";
+  if (normalized.includes("site pack")) return "site pack to be sent";
+  if (normalized.includes("site walk")) return "site walk to be arranged or confirmed";
+  if (normalized.includes("decision")) return "decision-maker intro requested";
+  if (normalized.includes("team member")) return "awaiting senior team feedback";
+  if (normalized.includes("check back")) return "follow-up thread kept warm";
+  if (normalized.includes("close")) return "lead politely closed for now";
+  if (normalized.includes("instant")) return "same-day follow-up sent";
+  return label;
+}
+
+function getActionPhraseFromOutcome(outcome) {
+  const normalized = String(outcome || "").toLowerCase();
+  if (normalized.includes("site walk")) return "site walk booked";
+  if (normalized.includes("deferred")) return "awaiting decision-maker feedback";
+  if (normalized.includes("follow-up")) return "follow-up required";
+  if (normalized.includes("needs email")) return "site information requested by email";
+  if (normalized.includes("not suitable")) return "not suitable for current requirement";
+  if (normalized.includes("interested")) return "interest logged";
+  if (normalized.includes("manager")) return "manager contact made";
+  if (normalized.includes("card")) return "business card captured";
+  return outcome;
+}
+
+function dedupeList(items) {
+  return [...new Set(items.map((item) => String(item || "").trim()).filter(Boolean))];
+}
+
+export function buildEmailProofSummary({ draft, contact, dealership, emailIntentLabels = [], outcomes = [] }) {
+  if (!draft) {
+    return {
+      label: "No email evidence yet",
+      headline: "No email evidence yet",
+      detail: "No follow-up email action has been recorded for this dealership.",
+      actions: [],
+    };
+  }
+
+  if (draft.status !== "sent" && draft.status !== "opened") {
+    return {
+      label: "Draft ready",
+      headline: `Draft prepared for ${formatRecipient(contact, draft)}`,
+      detail: `Draft prepared for the ${dealership.name} follow-up, but no handoff to Outlook has been recorded yet.`,
+      actions: dedupeList(emailIntentLabels.map(getActionPhraseFromIntent)),
+    };
+  }
+
+  const recipient = formatRecipient(contact, draft);
+  const proofVerb = draft.status === "sent" ? "Email sent to" : "Emailed";
+  const label = `${proofVerb} ${recipient}`;
+  const actionPhrases = dedupeList([
+    ...emailIntentLabels.map(getActionPhraseFromIntent),
+    ...outcomes.map(getActionPhraseFromOutcome),
+  ]);
+  const actionSentence = actionPhrases.length ? `Next steps: ${actionPhrases.join(", ")}.` : "";
+
+  return {
+    label,
+    headline: label,
+    detail: [`Followed up from the conversation at ${dealership.name}.`, actionSentence].filter(Boolean).join(" "),
+    actions: actionPhrases,
+  };
+}
+
 function getBounds(points) {
   if (!points.length) {
     return {
@@ -121,6 +192,13 @@ export function buildClusterReportModel({
     const emailHandoff = draft?.status === "opened";
     const emailProof = Boolean(sentEmail || emailHandoff);
     const emailIntentLabels = getEmailIntentDetails(draft?.emailIntents || []).map((intent) => intent.label);
+    const emailProofSummary = buildEmailProofSummary({
+      draft,
+      contact,
+      dealership,
+      emailIntentLabels,
+      outcomes: visit?.outcomes || [],
+    });
 
     return {
       id: dealership.id,
@@ -144,9 +222,12 @@ export function buildClusterReportModel({
       sentEmail,
       emailHandoff,
       emailProof,
-      emailProofLabel: getEmailProofLabel(draft),
+      emailProofLabel: emailProof ? emailProofSummary.label : getEmailProofLabel(draft),
+      emailProofHeadline: emailProofSummary.headline,
+      emailProofDetail: emailProofSummary.detail,
       emailProofTime: formatDateTime(draft?.openedAt || draft?.sentAt || draft?.createdAt),
       emailIntentLabels,
+      emailProofActions: emailProofSummary.actions,
       contact,
       media,
       actions,
@@ -200,7 +281,7 @@ export function buildClusterReportModel({
           title: row.name,
           detail: [
             row.outcomes.length ? row.outcomes.join(", ") : row.nextAction,
-            row.emailProof ? `${row.emailProofLabel}: ${row.emailIntentLabels.join(", ") || row.draft?.emailType}` : "",
+            row.emailProof ? row.emailProofDetail : "",
           ]
             .filter(Boolean)
             .join(". "),
