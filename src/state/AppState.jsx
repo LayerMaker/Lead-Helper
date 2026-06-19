@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useMemo, useReducer } from "react";
+import { createContext, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
   STORAGE_KEY,
   STATE_VERSION,
@@ -38,6 +38,10 @@ const AppStateContext = createContext(null);
 
 function reducer(state, action) {
   const next = cloneState(state);
+
+  if (action.type === "replace-state") {
+    return hydrateState(action.state);
+  }
 
   if (action.type === "select-cluster") {
     next.selectedClusterId = action.clusterId;
@@ -202,37 +206,45 @@ function reducer(state, action) {
   return state;
 }
 
+function hydrateState(parsed) {
+  if (parsed?.version !== STATE_VERSION) return cloneState(initialState);
+  const defaults = cloneState(initialState);
+  return {
+    ...defaults,
+    ...parsed,
+    mapV2: parsed.mapV2?.version ? parsed.mapV2 : defaults.mapV2,
+    actions: (parsed.actions || defaults.actions || []).map((action) => normalizeActionRecord(action)),
+    settings: {
+      ...defaults.settings,
+      ...(parsed.settings || {}),
+      openRouterApiKey: parsed.settings?.openRouterApiKey || defaults.settings.openRouterApiKey,
+      ocrModel: parsed.settings?.ocrModel || defaults.settings.ocrModel,
+      emailModel: parsed.settings?.emailModel || defaults.settings.emailModel,
+      emailGenerationMode: parsed.settings?.emailGenerationMode || defaults.settings.emailGenerationMode,
+      workEmail: parsed.settings?.workEmail || defaults.settings.workEmail,
+      preferredSendMode: parsed.settings?.preferredSendMode || defaults.settings.preferredSendMode,
+      notificationsEnabled:
+        typeof parsed.settings?.notificationsEnabled === "boolean" ? parsed.settings.notificationsEnabled : defaults.settings.notificationsEnabled,
+      notificationLeadMinutes: Number.isFinite(Number(parsed.settings?.notificationLeadMinutes))
+        ? Number(parsed.settings.notificationLeadMinutes)
+        : defaults.settings.notificationLeadMinutes,
+    },
+    parkedDiscoveryAreaIds: Array.isArray(parsed.parkedDiscoveryAreaIds) ? parsed.parkedDiscoveryAreaIds : defaults.parkedDiscoveryAreaIds,
+  };
+}
+
+function prepareRemoteState(state) {
+  const remoteState = cloneState(state);
+  if (remoteState.settings) delete remoteState.settings.openRouterApiKey;
+  return remoteState;
+}
+
 function loadInitialState() {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return cloneState(initialState);
     const parsed = JSON.parse(raw);
-    if (parsed?.version !== STATE_VERSION) return cloneState(initialState);
-    const defaults = cloneState(initialState);
-    return {
-      ...defaults,
-      ...parsed,
-      mapV2: parsed.mapV2?.version ? parsed.mapV2 : defaults.mapV2,
-      actions: (parsed.actions || defaults.actions || []).map((action) => normalizeActionRecord(action)),
-      settings: {
-        ...defaults.settings,
-        ...(parsed.settings || {}),
-        openRouterApiKey: parsed.settings?.openRouterApiKey || defaults.settings.openRouterApiKey,
-        ocrModel: parsed.settings?.ocrModel || defaults.settings.ocrModel,
-        emailModel: parsed.settings?.emailModel || defaults.settings.emailModel,
-        emailGenerationMode: parsed.settings?.emailGenerationMode || defaults.settings.emailGenerationMode,
-        workEmail: parsed.settings?.workEmail || defaults.settings.workEmail,
-        preferredSendMode: parsed.settings?.preferredSendMode || defaults.settings.preferredSendMode,
-        notificationsEnabled:
-          typeof parsed.settings?.notificationsEnabled === "boolean"
-            ? parsed.settings.notificationsEnabled
-            : defaults.settings.notificationsEnabled,
-        notificationLeadMinutes: Number.isFinite(Number(parsed.settings?.notificationLeadMinutes))
-          ? Number(parsed.settings.notificationLeadMinutes)
-          : defaults.settings.notificationLeadMinutes,
-      },
-      parkedDiscoveryAreaIds: Array.isArray(parsed.parkedDiscoveryAreaIds) ? parsed.parkedDiscoveryAreaIds : defaults.parkedDiscoveryAreaIds,
-    };
+    return hydrateState(parsed);
   } catch {
     return cloneState(initialState);
   }
@@ -240,10 +252,66 @@ function loadInitialState() {
 
 export function AppStateProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, undefined, loadInitialState);
+  const [remoteSyncReady, setRemoteSyncReady] = useState(false);
+  const latestRemotePayload = useRef("");
+  const remoteSaveTimer = useRef(null);
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadRemoteState() {
+      try {
+        const response = await fetch("/api/sync/state");
+        if (!response.ok) throw new Error("Remote sync is not ready.");
+        const payload = await response.json();
+        if (cancelled) return;
+
+        if (payload.state?.version === STATE_VERSION) {
+          latestRemotePayload.current = JSON.stringify(prepareRemoteState(payload.state));
+          dispatch({ type: "replace-state", state: payload.state });
+        }
+      } catch {
+        // Local storage remains the offline fallback until Supabase is ready.
+      } finally {
+        if (!cancelled) setRemoteSyncReady(true);
+      }
+    }
+
+    loadRemoteState();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!remoteSyncReady) return undefined;
+
+    const remoteState = prepareRemoteState(state);
+    const payload = JSON.stringify(remoteState);
+    if (payload === latestRemotePayload.current) return undefined;
+
+    window.clearTimeout(remoteSaveTimer.current);
+    remoteSaveTimer.current = window.setTimeout(async () => {
+      try {
+        const response = await fetch("/api/sync/state", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ state: remoteState }),
+        });
+        if (response.ok) latestRemotePayload.current = payload;
+      } catch {
+        // Keep working locally; the next state change will retry.
+      }
+    }, 900);
+
+    return () => window.clearTimeout(remoteSaveTimer.current);
+  }, [remoteSyncReady, state]);
 
   const value = useMemo(() => {
     const clusters = getAllClusters(state);

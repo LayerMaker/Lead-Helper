@@ -1,5 +1,6 @@
 import express from "express";
 import { randomUUID } from "node:crypto";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -8,8 +9,58 @@ const port = process.env.PORT || 4174;
 const appDir = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(appDir, "dist");
 const contactCards = new Map();
+const syncRecordId = "default";
 
 app.use(express.json({ limit: "12mb" }));
+
+function readSecretFile(relativePath) {
+  try {
+    return fs.readFileSync(path.join(appDir, relativePath), "utf8").trim();
+  } catch {
+    return "";
+  }
+}
+
+function getSupabaseConfig() {
+  const url = process.env.SUPABASE_URL || readSecretFile("../../SUPABASE_URL.txt");
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || readSecretFile("../../service_role secret.txt");
+
+  return {
+    configured: Boolean(url && serviceRoleKey),
+    serviceRoleKey,
+    url: url.replace(/\/+$/, ""),
+  };
+}
+
+async function supabaseRest(pathname, options = {}) {
+  const config = getSupabaseConfig();
+  if (!config.configured) {
+    const error = new Error("Supabase is not configured on the server.");
+    error.status = 500;
+    throw error;
+  }
+
+  const response = await fetch(`${config.url}/rest/v1/${pathname}`, {
+    ...options,
+    headers: {
+      apikey: config.serviceRoleKey,
+      Authorization: `Bearer ${config.serviceRoleKey}`,
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  });
+  const text = await response.text();
+  const body = text ? JSON.parse(text) : null;
+
+  if (!response.ok) {
+    const error = new Error(body?.message || body?.hint || "Supabase request failed.");
+    error.status = response.status;
+    error.body = body;
+    throw error;
+  }
+
+  return body;
+}
 
 function escapeVcardValue(value = "") {
   return String(value || "")
@@ -71,6 +122,73 @@ app.get("/api/openrouter/status", (_request, response) => {
     ocrModel: process.env.OPENROUTER_OCR_MODEL || "qwen/qwen3.7-plus",
     emailModel: process.env.OPENROUTER_EMAIL_MODEL || "openai/gpt-5-mini",
   });
+});
+
+app.get("/api/supabase/status", async (_request, response) => {
+  const config = getSupabaseConfig();
+  if (!config.configured) {
+    response.json({ configured: false, tableReady: false });
+    return;
+  }
+
+  try {
+    await supabaseRest(`lead_helper_app_state?id=eq.${syncRecordId}&select=id&limit=1`);
+    response.json({ configured: true, tableReady: true });
+  } catch (error) {
+    response.status(error.status || 500).json({
+      configured: true,
+      tableReady: false,
+      error: error.body?.message || error.message,
+      hint: "Run database/schema.sql in the Supabase SQL editor, then retry.",
+    });
+  }
+});
+
+app.get("/api/sync/state", async (_request, response) => {
+  try {
+    const rows = await supabaseRest(`lead_helper_app_state?id=eq.${syncRecordId}&select=state,updated_at&limit=1`);
+    const record = Array.isArray(rows) ? rows[0] : null;
+    response.json({
+      state: record?.state || null,
+      updatedAt: record?.updated_at || null,
+    });
+  } catch (error) {
+    response.status(error.status || 500).json({
+      error: error.body?.message || error.message,
+      hint: "Run database/schema.sql in the Supabase SQL editor if this is the first setup.",
+    });
+  }
+});
+
+app.put("/api/sync/state", async (request, response) => {
+  const state = request.body?.state;
+  if (!state || typeof state !== "object") {
+    response.status(400).json({ error: "A state object is required." });
+    return;
+  }
+
+  try {
+    const rows = await supabaseRest("lead_helper_app_state?on_conflict=id", {
+      method: "POST",
+      headers: {
+        Prefer: "resolution=merge-duplicates,return=representation",
+      },
+      body: JSON.stringify([
+        {
+          id: syncRecordId,
+          state,
+          updated_at: new Date().toISOString(),
+        },
+      ]),
+    });
+    const record = Array.isArray(rows) ? rows[0] : null;
+    response.json({ ok: true, updatedAt: record?.updated_at || null });
+  } catch (error) {
+    response.status(error.status || 500).json({
+      error: error.body?.message || error.message,
+      hint: "Run database/schema.sql in the Supabase SQL editor if this is the first setup.",
+    });
+  }
 });
 
 async function proxyOpenRouterChat(request, response, modelOverride) {
