@@ -251,6 +251,14 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
   min-height: 640px;
   overflow: hidden;
 }
+.map-v2-frame {
+  position: relative;
+  min-height: 640px;
+  height: 100%;
+}
+.map-v2-frame.drawing {
+  cursor: crosshair;
+}
 .field-map {
   height: 100%;
   min-height: 640px;
@@ -290,6 +298,59 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
 .field-map .leaflet-tooltip-left:before,
 .field-map .leaflet-tooltip-right:before {
   display: none;
+}
+.map-v2-draw-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 900;
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+  background: oklch(8% 0.015 55 / 0.14);
+}
+.map-v2-draw-banner {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  z-index: 2;
+  display: grid;
+  gap: 3px;
+  min-width: min(420px, calc(100% - 28px));
+  padding: 10px 14px;
+  border: 1px solid oklch(95% 0.02 85 / 0.18);
+  border-radius: 14px;
+  background: oklch(10% 0.018 55 / 0.88);
+  color: var(--fg);
+  text-align: center;
+  transform: translateX(-50%);
+  box-shadow: 0 14px 42px oklch(0% 0 0 / 0.28);
+  pointer-events: none;
+}
+.map-v2-draw-banner strong {
+  font: 750 14px/1.1 var(--font-display);
+}
+.map-v2-draw-banner span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.map-v2-draw-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.map-v2-lasso-line {
+  fill: none;
+  stroke: oklch(92% 0.08 82);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 10px oklch(70% 0.18 20 / 0.62));
+}
+.map-v2-lasso-fill {
+  fill: oklch(72% 0.18 20 / 0.18);
+  stroke: none;
 }
 .territory-map {
   position: relative;

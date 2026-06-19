@@ -11,6 +11,7 @@ const clusterSeed = [
   { id: "wandsworth", name: "Wandsworth", colour: "rose", lifecycle: "accepted", strategy: "legacy" },
   { id: "brentford", name: "Brentford", colour: "teal", lifecycle: "accepted", strategy: "legacy" },
 ];
+const clusterPalette = ["amber", "mint", "rose", "teal", "lime", "violet"];
 
 function slugify(value) {
   return String(value || "")
@@ -150,6 +151,25 @@ export function getMapV2BoundaryForPins(pins) {
     .map((pin) => pin.location);
 }
 
+export function isMapV2PointInsidePolygon(location, polygon) {
+  if (!Array.isArray(location) || !Array.isArray(polygon) || polygon.length < 3) return false;
+
+  const [lat, lng] = location;
+  let inside = false;
+
+  for (let index = 0, previousIndex = polygon.length - 1; index < polygon.length; previousIndex = index, index += 1) {
+    const [currentLat, currentLng] = polygon[index];
+    const [previousLat, previousLng] = polygon[previousIndex];
+    const intersects =
+      currentLng > lng !== previousLng > lng &&
+      lat < ((previousLat - currentLat) * (lng - currentLng)) / (previousLng - currentLng || Number.EPSILON) + currentLat;
+
+    if (intersects) inside = !inside;
+  }
+
+  return inside;
+}
+
 export function createMapV2PinFromManualPayload(payload = {}) {
   const createdAt = nowIso();
   const name = String(payload.name || "").trim();
@@ -209,6 +229,45 @@ export function assignMapV2PinToCluster(mapV2, pinId, clusterId, options = {}) {
     assignments: [
       nextAssignment,
       ...(mapV2.assignments || []).filter((assignment) => assignment.pinId !== pinId || assignment.clusterId !== clusterId),
+    ],
+  };
+}
+
+export function createMapV2ClusterFromPins(mapV2, pinIds = [], preferredName = "") {
+  const selectedPinIds = [...new Set((pinIds || []).filter(Boolean))];
+  if (!selectedPinIds.length) return mapV2;
+
+  const createdAt = nowIso();
+  const clusterName = String(preferredName || "").trim() || `Manual field cluster ${new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
+  const clusterId = `manual-${slugify(clusterName)}-${Date.now().toString(36).slice(-4)}`;
+  const colour = clusterPalette[(mapV2.clusters || []).length % clusterPalette.length];
+  const nextCluster = {
+    id: clusterId,
+    name: clusterName,
+    colour,
+    lifecycle: "manual",
+    strategy: "manual-selection",
+    targetSession: "half-day",
+    createdAt,
+    updatedAt: createdAt,
+  };
+
+  const replacementAssignments = selectedPinIds.map((pinId) => ({
+    id: `assignment-${slugify(clusterId)}-${slugify(pinId)}`,
+    clusterId,
+    pinId,
+    assignmentType: "manual",
+    confidence: 1,
+    assignedAt: createdAt,
+    assignedBy: "user",
+  }));
+
+  return {
+    ...mapV2,
+    clusters: [...(mapV2.clusters || []), nextCluster],
+    assignments: [
+      ...replacementAssignments,
+      ...(mapV2.assignments || []).filter((assignment) => !selectedPinIds.includes(assignment.pinId)),
     ],
   };
 }

@@ -28,6 +28,7 @@ import {
 } from "../lib/leadHelperModel";
 import {
   assignMapV2PinToCluster,
+  createMapV2ClusterFromPins,
   createMapV2PinFromManualPayload,
   ensureMapV2State,
   upsertMapV2Pin,
@@ -88,6 +89,11 @@ function reducer(state, action) {
 
   if (action.type === "assign-map-v2-pin") {
     next.mapV2 = assignMapV2PinToCluster(ensureMapV2State(next), action.pinId, action.clusterId, action.options || {});
+    return next;
+  }
+
+  if (action.type === "create-map-v2-cluster-from-pins") {
+    next.mapV2 = createMapV2ClusterFromPins(ensureMapV2State(next), action.pinIds, action.name);
     return next;
   }
 
