@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { chromium } from "playwright-chromium";
 
 const app = express();
 const port = process.env.PORT || 4174;
@@ -10,6 +11,7 @@ const appDir = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(appDir, "dist");
 const contactCards = new Map();
 const syncRecordId = "default";
+const clientStorageKey = "lead-helper-shell-v1";
 
 app.use(express.json({ limit: "12mb" }));
 
@@ -30,6 +32,25 @@ function getSupabaseConfig() {
     serviceRoleKey,
     url: url.replace(/\/+$/, ""),
   };
+}
+
+function slugifyFilePart(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+}
+
+function getRequestBaseUrl(request) {
+  const protocol = request.get("x-forwarded-proto") || request.protocol || "http";
+  return `${protocol}://${request.get("host")}`;
+}
+
+function getClusterNameFromState(state, clusterId) {
+  const clusters = [...(state?.clusters || []), ...(state?.manualClusters || [])];
+  return clusters.find((cluster) => cluster.id === clusterId)?.name || "cluster";
 }
 
 async function supabaseRest(pathname, options = {}) {
@@ -188,6 +209,73 @@ app.put("/api/sync/state", async (request, response) => {
       error: error.body?.message || error.message,
       hint: "Run database/schema.sql in the Supabase SQL editor if this is the first setup.",
     });
+  }
+});
+
+app.get("/api/reports/pdf", async (request, response) => {
+  let browser;
+
+  try {
+    const clusterId = String(request.query.cluster || "");
+    const rows = await supabaseRest(`lead_helper_app_state?id=eq.${syncRecordId}&select=state&limit=1`);
+    const state = Array.isArray(rows) ? rows[0]?.state : null;
+    const baseUrl = getRequestBaseUrl(request);
+    const printUrl = new URL("/reports/print", baseUrl);
+    if (clusterId) printUrl.searchParams.set("cluster", clusterId);
+    printUrl.searchParams.set("pdf", "1");
+
+    browser = await chromium.launch({
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+    const context = await browser.newContext({
+      viewport: { width: 1240, height: 1754 },
+    });
+
+    if (state) {
+      await context.addInitScript(
+        ({ key, value }) => {
+          window.localStorage.setItem(key, JSON.stringify(value));
+        },
+        { key: clientStorageKey, value: state },
+      );
+    }
+
+    const page = await context.newPage();
+    await page.goto(printUrl.toString(), { waitUntil: "networkidle", timeout: 45000 });
+    await page.emulateMedia({ media: "print" });
+    await page.waitForSelector(".report-export-sheet", { state: "visible", timeout: 15000 });
+    await page.waitForTimeout(350);
+
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      preferCSSPageSize: true,
+      margin: {
+        top: "0mm",
+        right: "0mm",
+        bottom: "0mm",
+        left: "0mm",
+      },
+    });
+
+    const clusterName = getClusterNameFromState(state, clusterId);
+    const fileName = `${slugifyFilePart(clusterName) || "lead-helper"}-cluster-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+
+    response
+      .status(200)
+      .set({
+        "Cache-Control": "no-store",
+        "Content-Disposition": `attachment; filename="${fileName}"`,
+        "Content-Type": "application/pdf",
+      })
+      .send(pdfBuffer);
+  } catch (error) {
+    response.status(error.status || 500).json({
+      error: error.body?.message || error.message || "Report PDF generation failed.",
+      hint: "If this is running on Render, confirm the latest deploy installed the Chromium renderer.",
+    });
+  } finally {
+    if (browser) await browser.close();
   }
 });
 

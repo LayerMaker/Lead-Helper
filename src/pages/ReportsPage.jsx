@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { ClusterReportTemplate } from "../components/ClusterReportTemplate";
 import { canonicalDealershipId, getEmailIntentDetails } from "../lib/leadHelperModel";
 import { AppLayout } from "../components/AppLayout";
-import { buildClusterReportModel, buildEmailProofSummary, buildReportPrintUrl } from "../lib/reporting";
+import { buildClusterReportModel, buildEmailProofSummary, buildReportPdfUrl, buildReportPrintUrl } from "../lib/reporting";
 import { useAppState } from "../state/AppState";
 
 export function ReportsPage() {
@@ -33,18 +33,32 @@ export function ReportsPage() {
     [getDealershipsForCluster, getDraftForDealership, getLatestContact, getLatestMedia, selectedCluster, state],
   );
 
-  function handleExportVisibleCluster() {
+  async function handleExportVisibleCluster() {
     setExportState("exporting");
     setExportMessage("");
 
     try {
-      const printUrl = buildReportPrintUrl(reportModel.clusterId, { autoprint: true });
-      window.open(printUrl, "_blank", "noopener,noreferrer");
+      const response = await fetch(buildReportPdfUrl(reportModel.clusterId));
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error || "PDF export failed.");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = reportModel.fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+
       setExportState("done");
-      setExportMessage("Print view opened. Use Save as PDF from that page for the cleanest export.");
+      setExportMessage("Styled PDF downloaded from the server-rendered report template.");
     } catch (error) {
       setExportState("error");
-      setExportMessage(error.message || "Print view could not be opened.");
+      setExportMessage(error.message || "PDF export could not be generated.");
     }
   }
 
@@ -69,7 +83,7 @@ export function ReportsPage() {
             Open print view
           </a>
           <button className="btn primary" type="button" disabled={exportState === "exporting"} onClick={handleExportVisibleCluster}>
-            {exportState === "exporting" ? "Opening..." : "Export visible cluster"}
+            {exportState === "exporting" ? "Generating..." : "Download styled PDF"}
           </button>
         </div>
       </section>
@@ -161,7 +175,7 @@ export function ReportsPage() {
                               Print view
                             </a>
                             <button className="btn primary" type="button" onClick={handleExportVisibleCluster}>
-                              Export cluster PDF
+                              Download PDF
                             </button>
                           </div>
                         </div>

@@ -326,3 +326,10 @@ export function buildReportPrintUrl(clusterId, options = {}) {
   const query = params.toString();
   return `/reports/print${query ? `?${query}` : ""}`;
 }
+
+export function buildReportPdfUrl(clusterId) {
+  const params = new URLSearchParams();
+  if (clusterId) params.set("cluster", clusterId);
+  const query = params.toString();
+  return `/api/reports/pdf${query ? `?${query}` : ""}`;
+}
