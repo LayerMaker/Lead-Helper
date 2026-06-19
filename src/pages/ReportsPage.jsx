@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { ClusterReportTemplate } from "../components/ClusterReportTemplate";
-import { canonicalDealershipId } from "../lib/leadHelperModel";
+import { canonicalDealershipId, getEmailIntentDetails } from "../lib/leadHelperModel";
 import { AppLayout } from "../components/AppLayout";
 import { buildClusterReportModel, buildReportPrintUrl } from "../lib/reporting";
 import { useAppState } from "../state/AppState";
@@ -129,6 +129,9 @@ export function ReportsPage() {
                         (dealer) => canonicalDealershipId(dealer.id) === canonicalDealershipId(visit.dealershipId),
                       );
                       const draft = getDraftForDealership(visit.dealershipId);
+                      const emailIntentLabels = getEmailIntentDetails(draft?.emailIntents || []).map((intent) => intent.label);
+                      const emailProofLabel =
+                        draft?.status === "sent" ? "Sent" : draft?.status === "opened" ? "Outlook draft opened" : draft ? "Draft ready" : "";
                       return (
                         <div className={`report-card${visitIndex === 0 ? " selected" : ""}`} key={visit.id}>
                           <div className="section-head">
@@ -141,7 +144,8 @@ export function ReportsPage() {
                             <span className={`pill${dealership.status === "Interested" ? " active" : ""}`}>{dealership.status}</span>
                           </div>
                           <p>
-                            {draft ? `Generated draft: ${draft.emailType}. ` : ""}
+                            {draft ? `${emailProofLabel}: ${draft.emailType}. ` : ""}
+                            {emailIntentLabels.length ? `Intent: ${emailIntentLabels.join(", ")}. ` : ""}
                             Lead score {dealership.leadScore}. Next action: {dealership.nextAction}.
                           </p>
                           <div className="action-row">

@@ -1,4 +1,4 @@
-import { canonicalDealershipId, getClusterCoveragePolygon } from "./leadHelperModel";
+import { canonicalDealershipId, getClusterCoveragePolygon, getEmailIntentDetails } from "./leadHelperModel";
 
 const MAP_WIDTH = 980;
 const MAP_HEIGHT = 320;
@@ -33,6 +33,14 @@ function formatDateTime(value) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function getEmailProofLabel(draft) {
+  if (!draft) return "Not started";
+  if (draft.proofLabel) return draft.proofLabel;
+  if (draft.status === "sent") return "Sent";
+  if (draft.status === "opened") return "Outlook opened";
+  return "Draft ready";
 }
 
 function getBounds(points) {
@@ -110,6 +118,9 @@ export function buildClusterReportModel({
     const media = getLatestMedia(dealership.id);
     const actions = clusterActions.filter((action) => canonicalDealershipId(action.dealershipId) === canonicalId);
     const sentEmail = draft?.status === "sent";
+    const emailHandoff = draft?.status === "opened";
+    const emailProof = Boolean(sentEmail || emailHandoff);
+    const emailIntentLabels = getEmailIntentDetails(draft?.emailIntents || []).map((intent) => intent.label);
 
     return {
       id: dealership.id,
@@ -131,6 +142,11 @@ export function buildClusterReportModel({
       note: visit?.note || "",
       draft,
       sentEmail,
+      emailHandoff,
+      emailProof,
+      emailProofLabel: getEmailProofLabel(draft),
+      emailProofTime: formatDateTime(draft?.openedAt || draft?.sentAt || draft?.createdAt),
+      emailIntentLabels,
       contact,
       media,
       actions,
@@ -139,11 +155,11 @@ export function buildClusterReportModel({
 
   const visitedRows = rows.filter((row) => row.visit).sort((left, right) => String(right.visit?.createdAt || "").localeCompare(String(left.visit?.createdAt || "")));
   const warmRows = rows.filter((row) => row.status === "Interested" || row.status === "Site walk booked");
-  const sentFollowUps = rows.filter((row) => row.sentEmail).length;
+  const sentFollowUps = rows.filter((row) => row.emailProof).length;
   const openActions = clusterActions.filter((action) => action.status === "pending");
   const siteWalks = visitedRows.filter((row) => row.outcomes.includes("Site walk booked"));
   const contactsCaptured = rows.filter((row) => row.contact).length;
-  const evidenceCount = rows.reduce((total, row) => total + (row.visit ? 1 : 0) + (row.contact ? 1 : 0) + (row.media ? 1 : 0) + (row.sentEmail ? 1 : 0), 0);
+  const evidenceCount = rows.reduce((total, row) => total + (row.visit ? 1 : 0) + (row.contact ? 1 : 0) + (row.media ? 1 : 0) + (row.emailProof ? 1 : 0), 0);
 
   const projectedPolygon = clusterPolygon.map((point) => projectPoint(point, bounds));
   const projectedRoute = dealerships
@@ -164,7 +180,7 @@ export function buildClusterReportModel({
       { label: "Date", value: formatDate(exportDate.toISOString()) },
       { label: "Visited", value: String(visitedRows.length) },
       { label: "Open actions", value: String(openActions.length) },
-      { label: "Sent follow-ups", value: String(sentFollowUps) },
+      { label: "Follow-up proof", value: String(sentFollowUps) },
       { label: "Site walks", value: String(siteWalks.length) },
     ],
     stats: [
@@ -182,14 +198,19 @@ export function buildClusterReportModel({
     actionsTaken: visitedRows.length
       ? visitedRows.slice(0, 6).map((row) => ({
           title: row.name,
-          detail: row.outcomes.length ? row.outcomes.join(", ") : row.nextAction,
+          detail: [
+            row.outcomes.length ? row.outcomes.join(", ") : row.nextAction,
+            row.emailProof ? `${row.emailProofLabel}: ${row.emailIntentLabels.join(", ") || row.draft?.emailType}` : "",
+          ]
+            .filter(Boolean)
+            .join(". "),
         }))
       : [{ title: "No visits logged", detail: "Visit rows will appear here after route activity is captured." }],
     evidenceGenerated: [
       { label: "Visit logs", value: visitedRows.length },
       { label: "Contact records", value: contactsCaptured },
       { label: "Media captures", value: rows.filter((row) => row.media).length },
-      { label: "Email drafts / sent", value: rows.filter((row) => row.draft).length },
+      { label: "Email proof events", value: rows.filter((row) => row.emailProof).length },
     ],
     map: {
       width: MAP_WIDTH,

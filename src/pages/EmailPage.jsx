@@ -140,6 +140,16 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
   }
 
   function openOutlookApp() {
+    const openedAt = new Date().toISOString();
+    dispatch({
+      type: "open-email-handoff",
+      dealershipId: selectedDealership.id,
+      outcomes: selectedOutcomes,
+      handoff: "outlook-app",
+      openedAt,
+      draft: buildDraftPayload(),
+    });
+
     const outlookUrl = buildOutlookAppComposeUrl({
       toAddress,
       subject,
@@ -147,7 +157,7 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
     });
 
     window.location.href = outlookUrl;
-    setSaveState("Opened Outlook app");
+    setSaveState("Outlook draft opened");
   }
 
   async function runAi(mode) {

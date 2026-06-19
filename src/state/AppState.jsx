@@ -89,6 +89,28 @@ function reducer(state, action) {
     return next;
   }
 
+  if (action.type === "open-email-handoff") {
+    const latest = getLatestVisit(next, action.dealershipId);
+    if (!latest || !sameOutcomes(latest.outcomes, action.outcomes)) {
+      applyVisitOutcomes(next, action.dealershipId, action.outcomes, "Outlook draft opened from Email page");
+    }
+
+    upsertDraft(next, action.dealershipId, action.outcomes, "opened", {
+      ...(action.draft || {}),
+      handoff: action.handoff || "outlook-app",
+      openedAt: action.openedAt || new Date().toISOString(),
+      proofLabel: "Outlook draft opened",
+    });
+    ensureEmailAction(next, action.dealershipId, "done");
+    next.actions.forEach((item) => {
+      if (item.dealershipId === action.dealershipId && item.type === "email") {
+        item.status = "done";
+        item.completedAt = action.openedAt || new Date().toISOString();
+      }
+    });
+    return next;
+  }
+
   if (action.type === "generate-visit") {
     applyVisitOutcomes(next, action.dealershipId, action.outcomes, action.note, { scheduleAt: action.scheduleAt });
     return next;
@@ -139,7 +161,11 @@ function reducer(state, action) {
     } else {
       latest.note = "Sent from FGI Email";
     }
-    upsertDraft(next, action.dealershipId, action.outcomes, "sent", action.draft || {});
+    upsertDraft(next, action.dealershipId, action.outcomes, "sent", {
+      ...(action.draft || {}),
+      sentAt: action.sentAt || new Date().toISOString(),
+      proofLabel: "Email marked sent",
+    });
     ensureEmailAction(next, action.dealershipId, "done");
     next.actions.forEach((item) => {
       if (item.dealershipId === action.dealershipId && item.type === "email") item.status = "done";

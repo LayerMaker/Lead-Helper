@@ -1243,6 +1243,10 @@ export function upsertDraft(state, dealershipId, outcomes, status = "draft", dra
     current.toAddress = nextToAddress;
     current.generationMode = draftOverrides.generationMode || current.generationMode || "template";
     current.emailIntents = [...(draftOverrides.emailIntents || current.emailIntents || [])];
+    current.handoff = draftOverrides.handoff || current.handoff || "";
+    current.openedAt = draftOverrides.openedAt || current.openedAt || "";
+    current.sentAt = draftOverrides.sentAt || current.sentAt || "";
+    current.proofLabel = draftOverrides.proofLabel || current.proofLabel || "";
     current.status = status;
     current.createdAt = new Date().toISOString().slice(0, 16).replace("T", " ");
     return current;
@@ -1257,6 +1261,10 @@ export function upsertDraft(state, dealershipId, outcomes, status = "draft", dra
     toAddress: nextToAddress,
     generationMode: draftOverrides.generationMode || "template",
     emailIntents: [...(draftOverrides.emailIntents || [])],
+    handoff: draftOverrides.handoff || "",
+    openedAt: draftOverrides.openedAt || "",
+    sentAt: draftOverrides.sentAt || "",
+    proofLabel: draftOverrides.proofLabel || "",
     status,
     createdAt: new Date().toISOString().slice(0, 16).replace("T", " "),
   };
