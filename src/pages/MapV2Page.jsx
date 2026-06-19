@@ -411,13 +411,13 @@ export function MapV2Page() {
   }
 
   return (
-    <AppLayout statusLine="Map V2 - pin assignments and generated boundaries">
+    <AppLayout statusLine="Map - pin assignments and generated boundaries">
       <section className="title-row">
         <div>
-          <div className="kicker">Map V2</div>
-          <h1>Pin-first cluster architecture running beside the stable map.</h1>
+          <div className="kicker">Map</div>
+          <h1>Pin-first cluster planning for field visits.</h1>
           <p className="subtle-copy">
-            This page proves the new model: pins stay independent, assignments control cluster membership, and boundaries connect assigned pins directly.
+            Pins stay independent, assignments control cluster membership, and boundaries connect assigned pins directly.
           </p>
         </div>
         <div className="action-row">
@@ -443,7 +443,7 @@ export function MapV2Page() {
                 onDrawComplete={handleDrawComplete}
               />
             ) : (
-              <div className="workflow-empty">Map V2 has no clusters yet.</div>
+              <div className="workflow-empty">Map has no clusters yet.</div>
             )}
           </div>
 
@@ -518,7 +518,7 @@ export function MapV2Page() {
               <div className="kicker">Selected cluster</div>
               <h2>{selectedCluster?.name || "No cluster"}</h2>
             </div>
-            <span className="pill active">{selectedCluster?.lifecycle || "V2"}</span>
+            <span className="pill active">{selectedCluster?.lifecycle || "Map"}</span>
           </div>
 
           <div className="grid three stat-strip">
@@ -594,7 +594,7 @@ export function MapV2Page() {
                 </button>
               ))
             ) : (
-              <div className="workflow-empty">No unassigned V2 pins.</div>
+              <div className="workflow-empty">No unassigned map pins.</div>
             )}
           </div>
 

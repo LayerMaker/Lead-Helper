@@ -3,7 +3,6 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { EmailPage } from "./pages/EmailPage";
 import { LeadsPage } from "./pages/LeadsPage";
 import { LocationPage } from "./pages/LocationPage";
-import { MapPage } from "./pages/MapPage";
 import { MapV2Page } from "./pages/MapV2Page";
 import { ReportPrintPage } from "./pages/ReportPrintPage";
 import { ReportsPage } from "./pages/ReportsPage";
@@ -14,8 +13,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<DashboardPage />} />
-      <Route path="/map" element={<MapPage />} />
-      <Route path="/map-v2" element={<MapV2Page />} />
+      <Route path="/map" element={<MapV2Page />} />
+      <Route path="/map-v2" element={<Navigate to="/map" replace />} />
       <Route path="/location" element={<LocationPage />} />
       <Route path="/route" element={<RoutePage />} />
       <Route path="/leads" element={<LeadsPage />} />
