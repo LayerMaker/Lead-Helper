@@ -12,7 +12,18 @@ import {
 import { AppLayout } from "../components/AppLayout";
 import { useAppState } from "../state/AppState";
 
-const routeOutcomes = ["Met manager", "Interested", "Needs email", "Follow-up required", "Site walk booked", "Deferred to decision maker", "Card captured", "Not suitable"];
+const routeOutcomes = [
+  "Met manager",
+  "Interested",
+  "Needs email",
+  "Follow-up required",
+  "Not a good time",
+  "Management not present",
+  "Site walk booked",
+  "Deferred to decision maker",
+  "Card captured",
+  "Not suitable",
+];
 
 function RouteComposer({ state, dealerships, selectedDealership, currentVisit, dispatch }) {
   const [selectedOutcomes, setSelectedOutcomes] = useState(currentVisit?.outcomes || defaultVisitOutcomes);

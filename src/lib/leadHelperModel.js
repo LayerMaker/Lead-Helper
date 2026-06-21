@@ -54,7 +54,17 @@ export const outcomeRules = {
   "Follow-up required": {
     scoreDelta: 1,
     createAction: { type: "call", title: "Follow-up call", duePreset: { offsetDays: 2, hour: 10, minute: 30 } },
-    adminActions: ["Create follow-up call task"],
+    adminActions: ["Create wider-team follow-up task"],
+  },
+  "Not a good time": {
+    scoreDelta: 0,
+    createAction: { type: "call", title: "Return at a better time", duePreset: { offsetDays: 1, hour: 10, minute: 30 } },
+    adminActions: ["Create better-time revisit task"],
+  },
+  "Management not present": {
+    scoreDelta: 0,
+    createAction: { type: "call", title: "Chase manager contact", duePreset: { offsetDays: 1, hour: 11, minute: 0 } },
+    adminActions: ["Create manager chase task"],
   },
   "Site walk booked": {
     scoreDelta: 6,
@@ -95,6 +105,8 @@ export const visitOutcomeOptions = [
   "Interested",
   "Needs email",
   "Follow-up required",
+  "Not a good time",
+  "Management not present",
   "Deferred to decision maker",
   "Card captured",
   "Site walk booked",
