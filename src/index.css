@@ -1185,6 +1185,10 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
     width: 170mm;
     padding: 14px;
     gap: 12px;
+    display: block;
+  }
+  .report-export-sheet.print-mode > * + * {
+    margin-top: 12px;
   }
   .report-export-meta {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1198,10 +1202,24 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
   .report-export-body {
     grid-template-columns: 1fr;
   }
+  .report-export-sheet.print-mode .report-export-body,
+  .report-export-sheet.print-mode .report-export-cards,
+  .report-export-sheet.print-mode .report-export-sidebar {
+    display: block;
+  }
+  .report-export-sheet.print-mode .report-export-dealer-card,
+  .report-export-sheet.print-mode .report-sidebar-card {
+    margin-bottom: 14px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .report-export-sheet.print-mode .report-export-sidebar {
+    break-before: page;
+    page-break-before: always;
+  }
   .report-export-sheet.print-mode .report-export-dealer-grid,
   .report-export-sheet.print-mode .report-export-note,
-  .report-export-sheet.print-mode .report-export-body,
-  .report-export-sheet.print-mode .report-export-sidebar {
+  .report-export-sheet.print-mode .report-export-body {
     grid-template-columns: 1fr;
   }
 }

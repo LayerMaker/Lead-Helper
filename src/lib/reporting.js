@@ -129,32 +129,99 @@ function formatRecipient(contact, draft) {
 
 function getActionPhraseFromIntent(label) {
   const normalized = String(label || "").toLowerCase();
-  if (normalized.includes("brochure")) return "site brochure to be sent";
-  if (normalized.includes("site pack")) return "site pack to be sent";
-  if (normalized.includes("site walk")) return "site walk to be arranged or confirmed";
+  if (normalized.includes("brochure")) return "brochure and site details to follow";
+  if (normalized.includes("site pack")) return "Battersea site pack offered";
+  if (normalized.includes("site walk")) return "pre-site-walk information to be sent";
   if (normalized.includes("decision")) return "decision-maker intro requested";
-  if (normalized.includes("team member")) return "awaiting senior team feedback";
-  if (normalized.includes("check back")) return "follow-up thread kept warm";
+  if (normalized.includes("team member")) return "relevant team member to be picked up with when available";
+  if (normalized.includes("check back")) return "email thread kept warm for the next check-in";
   if (normalized.includes("close")) return "lead politely closed for now";
-  if (normalized.includes("instant")) return "same-day follow-up sent";
+  if (normalized.includes("instant")) return "same-day follow-up completed";
   return label;
 }
 
 function getActionPhraseFromOutcome(outcome) {
   const normalized = String(outcome || "").toLowerCase();
-  if (normalized.includes("site walk")) return "site walk booked";
-  if (normalized.includes("deferred")) return "awaiting decision-maker feedback";
-  if (normalized.includes("follow-up")) return "follow-up required";
-  if (normalized.includes("needs email")) return "site information requested by email";
+  if (normalized.includes("site walk")) return "site walk booked or being confirmed";
+  if (normalized.includes("deferred")) return "awaiting decision-maker feedback or introduction";
+  if (normalized.includes("follow-up")) return "follow-up action required";
+  if (normalized.includes("needs email")) return "Battersea site information to be sent by email";
   if (normalized.includes("not suitable")) return "not suitable for current requirement";
-  if (normalized.includes("interested")) return "interest logged";
-  if (normalized.includes("manager")) return "manager contact made";
-  if (normalized.includes("card")) return "business card captured";
+  if (normalized.includes("interested")) return "interest in the Battersea site recorded";
+  if (normalized.includes("manager")) return "manager-level contact made";
+  if (normalized.includes("card")) return "business card captured and contact details logged";
   return outcome;
+}
+
+function getReportChipLabel(outcome) {
+  const normalized = String(outcome || "").toLowerCase();
+  if (normalized.includes("site walk")) return "Site walk";
+  if (normalized.includes("deferred")) return "Decision-maker review";
+  if (normalized.includes("follow-up")) return "Follow-up set";
+  if (normalized.includes("needs email")) return "Site pack needed";
+  if (normalized.includes("not suitable")) return "Not suitable";
+  if (normalized.includes("interested")) return "Interest logged";
+  if (normalized.includes("manager")) return "Manager met";
+  if (normalized.includes("card")) return "Contact captured";
+  return outcome;
+}
+
+function joinSentenceList(items) {
+  const cleanItems = dedupeList(items);
+  if (!cleanItems.length) return "";
+  if (cleanItems.length === 1) return cleanItems[0];
+  if (cleanItems.length === 2) return `${cleanItems[0]} and ${cleanItems[1]}`;
+  return `${cleanItems.slice(0, -1).join(", ")} and ${cleanItems[cleanItems.length - 1]}`;
+}
+
+function sentenceCase(value) {
+  const text = String(value || "").trim();
+  return text ? `${text[0].toUpperCase()}${text.slice(1)}` : "";
 }
 
 function dedupeList(items) {
   return [...new Set(items.map((item) => String(item || "").trim()).filter(Boolean))];
+}
+
+function isInternalVisitNote(note) {
+  const normalized = String(note || "").toLowerCase();
+  return (
+    !normalized ||
+    normalized.includes("outlook draft opened") ||
+    normalized.includes("fgi email") ||
+    normalized.includes("email page")
+  );
+}
+
+function buildVisitReportNote({ note, outcomes = [], dealership, contact, draft }) {
+  if (!isInternalVisitNote(note)) return note;
+
+  const contactLine = contact?.name
+    ? `Contact details captured for ${formatRecipient(contact, draft)}.`
+    : outcomes.includes("Card captured")
+      ? "Contact media captured for OCR verification."
+      : "";
+  const outcomeLine = sentenceCase(joinSentenceList(outcomes.map(getActionPhraseFromOutcome)));
+  const emailLine =
+    draft?.status === "opened" || draft?.status === "sent"
+      ? "Follow-up email prepared for immediate handoff."
+      : draft
+        ? "Follow-up draft prepared for review."
+        : "";
+
+  return [
+    `Field interaction logged at ${dealership.name}.`,
+    contactLine,
+    outcomeLine ? `${outcomeLine}.` : "",
+    emailLine,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function buildOutcomeReportSummary(outcomes = []) {
+  const phrases = outcomes.map(getActionPhraseFromOutcome);
+  return sentenceCase(joinSentenceList(phrases));
 }
 
 export function buildEmailProofSummary({ draft, contact, dealership, emailIntentLabels = [], outcomes = [] }) {
@@ -183,12 +250,12 @@ export function buildEmailProofSummary({ draft, contact, dealership, emailIntent
     ...emailIntentLabels.map(getActionPhraseFromIntent),
     ...outcomes.map(getActionPhraseFromOutcome),
   ]);
-  const actionSentence = actionPhrases.length ? `Next steps: ${actionPhrases.join(", ")}.` : "";
+  const actionSentence = actionPhrases.length ? `Recorded next steps: ${actionPhrases.join("; ")}.` : "";
 
   return {
     label,
     headline: label,
-    detail: [`Followed up from the conversation at ${dealership.name}.`, actionSentence].filter(Boolean).join(" "),
+    detail: [`Followed up from the showroom conversation at ${dealership.name}.`, actionSentence].filter(Boolean).join(" "),
     actions: actionPhrases,
   };
 }
@@ -294,6 +361,14 @@ export function buildClusterReportModel({
       emailIntentLabels,
       outcomes: visit?.outcomes || [],
     });
+    const outcomeSummary = buildOutcomeReportSummary(visit?.outcomes || []);
+    const visitReportNote = buildVisitReportNote({
+      note: visit?.note || "",
+      outcomes: visit?.outcomes || [],
+      dealership,
+      contact,
+      draft,
+    });
 
     return {
       id: dealership.id,
@@ -312,7 +387,9 @@ export function buildClusterReportModel({
       visit,
       visitTime: formatDateTime(visit?.createdAt),
       outcomes: visit?.outcomes || [],
-      note: visit?.note || "",
+      reportOutcomeLabels: (visit?.outcomes || []).map(getReportChipLabel),
+      outcomeSummary,
+      note: visitReportNote,
       draft,
       sentEmail,
       emailHandoff,
@@ -376,11 +453,11 @@ export function buildClusterReportModel({
       ? visitedRows.slice(0, 6).map((row) => ({
           title: row.name,
           detail: [
-            row.outcomes.length ? row.outcomes.join(", ") : row.nextAction,
+            row.outcomeSummary ? `${row.outcomeSummary}.` : row.nextAction,
             row.emailProof ? row.emailProofDetail : "",
           ]
             .filter(Boolean)
-            .join(". "),
+            .join(" "),
         }))
       : [{ title: "No visits logged", detail: "Visit rows will appear here after route activity is captured." }],
     evidenceGenerated: [

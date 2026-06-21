@@ -119,7 +119,12 @@ export function ClusterReportTemplate({ report, exportRef = null, mode = "previe
               </div>
 
               <div className="report-export-outcomes">
-                {(row.outcomes.length ? row.outcomes : [row.roleHint]).map((outcome) => (
+                {((row.reportOutcomeLabels?.length ? row.reportOutcomeLabels : row.outcomes).length
+                  ? row.reportOutcomeLabels?.length
+                    ? row.reportOutcomeLabels
+                    : row.outcomes
+                  : [row.roleHint]
+                ).map((outcome) => (
                   <span className="report-outcome-chip" key={outcome}>
                     {outcome}
                   </span>
