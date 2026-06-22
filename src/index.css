@@ -1091,6 +1091,18 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
   flex-wrap: wrap;
   gap: 8px;
 }
+.report-export-outcomes.summary-review {
+  padding-top: 2px;
+}
+.report-export-outcomes.summary-review:before {
+  content: "Weekly review";
+  display: inline-flex;
+  align-items: center;
+  color: var(--muted);
+  font: 700 11px/1 var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
 .report-outcome-chip {
   display: inline-flex;
   align-items: center;
@@ -1321,6 +1333,34 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
 .summary-card {
   display: grid;
   gap: 12px;
+}
+.summary-cluster {
+  border-color: color-mix(in oklab, var(--cluster-accent), transparent 62%);
+  box-shadow: inset 4px 0 0 var(--cluster-accent);
+}
+.summary-cluster-head h2 {
+  color: var(--cluster-accent);
+}
+.summary-card {
+  border-color: color-mix(in oklab, var(--cluster-accent), transparent 72%);
+}
+.summary-card h2 {
+  color: var(--cluster-accent);
+}
+.summary-report-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.summary-report-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--cluster-accent);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--cluster-accent), transparent 78%);
 }
 .summary-context-grid {
   display: grid;

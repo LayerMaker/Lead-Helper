@@ -242,6 +242,16 @@ export function ClusterReportTemplate({ report, exportRef = null, mode = "previe
                 ))}
               </div>
 
+              {row.summaryLabels?.length ? (
+                <div className="report-export-outcomes summary-review">
+                  {row.summaryLabels.map((label) => (
+                    <span className="report-outcome-chip" key={label}>
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+
               <div className="report-export-note">
                 <div>
                   <label>Visit note</label>

@@ -1,6 +1,16 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { AppLayout } from "../components/AppLayout";
+import { buildReportPdfUrl, getReportClusters } from "../lib/reporting";
 import { useAppState } from "../state/AppState";
+
+const clusterAccentMap = {
+  amber: "#f3a53d",
+  mint: "#7ae3b8",
+  rose: "#ff7fa7",
+  teal: "#2fd4d4",
+  lime: "#b8de6f",
+  violet: "#d8a7ff",
+};
 
 const summaryOutcomeCatalog = [
   {
@@ -47,12 +57,20 @@ function getEntryDate(entry) {
   return entry.latestVisit?.createdAt || entry.completedActions[0]?.completedAt || "";
 }
 
-function SummaryCard({ entry, summaryRecord, dispatch }) {
+function getClusterAccent(cluster) {
+  if (cluster?.colour) return clusterAccentMap[cluster.colour] || "#f3a53d";
+  if (cluster?.colorClass?.includes("mint")) return clusterAccentMap.mint;
+  if (cluster?.colorClass?.includes("rose")) return clusterAccentMap.rose;
+  if (cluster?.colorClass?.includes("teal")) return clusterAccentMap.teal;
+  return clusterAccentMap.amber;
+}
+
+function SummaryCard({ entry, summaryRecord, dispatch, clusterAccent }) {
   const selectedOutcomeIds = summaryRecord?.outcomeIds || [];
   const selectedLabels = summaryRecord?.labels || [];
 
   return (
-    <article className="panel pad summary-card">
+    <article className="panel pad summary-card" style={{ "--cluster-accent": clusterAccent }}>
       <div className="section-head">
         <div>
           <div className="kicker">{formatDateLabel(getEntryDate(entry))}</div>
@@ -62,6 +80,10 @@ function SummaryCard({ entry, summaryRecord, dispatch }) {
         <span className={`pill${selectedOutcomeIds.length ? " active" : ""}`}>
           {selectedOutcomeIds.length ? "Reviewed" : "Needs review"}
         </span>
+      </div>
+      <div className="summary-report-line">
+        <span className="summary-report-dot"></span>
+        <span>Included in this cluster report</span>
       </div>
 
       <div className="summary-context-grid">
@@ -126,7 +148,10 @@ function SummaryCard({ entry, summaryRecord, dispatch }) {
 }
 
 export function SummaryPage() {
-  const { state, clusters, completedActions, getDealershipById, dispatch } = useAppState();
+  const { state, completedActions, getDealershipById, dispatch } = useAppState();
+  const [exportState, setExportState] = useState("idle");
+  const [exportMessage, setExportMessage] = useState("");
+  const reportClusters = useMemo(() => getReportClusters(state), [state]);
 
   const summaryEntries = useMemo(() => {
     const entryMap = new Map();
@@ -168,6 +193,34 @@ export function SummaryPage() {
 
   const summaryByDealership = new Map((state.summaryOutcomes || []).map((item) => [item.dealershipId, item]));
   const reviewedCount = summaryEntries.filter((entry) => summaryByDealership.get(entry.dealership.id)?.outcomeIds?.length).length;
+
+  async function downloadClusterReport(cluster) {
+    setExportState("exporting");
+    setExportMessage("");
+
+    try {
+      const response = await fetch(buildReportPdfUrl(cluster.id));
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error || "PDF export failed.");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `${String(cluster.name || "cluster").toLowerCase().replace(/[^a-z0-9]+/g, "-")}-field-report.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+      setExportState("done");
+      setExportMessage(`${cluster.name} report downloaded.`);
+    } catch (error) {
+      setExportState("error");
+      setExportMessage(error.message || "PDF export could not be generated.");
+    }
+  }
 
   return (
     <AppLayout statusLine="Weekly response review">
@@ -219,23 +272,36 @@ export function SummaryPage() {
         </div>
       </section>
 
+      {exportMessage ? <div className={`inline-alert${exportState === "error" ? " error" : ""}`}>{exportMessage}</div> : null}
+
       <section className="summary-cluster-list">
-        {clusters.map((cluster) => {
+        {reportClusters.map((cluster) => {
           const clusterEntries = summaryEntries.filter((entry) => entry.dealership.clusterId === cluster.id);
           if (!clusterEntries.length) return null;
+          const clusterAccent = getClusterAccent(cluster);
+          const reviewedClusterCount = clusterEntries.filter((entry) => summaryByDealership.get(entry.dealership.id)?.outcomeIds?.length).length;
 
           return (
-            <section className="summary-cluster" key={cluster.id}>
-              <div className="section-head">
+            <section className="summary-cluster panel pad" key={cluster.id} style={{ "--cluster-accent": clusterAccent }}>
+              <div className="section-head summary-cluster-head">
                 <div>
                   <div className="kicker">Cluster</div>
                   <h2>{cluster.name}</h2>
+                  <small>
+                    {clusterEntries.length} included, {reviewedClusterCount} reviewed
+                  </small>
                 </div>
-                <span className="pill">{clusterEntries.length}</span>
+                <div className="action-row">
+                  <span className="pill">{clusterEntries.length}</span>
+                  <button className="btn primary" type="button" disabled={exportState === "exporting"} onClick={() => downloadClusterReport(cluster)}>
+                    {exportState === "exporting" ? "Generating..." : "Download PDF"}
+                  </button>
+                </div>
               </div>
               <div className="summary-card-list">
                 {clusterEntries.map((entry) => (
                   <SummaryCard
+                    clusterAccent={clusterAccent}
                     dispatch={dispatch}
                     entry={entry}
                     key={entry.dealership.id}

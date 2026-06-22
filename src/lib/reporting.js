@@ -478,6 +478,8 @@ export function buildClusterReportModel({
     const contact = getLatestContact(dealership.id);
     const media = getLatestMedia(dealership.id);
     const actions = clusterActions.filter((action) => canonicalDealershipId(action.dealershipId) === canonicalId);
+    const completedActions = actions.filter((action) => action.status === "done");
+    const summaryRecord = (state.summaryOutcomes || []).find((item) => canonicalDealershipId(item.dealershipId) === canonicalId) || null;
     const sentEmail = draft?.status === "sent";
     const emailHandoff = draft?.status === "opened";
     const emailProof = Boolean(sentEmail || emailHandoff);
@@ -535,10 +537,20 @@ export function buildClusterReportModel({
       contact,
       media,
       actions,
+      completedActions,
+      summaryRecord,
+      summaryLabels: summaryRecord?.labels || [],
     };
   });
 
   const visitedRows = rows.filter((row) => row.visit).sort((left, right) => String(right.visit?.createdAt || "").localeCompare(String(left.visit?.createdAt || "")));
+  const reportableRows = rows
+    .filter((row) => row.visit || row.completedActions.length || row.summaryLabels.length)
+    .sort((left, right) => {
+      const leftDate = left.visit?.createdAt || left.completedActions[0]?.completedAt || left.summaryRecord?.updatedAt || "";
+      const rightDate = right.visit?.createdAt || right.completedActions[0]?.completedAt || right.summaryRecord?.updatedAt || "";
+      return String(rightDate).localeCompare(String(leftDate));
+    });
   const warmRows = rows.filter((row) => row.status === "Interested" || row.status === "Site walk booked");
   const sentFollowUps = rows.filter((row) => row.emailProof).length;
   const openActions = clusterActions.filter((action) => action.status === "pending");
@@ -631,9 +643,7 @@ export function buildClusterReportModel({
         { text: usingMapV2Pins ? "PIN-FIRST FIELD CLUSTER" : "BATTERSEA SEARCH", x: MAP_WIDTH - 250, y: MAP_HEIGHT - 30 },
       ],
     },
-    dealershipCards: visitedRows.length
-      ? visitedRows
-      : rows.slice(0, Math.min(rows.length, 4)),
+    dealershipCards: reportableRows.length ? reportableRows : rows.slice(0, Math.min(rows.length, 4)),
   };
 }
 
