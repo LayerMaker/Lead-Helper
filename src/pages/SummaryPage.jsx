@@ -316,8 +316,8 @@ export function SummaryPage() {
         </div>
         <div>
           <span className="flow-dot"></span>
-          <b>Reports</b>
-          <small>Weekly handoff later</small>
+          <b>PDF handoff</b>
+          <small>Generate after final review</small>
         </div>
       </section>
 

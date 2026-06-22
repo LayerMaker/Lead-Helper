@@ -208,8 +208,8 @@ export function DashboardPage() {
         </div>
         <div>
           <span className="flow-dot"></span>
-          <b>Reports</b>
-          <small>Cluster proof-of-work feed</small>
+          <b>Summary</b>
+          <small>Weekly review and PDF handoff</small>
         </div>
       </section>
 
@@ -306,8 +306,8 @@ export function DashboardPage() {
             <Link className="btn" to="/leads">
               Open intel
             </Link>
-            <Link className="btn" to="/reports">
-              Cluster report
+            <Link className="btn" to="/summary">
+              Weekly summary
             </Link>
           </div>
         </aside>

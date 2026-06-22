@@ -447,8 +447,8 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
               {adminEntries.length} admin actions will feed Dashboard and the {selectedCluster.name} report cards.
             </small>
           </div>
-          <Link className="btn" to="/reports">
-            Open reports
+          <Link className="btn" to="/summary">
+            Open summary
           </Link>
         </div>
       </div>

@@ -10,7 +10,6 @@ const navItems = [
   { to: "/leads", label: "Leads" },
   { to: "/email", label: "Email" },
   { to: "/summary", label: "Summary" },
-  { to: "/reports", label: "Report" },
   { to: "/settings", label: "Settings" },
 ];
 
