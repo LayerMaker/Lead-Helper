@@ -1189,7 +1189,7 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
 }
 @page {
   size: A4 portrait;
-  margin: 12mm;
+  margin: 0;
 }
 @media print {
   html,
@@ -1214,6 +1214,9 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
     forced-color-adjust: none !important;
   }
   html, body {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0;
     background: #120c08;
   }
   body.print-route-body {
@@ -1223,6 +1226,8 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
     display: none !important;
   }
   .report-print-page {
+    width: 210mm;
+    min-height: 297mm;
     padding: 0;
     background:
       radial-gradient(circle at 18% 12%, oklch(44% 0.12 55 / 0.16), transparent 18rem),
@@ -1232,23 +1237,27 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
     background-size: auto, 52px 52px, 52px 52px, auto;
   }
   .report-print-sheet-wrap {
-    width: auto;
+    width: 210mm;
     margin: 0;
   }
   .report-export-sheet {
-    width: 176mm;
-    padding: 16px;
+    width: 210mm;
+    min-height: 297mm;
+    padding: 11mm;
     border-radius: 0;
     border: 0;
     background:
+      linear-gradient(oklch(100% 0 0 / 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(100% 0 0 / 0.025) 1px, transparent 1px),
       radial-gradient(circle at 72% 6%, oklch(50% 0.12 55 / 0.22), transparent 22rem),
       radial-gradient(circle at 6% 20%, oklch(34% 0.08 45 / 0.16), transparent 18rem),
       linear-gradient(180deg, oklch(13% 0.018 55), oklch(9% 0.012 55)) !important;
+    background-size: 14mm 14mm, 14mm 14mm, auto, auto, auto;
     box-shadow: none;
   }
   .report-export-sheet.print-mode {
-    width: 170mm;
-    padding: 14px;
+    width: 210mm;
+    padding: 11mm;
     gap: 12px;
     display: block;
   }
