@@ -184,92 +184,104 @@ function isInternalVisitNote(note) {
   );
 }
 
-function includesOutcome(outcomes, label) {
-  return outcomes.some((outcome) => String(outcome || "").toLowerCase() === label.toLowerCase());
+const reportOutcomeOrder = [
+  "Met manager",
+  "Interested",
+  "Needs email",
+  "Follow-up required",
+  "Not a good time",
+  "Management not present",
+  "Deferred to decision maker",
+  "Card captured",
+  "Site walk booked",
+  "Not suitable",
+];
+
+function formatContactName(contact) {
+  return contact?.name || "the on-site contact";
 }
 
-function formatContactForSentence(contact, fallback = "the on-site contact") {
-  if (!contact?.name) return fallback;
-  return contact.role ? `${contact.name}, ${contact.role}` : contact.name;
+function formatContactTitle(contact) {
+  return contact?.role || "title not captured";
 }
 
-function getEmailHandoffSentence(draft) {
-  if (draft?.status === "sent") return "The follow-up email has been recorded as sent.";
-  if (draft?.status === "opened") return "A follow-up email was prepared for immediate Outlook handoff.";
-  if (draft) return "A follow-up email draft has been prepared for review.";
-  return "";
+function formatContactWithTitle(contact) {
+  return contact?.name ? `${formatContactName(contact)} (${formatContactTitle(contact)})` : "the on-site contact";
 }
 
-function buildOutcomeNarrative({ outcomes = [], dealership, contact, draft }) {
-  const sentences = [];
-  const contactText = formatContactForSentence(contact);
-  const hasContact = Boolean(contact?.name);
+function getSiteWalkDateLabel(actions = []) {
+  const siteWalkAction = actions.find((action) => action.type === "site_walk" && action.dueAt);
+  return siteWalkAction?.dueAt ? formatDateTime(siteWalkAction.dueAt) : "";
+}
 
-  if (!outcomes.length) {
-    return `Field interaction logged at ${dealership.name}.`;
+function getReportSentenceForOutcome(outcome, { contact, actions = [] }) {
+  const siteWalkDate = getSiteWalkDateLabel(actions);
+
+  if (outcome === "Met manager") {
+    return `Had a productive initial conversation with the site manager, ${formatContactWithTitle(contact)}, to pitch the new commercial space and gauge their interest in expanding their footprint.`;
   }
 
-  if (includesOutcome(outcomes, "Met manager")) {
-    sentences.push(
-      `Had a productive initial conversation with ${contactText} to pitch the Battersea commercial space and gauge interest in the opportunity.`,
-    );
-  } else {
-    sentences.push(`Field interaction logged at ${dealership.name}.`);
+  if (outcome === "Interested") {
+    return "The team expressed strong interest in the new commercial space and see clear value in the proposed location.";
   }
 
-  if (includesOutcome(outcomes, "Interested")) {
-    sentences.push("The team expressed interest in the proposed location and saw potential value in the Battersea site.");
+  if (outcome === "Needs email") {
+    return "They requested further information, so I am sending over the comprehensive site pack and proposal details via email for their review.";
   }
 
-  if (includesOutcome(outcomes, "Card captured")) {
-    sentences.push(
-      hasContact
-        ? `Secured contact details for ${contactText} and added them to the operational contact list for future correspondence.`
-        : "Captured contact media and queued the details for OCR verification.",
-    );
+  if (outcome === "Follow-up required") {
+    return "Initial contact was made, but additional members of their team need to be included before the opportunity can progress.";
   }
 
-  if (includesOutcome(outcomes, "Needs email")) {
-    sentences.push("They requested further information, so the comprehensive site pack and proposal details are being sent by email for review.");
+  if (outcome === "Not a good time") {
+    return "The timing was not suitable for a detailed conversation, so this location needs a return visit or follow-up call at a better time.";
   }
 
-  if (includesOutcome(outcomes, "Follow-up required")) {
-    sentences.push("Initial contact was made, but further members of their team need to be included before the opportunity can progress.");
+  if (outcome === "Management not present") {
+    return "Management was not present, so the relevant decision-maker needs to be chased before the lead can be properly qualified.";
   }
 
-  if (includesOutcome(outcomes, "Not a good time")) {
-    sentences.push("The timing was not suitable for a detailed conversation, so a return visit or follow-up call is required at a better time.");
+  if (outcome === "Deferred to decision maker") {
+    return "Spoke with the on-site team, but they directed me to senior team members for any property expansion approvals.";
   }
 
-  if (includesOutcome(outcomes, "Management not present")) {
-    sentences.push("The relevant manager was not present, so manager-level contact needs to be chased before the lead can be properly qualified.");
+  if (outcome === "Card captured") {
+    return `Secured contact details for ${formatContactWithTitle(contact)} and added them to the operational contact list for future correspondence.`;
   }
 
-  if (includesOutcome(outcomes, "Deferred to decision maker")) {
-    sentences.push("The on-site team directed the opportunity toward senior decision-makers responsible for property expansion approvals.");
+  if (outcome === "Site walk booked") {
+    return siteWalkDate
+      ? `Arranged a formal site walk for ${siteWalkDate} to tour the proposed space and discuss layout possibilities.`
+      : "Arranged a formal site walk to tour the proposed space and discuss layout possibilities.";
   }
 
-  if (includesOutcome(outcomes, "Site walk booked")) {
-    sentences.push("A formal site walk has been arranged to tour the proposed space and discuss layout possibilities.");
+  if (outcome === "Not suitable") {
+    return "The site does not align with the company's current expansion criteria; no further action will be taken on this location.";
   }
 
-  if (includesOutcome(outcomes, "Not suitable")) {
-    sentences.push("The site does not align with the company's current expansion criteria, so no further action will be taken on this location.");
-  }
+  return getActionPhraseFromOutcome(outcome);
+}
 
-  const emailSentence = getEmailHandoffSentence(draft);
-  if (emailSentence) sentences.push(emailSentence);
+function orderOutcomes(outcomes = []) {
+  return [...outcomes].sort((left, right) => {
+    const leftIndex = reportOutcomeOrder.indexOf(left);
+    const rightIndex = reportOutcomeOrder.indexOf(right);
+    return (leftIndex === -1 ? 999 : leftIndex) - (rightIndex === -1 ? 999 : rightIndex);
+  });
+}
 
+function buildChipReportText({ outcomes = [], contact, actions = [] }) {
+  const sentences = orderOutcomes(outcomes).map((outcome) => getReportSentenceForOutcome(outcome, { contact, actions }));
   return dedupeList(sentences).join(" ");
 }
 
-function buildVisitReportNote({ note, outcomes = [], dealership, contact, draft }) {
+function buildVisitReportNote({ note, outcomes = [], contact, actions = [] }) {
   if (!isInternalVisitNote(note)) return note;
-  return buildOutcomeNarrative({ outcomes, dealership, contact, draft });
+  return buildChipReportText({ outcomes, contact, actions });
 }
 
-function buildOutcomeReportSummary({ outcomes = [], dealership, contact, draft }) {
-  return buildOutcomeNarrative({ outcomes, dealership, contact, draft });
+function buildOutcomeReportSummary({ outcomes = [], contact, actions = [] }) {
+  return buildChipReportText({ outcomes, contact, actions });
 }
 
 export function buildEmailProofSummary({ draft, contact, dealership, emailIntentLabels = [], outcomes = [] }) {
@@ -411,16 +423,14 @@ export function buildClusterReportModel({
     });
     const outcomeSummary = buildOutcomeReportSummary({
       outcomes: visit?.outcomes || [],
-      dealership,
       contact,
-      draft,
+      actions,
     });
     const visitReportNote = buildVisitReportNote({
       note: visit?.note || "",
       outcomes: visit?.outcomes || [],
-      dealership,
       contact,
-      draft,
+      actions,
     });
 
     return {
