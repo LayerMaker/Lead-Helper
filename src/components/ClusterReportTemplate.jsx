@@ -220,20 +220,12 @@ export function ClusterReportTemplate({ report, exportRef = null, mode = "previe
 
               <div className="report-export-dealer-grid">
                 <div>
-                  <label>Lead score</label>
-                  <strong>{row.leadScore}</strong>
-                </div>
-                <div>
                   <label>Contact captured</label>
                   <strong>{row.contact ? row.contact.name : "No"}</strong>
                 </div>
                 <div>
                   <label>Email status</label>
                   <strong>{row.emailProof ? row.emailProofHeadline : row.emailProofLabel}</strong>
-                </div>
-                <div>
-                  <label>Next action</label>
-                  <strong>{row.nextAction}</strong>
                 </div>
               </div>
 
@@ -256,13 +248,13 @@ export function ClusterReportTemplate({ report, exportRef = null, mode = "previe
                   <p>{row.note || row.pitch || "No visit note added yet."}</p>
                 </div>
                 <div>
-                  <label>Evidence</label>
+                  <label>Logs</label>
                   <p>
-                    {row.visit ? `Visit logged ${row.visitTime}. ` : ""}
+                    {row.visit ? `Visit logged ${row.visitDate}. ` : ""}
                     {row.contact ? `Contact ${row.contact.name}${row.contact.role ? `, ${row.contact.role}` : ""}. ` : ""}
                     {row.media ? `Media capture recorded. ` : ""}
                     {row.emailProof
-                      ? `${row.emailProofDetail} Recorded ${row.emailProofTime}.`
+                      ? row.emailProofDetail
                       : row.draft
                         ? `Email draft ready: ${row.draft.emailType}.`
                         : "No email evidence yet."}
@@ -287,7 +279,7 @@ export function ClusterReportTemplate({ report, exportRef = null, mode = "previe
           </section>
 
           <section className="report-sidebar-card">
-            <div className="kicker">Evidence generated</div>
+            <div className="kicker">Logs generated</div>
             <ul className="report-evidence-list">
               {report.evidenceGenerated.map((item) => (
                 <li key={item.label}>
@@ -302,7 +294,7 @@ export function ClusterReportTemplate({ report, exportRef = null, mode = "previe
             <div className="kicker">Cluster summary</div>
             <p>
               {report.summary.dealershipsVisited} dealerships visited, {report.summary.contactsCaptured} contacts captured,{" "}
-              {report.summary.sentFollowUps} follow-ups sent, {report.summary.evidenceCount} total evidence events logged.
+              {report.summary.sentFollowUps} follow-ups sent, {report.summary.evidenceCount} total log entries recorded.
             </p>
           </section>
         </aside>

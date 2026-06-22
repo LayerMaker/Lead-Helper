@@ -149,6 +149,14 @@ function formatDateTime(value) {
   });
 }
 
+function formatLogDate(value) {
+  if (!value) return "";
+  const normalized = String(value).replace(" ", "T");
+  const date = new Date(normalized);
+  if (Number.isNaN(date.getTime())) return formatDate(value);
+  return formatDate(date.toISOString());
+}
+
 function formatClusterReportTitle(clusterName) {
   const name = String(clusterName || "Cluster").trim();
   return /\bcluster\b/i.test(name) ? `${name} Report` : `${name} Cluster Report`;
@@ -509,7 +517,7 @@ export function buildClusterReportModel({
       location: dealership.location,
       projectedLocation: Array.isArray(dealership.location) ? projectPoint(dealership.location, bounds) : null,
       visit,
-      visitTime: formatDateTime(visit?.createdAt),
+      visitDate: formatLogDate(visit?.createdAt),
       outcomes: visit?.outcomes || [],
       reportOutcomeLabels: (visit?.outcomes || []).map(getReportChipLabel),
       outcomeSummary,
@@ -521,7 +529,7 @@ export function buildClusterReportModel({
       emailProofLabel: emailProof ? emailProofSummary.label : getEmailProofLabel(draft),
       emailProofHeadline: emailProofSummary.headline,
       emailProofDetail: emailProofSummary.detail,
-      emailProofTime: formatDateTime(draft?.openedAt || draft?.sentAt || draft?.createdAt),
+      emailProofDate: formatLogDate(draft?.openedAt || draft?.sentAt || draft?.createdAt),
       emailIntentLabels,
       emailProofActions: emailProofSummary.actions,
       contact,
@@ -534,7 +542,6 @@ export function buildClusterReportModel({
   const warmRows = rows.filter((row) => row.status === "Interested" || row.status === "Site walk booked");
   const sentFollowUps = rows.filter((row) => row.emailProof).length;
   const openActions = clusterActions.filter((action) => action.status === "pending");
-  const siteWalks = visitedRows.filter((row) => row.outcomes.includes("Site walk booked"));
   const contactsCaptured = rows.filter((row) => row.contact).length;
   const evidenceCount = rows.reduce((total, row) => total + (row.visit ? 1 : 0) + (row.contact ? 1 : 0) + (row.media ? 1 : 0) + (row.emailProof ? 1 : 0), 0);
 
@@ -558,14 +565,12 @@ export function buildClusterReportModel({
       { label: "Date", value: formatDate(exportDate.toISOString()) },
       { label: "Visited", value: String(visitedRows.length) },
       { label: "Open actions", value: String(openActions.length) },
-      { label: "Follow-up proof", value: String(sentFollowUps) },
-      { label: "Site walks", value: String(siteWalks.length) },
+      { label: "Follow-ups", value: String(sentFollowUps) },
     ],
     stats: [
       { label: "Visited", value: visitedRows.length, tone: "amber" },
       { label: "Interested", value: warmRows.length, tone: "rose" },
       { label: "Follow-ups due", value: openActions.length, tone: "teal" },
-      { label: "Site walks booked", value: siteWalks.length, tone: "mint" },
     ],
     summary: {
       dealershipsVisited: visitedRows.length,
@@ -584,7 +589,7 @@ export function buildClusterReportModel({
       { label: "Visit logs", value: visitedRows.length },
       { label: "Contact records", value: contactsCaptured },
       { label: "Media captures", value: rows.filter((row) => row.media).length },
-      { label: "Email proof events", value: rows.filter((row) => row.emailProof).length },
+      { label: "Follow-up records", value: rows.filter((row) => row.emailProof).length },
     ],
     map: {
       width: MAP_WIDTH,
