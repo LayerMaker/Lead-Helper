@@ -4,9 +4,45 @@ import { AppLayout } from "../components/AppLayout";
 import { fromDateTimeLocalValue, getPendingActionBuckets, toDateTimeLocalValue } from "../lib/leadHelperModel";
 import { useAppState } from "../state/AppState";
 
+function getCompletionOptions(action) {
+  const title = String(action.title || "").toLowerCase();
+
+  if (action.type === "email") {
+    const sentLabel = title.includes("pack") || title.includes("details") || title.includes("summary") ? "Site pack sent" : "Email sent";
+    return [
+      { label: sentLabel, outcome: "follow_up_sent" },
+      { label: "No reply yet", outcome: "no_reply_yet" },
+      { label: "Responded", outcome: "responded" },
+      { label: "Closed for now", outcome: "closed_for_now" },
+    ];
+  }
+
+  if (action.type === "call") {
+    return [
+      { label: "Spoke to contact", outcome: "call_completed" },
+      { label: "No answer", outcome: "no_answer" },
+      { label: "Call back needed", outcome: "call_back_needed" },
+    ];
+  }
+
+  if (action.type === "site_walk") {
+    return [
+      { label: "Confirmed", outcome: "site_walk_confirmed" },
+      { label: "Reschedule needed", outcome: "site_walk_reschedule" },
+      { label: "Completed", outcome: "site_walk_completed" },
+    ];
+  }
+
+  return [
+    { label: "Done", outcome: "done" },
+    { label: "Follow-up needed", outcome: "follow_up_needed" },
+  ];
+}
+
 function ScheduledActionRow({ action, getDealershipById, dispatch }) {
   const [scheduleValue, setScheduleValue] = useState(toDateTimeLocalValue(action.dueAt));
   const dealership = getDealershipById(action.dealershipId);
+  const completionOptions = getCompletionOptions(action);
 
   function openDestination() {
     dispatch({ type: "select-dealership", dealershipId: action.dealershipId });
@@ -71,9 +107,25 @@ function ScheduledActionRow({ action, getDealershipById, dispatch }) {
             {action.type === "call" ? "Call" : "Review"}
           </Link>
         )}
-        <button className="btn" type="button" onClick={() => dispatch({ type: "complete-action", actionId: action.id })}>
-          Done
-        </button>
+        <div className="dashboard-completion-options" aria-label="Complete action outcome">
+          {completionOptions.map((option, index) => (
+            <button
+              className={`btn${index === 0 ? " primary" : ""}`}
+              key={option.outcome}
+              type="button"
+              onClick={() =>
+                dispatch({
+                  type: "complete-action",
+                  actionId: action.id,
+                  outcome: option.outcome,
+                  label: option.label,
+                })
+              }
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

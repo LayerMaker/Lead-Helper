@@ -265,39 +265,6 @@ export function ClusterReportTemplate({ report, exportRef = null, mode = "previe
           ))}
         </div>
 
-        <aside className="report-export-sidebar">
-          <section className="report-sidebar-card">
-            <div className="kicker">Actions taken</div>
-            <ul>
-              {report.actionsTaken.map((item) => (
-                <li key={`${item.title}-${item.detail}`}>
-                  <strong style={{ color: item.colour }}>{item.title}</strong>
-                  <span>{item.detail}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="report-sidebar-card">
-            <div className="kicker">Logs generated</div>
-            <ul className="report-evidence-list">
-              {report.evidenceGenerated.map((item) => (
-                <li key={item.label}>
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="report-sidebar-card report-sidebar-summary">
-            <div className="kicker">Cluster summary</div>
-            <p>
-              {report.summary.dealershipsVisited} dealerships visited, {report.summary.contactsCaptured} contacts captured,{" "}
-              {report.summary.sentFollowUps} follow-ups sent, {report.summary.evidenceCount} total log entries recorded.
-            </p>
-          </section>
-        </aside>
       </section>
 
       <footer className="report-export-footer">

@@ -149,6 +149,9 @@ function reducer(state, action) {
             ...item,
             status: "done",
             completedAt: new Date().toISOString(),
+            completedOutcome: action.outcome || "done",
+            completedLabel: action.label || "Done",
+            completedNote: action.note || "",
           }
         : item,
     );
