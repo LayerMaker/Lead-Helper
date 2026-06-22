@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "postinstall": "playwright install chromium",
     "preview": "vite preview",
-    "start": "playwright install chromium && node server.mjs",
+    "start": "node server.mjs",
     "data:build": "node ./scripts/build-dealership-dataset.mjs",
     "data:import": "node ./scripts/import-dealership-job.mjs",
     "data:collect": "node ./scripts/collect-osm-candidates.mjs",
