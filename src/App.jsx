@@ -8,6 +8,7 @@ import { ReportPrintPage } from "./pages/ReportPrintPage";
 import { ReportsPage } from "./pages/ReportsPage";
 import { RoutePage } from "./pages/RoutePage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { SummaryPage } from "./pages/SummaryPage";
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
       <Route path="/route" element={<RoutePage />} />
       <Route path="/leads" element={<LeadsPage />} />
       <Route path="/email" element={<EmailPage />} />
+      <Route path="/summary" element={<SummaryPage />} />
       <Route path="/reports" element={<ReportsPage />} />
       <Route path="/reports/print" element={<ReportPrintPage />} />
       <Route path="/settings" element={<SettingsPage />} />

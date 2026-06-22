@@ -25,6 +25,7 @@ import {
   sameOutcomes,
   upsertManualDealership,
   upsertDraft,
+  uid,
 } from "../lib/leadHelperModel";
 import {
   assignMapV2PinToCluster,
@@ -35,6 +36,13 @@ import {
 } from "../lib/mapV2Model";
 
 const AppStateContext = createContext(null);
+
+function buildNextWeekDueAt() {
+  const dueAt = new Date();
+  dueAt.setDate(dueAt.getDate() + 7);
+  dueAt.setHours(10, 30, 0, 0);
+  return dueAt.toISOString();
+}
 
 function reducer(state, action) {
   const next = cloneState(state);
@@ -158,6 +166,74 @@ function reducer(state, action) {
     return next;
   }
 
+  if (action.type === "reopen-action") {
+    next.actions = next.actions.map((item) =>
+      item.id === action.actionId
+        ? normalizeActionRecord({
+            ...item,
+            status: "pending",
+            completedAt: "",
+            completedOutcome: "",
+            completedLabel: "",
+            completedNote: "",
+            notifiedAt: "",
+          })
+        : item,
+    );
+    return next;
+  }
+
+  if (action.type === "toggle-summary-outcome") {
+    next.summaryOutcomes = next.summaryOutcomes || [];
+    const dealershipId = action.dealershipId;
+    const outcomeId = action.outcomeId;
+    const current =
+      next.summaryOutcomes.find((item) => item.dealershipId === dealershipId) || {
+        id: uid("summary"),
+        dealershipId,
+        outcomeIds: [],
+        labels: [],
+        note: "",
+        updatedAt: "",
+      };
+    const isSelected = current.outcomeIds.includes(outcomeId);
+    const outcomeIds = isSelected ? current.outcomeIds.filter((item) => item !== outcomeId) : [...current.outcomeIds, outcomeId];
+    const labels = isSelected ? current.labels.filter((item) => item !== action.label) : [...current.labels, action.label];
+    const nextRecord = {
+      ...current,
+      outcomeIds,
+      labels,
+      updatedAt: new Date().toISOString(),
+    };
+
+    next.summaryOutcomes = [nextRecord, ...next.summaryOutcomes.filter((item) => item.dealershipId !== dealershipId)];
+
+    if (!isSelected && action.createChaseAction) {
+      const existingChase = next.actions.find(
+        (item) => item.dealershipId === dealershipId && item.status === "pending" && item.sourceSummaryOutcome === outcomeId,
+      );
+      if (!existingChase) {
+        const dueAt = buildNextWeekDueAt();
+        next.actions.unshift(
+          normalizeActionRecord({
+            id: uid("action"),
+            dealershipId,
+            title: action.chaseTitle || "Chase follow-up response",
+            type: "call",
+            dueAt,
+            dueText: "",
+            priority: "medium",
+            status: "pending",
+            note: action.chaseNote || "Created from weekly summary review.",
+            sourceSummaryOutcome: outcomeId,
+          }),
+        );
+      }
+    }
+
+    return next;
+  }
+
   if (action.type === "reschedule-action") {
     next.actions = next.actions.map((item) =>
       item.id === action.actionId
@@ -217,6 +293,7 @@ function hydrateState(parsed) {
     ...parsed,
     mapV2: parsed.mapV2?.version ? parsed.mapV2 : defaults.mapV2,
     actions: (parsed.actions || defaults.actions || []).map((action) => normalizeActionRecord(action)),
+    summaryOutcomes: Array.isArray(parsed.summaryOutcomes) ? parsed.summaryOutcomes : defaults.summaryOutcomes,
     settings: {
       ...defaults.settings,
       ...(parsed.settings || {}),
@@ -322,6 +399,9 @@ export function AppStateProvider({ children }) {
     const selectedDealership = mergeDealership(state, state.currentDealershipId);
     const normalizedActions = (state.actions || []).map((item) => normalizeActionRecord(item));
     const pendingActions = normalizedActions.filter((item) => item.status === "pending");
+    const completedActions = normalizedActions
+      .filter((item) => item.status === "done")
+      .sort((left, right) => String(right.completedAt || "").localeCompare(String(left.completedAt || "")));
     const pendingDrafts = state.emailDrafts.filter((item) => item.status === "draft");
     const clustersWithVisits = new Set(state.visits.map((visit) => visit.clusterId));
 
@@ -335,6 +415,7 @@ export function AppStateProvider({ children }) {
       settings: state.settings || initialState.settings,
       actions: normalizedActions,
       pendingActions,
+      completedActions,
       pendingDrafts,
       clustersWithVisits,
       getDealershipsForCluster: (clusterId) => getDealershipsForCluster(state, clusterId),

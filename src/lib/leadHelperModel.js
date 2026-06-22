@@ -533,6 +533,7 @@ export const initialState = {
       createdAt: "2026-06-16 09:05",
     },
   ],
+  summaryOutcomes: [],
 };
 
 export function cloneState(value) {
