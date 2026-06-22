@@ -234,6 +234,28 @@ function reducer(state, action) {
     return next;
   }
 
+  if (action.type === "set-summary-report-inclusion") {
+    next.summaryOutcomes = next.summaryOutcomes || [];
+    const dealershipId = action.dealershipId;
+    const current =
+      next.summaryOutcomes.find((item) => item.dealershipId === dealershipId) || {
+        id: uid("summary"),
+        dealershipId,
+        outcomeIds: [],
+        labels: [],
+        note: "",
+        updatedAt: "",
+      };
+    const nextRecord = {
+      ...current,
+      includeInReport: Boolean(action.includeInReport),
+      reportIncludedAt: action.includeInReport ? new Date().toISOString() : "",
+      updatedAt: new Date().toISOString(),
+    };
+    next.summaryOutcomes = [nextRecord, ...next.summaryOutcomes.filter((item) => item.dealershipId !== dealershipId)];
+    return next;
+  }
+
   if (action.type === "reschedule-action") {
     next.actions = next.actions.map((item) =>
       item.id === action.actionId

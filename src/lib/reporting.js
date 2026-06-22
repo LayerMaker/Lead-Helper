@@ -544,13 +544,17 @@ export function buildClusterReportModel({
   });
 
   const visitedRows = rows.filter((row) => row.visit).sort((left, right) => String(right.visit?.createdAt || "").localeCompare(String(left.visit?.createdAt || "")));
-  const reportableRows = rows
+  const approvedReportRows = rows
+    .filter((row) => row.summaryRecord?.includeInReport)
+    .sort((left, right) => String(right.summaryRecord?.reportIncludedAt || "").localeCompare(String(left.summaryRecord?.reportIncludedAt || "")));
+  const fallbackReportRows = rows
     .filter((row) => row.visit || row.completedActions.length || row.summaryLabels.length)
     .sort((left, right) => {
       const leftDate = left.visit?.createdAt || left.completedActions[0]?.completedAt || left.summaryRecord?.updatedAt || "";
       const rightDate = right.visit?.createdAt || right.completedActions[0]?.completedAt || right.summaryRecord?.updatedAt || "";
       return String(rightDate).localeCompare(String(leftDate));
     });
+  const reportableRows = approvedReportRows.length ? approvedReportRows : fallbackReportRows;
   const warmRows = rows.filter((row) => row.status === "Interested" || row.status === "Site walk booked");
   const sentFollowUps = rows.filter((row) => row.emailProof).length;
   const openActions = clusterActions.filter((action) => action.status === "pending");

@@ -1344,6 +1344,15 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
 .summary-card {
   border-color: color-mix(in oklab, var(--cluster-accent), transparent 72%);
 }
+.summary-card.report-included {
+  border-color: color-mix(in oklab, var(--cluster-accent), transparent 42%);
+  background:
+    linear-gradient(135deg, color-mix(in oklab, var(--cluster-accent), transparent 91%), transparent 42%),
+    var(--panel);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--cluster-accent), transparent 78%),
+    0 20px 48px oklch(0% 0 0 / 0.22);
+}
 .summary-card h2 {
   color: var(--cluster-accent);
 }
@@ -1400,6 +1409,32 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
 .summary-review-block small {
   color: var(--muted);
 }
+.summary-card-actions,
+.summary-final-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+}
+.summary-card-actions {
+  justify-content: flex-end;
+}
+.summary-final-panel {
+  margin-top: 18px;
+  border-color: oklch(64% 0.17 55 / 0.42);
+}
+.summary-final-controls label {
+  display: grid;
+  flex: 1 1 280px;
+  gap: 8px;
+  color: var(--muted);
+  font: 700 11px/1 var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.summary-final-controls .btn {
+  min-height: 42px;
+}
 .settings-overview { margin-bottom: 14px; }
 .settings-grid { align-items: start; }
 .settings-card { display: grid; gap: 14px; }
@@ -1432,6 +1467,14 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
   }
   .summary-context-grid {
     grid-template-columns: 1fr;
+  }
+  .summary-card-actions,
+  .summary-final-controls {
+    align-items: stretch;
+  }
+  .summary-card-actions .btn,
+  .summary-final-controls .btn {
+    width: 100%;
   }
   .compact-datetime {
     min-width: 0;

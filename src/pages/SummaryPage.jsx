@@ -68,9 +68,10 @@ function getClusterAccent(cluster) {
 function SummaryCard({ entry, summaryRecord, dispatch, clusterAccent }) {
   const selectedOutcomeIds = summaryRecord?.outcomeIds || [];
   const selectedLabels = summaryRecord?.labels || [];
+  const isIncludedInReport = Boolean(summaryRecord?.includeInReport);
 
   return (
-    <article className="panel pad summary-card" style={{ "--cluster-accent": clusterAccent }}>
+    <article className={`panel pad summary-card${isIncludedInReport ? " report-included" : ""}`} style={{ "--cluster-accent": clusterAccent }}>
       <div className="section-head">
         <div>
           <div className="kicker">{formatDateLabel(getEntryDate(entry))}</div>
@@ -83,7 +84,7 @@ function SummaryCard({ entry, summaryRecord, dispatch, clusterAccent }) {
       </div>
       <div className="summary-report-line">
         <span className="summary-report-dot"></span>
-        <span>Included in this cluster report</span>
+        <span>{isIncludedInReport ? "Added to final report" : "Review this dealership, then add it to the report"}</span>
       </div>
 
       <div className="summary-context-grid">
@@ -143,6 +144,41 @@ function SummaryCard({ entry, summaryRecord, dispatch, clusterAccent }) {
             : "Use these after the dashboard actions have actually happened."}
         </small>
       </div>
+
+      <div className="summary-card-actions">
+        {isIncludedInReport ? (
+          <>
+            <span className="pill active">Report ready</span>
+            <button
+              className="btn ghost"
+              type="button"
+              onClick={() =>
+                dispatch({
+                  type: "set-summary-report-inclusion",
+                  dealershipId: entry.dealership.id,
+                  includeInReport: false,
+                })
+              }
+            >
+              Remove
+            </button>
+          </>
+        ) : (
+          <button
+            className="btn primary"
+            type="button"
+            onClick={() =>
+              dispatch({
+                type: "set-summary-report-inclusion",
+                dealershipId: entry.dealership.id,
+                includeInReport: true,
+              })
+            }
+          >
+            Add to report
+          </button>
+        )}
+      </div>
     </article>
   );
 }
@@ -152,6 +188,7 @@ export function SummaryPage() {
   const [exportState, setExportState] = useState("idle");
   const [exportMessage, setExportMessage] = useState("");
   const reportClusters = useMemo(() => getReportClusters(state), [state]);
+  const [selectedReportClusterId, setSelectedReportClusterId] = useState("");
 
   const summaryEntries = useMemo(() => {
     const entryMap = new Map();
@@ -193,8 +230,35 @@ export function SummaryPage() {
 
   const summaryByDealership = new Map((state.summaryOutcomes || []).map((item) => [item.dealershipId, item]));
   const reviewedCount = summaryEntries.filter((entry) => summaryByDealership.get(entry.dealership.id)?.outcomeIds?.length).length;
+  const reportIncludedCount = summaryEntries.filter((entry) => summaryByDealership.get(entry.dealership.id)?.includeInReport).length;
+  const clusterSummaries = reportClusters
+    .map((cluster) => {
+      const entries = summaryEntries.filter((entry) => entry.dealership.clusterId === cluster.id);
+      const reviewed = entries.filter((entry) => summaryByDealership.get(entry.dealership.id)?.outcomeIds?.length).length;
+      const included = entries.filter((entry) => summaryByDealership.get(entry.dealership.id)?.includeInReport).length;
+      return {
+        cluster,
+        entries,
+        reviewed,
+        included,
+        accent: getClusterAccent(cluster),
+      };
+    })
+    .filter((item) => item.entries.length);
+  const selectedReportCluster =
+    clusterSummaries.find((item) => item.cluster.id === selectedReportClusterId)?.cluster ||
+    clusterSummaries.find((item) => item.included > 0)?.cluster ||
+    clusterSummaries[0]?.cluster ||
+    reportClusters[0];
+  const selectedReportSummary = clusterSummaries.find((item) => item.cluster.id === selectedReportCluster?.id);
 
   async function downloadClusterReport(cluster) {
+    if (!cluster?.id) {
+      setExportState("error");
+      setExportMessage("No report cluster is available yet.");
+      return;
+    }
+
     setExportState("exporting");
     setExportMessage("");
 
@@ -270,17 +334,16 @@ export function SummaryPage() {
           <strong>{reviewedCount}</strong>
           <span>dealerships reviewed for weekly response status</span>
         </div>
+        <div className="panel metric">
+          <strong>{reportIncludedCount}</strong>
+          <span>dealerships added to the final report</span>
+        </div>
       </section>
 
       {exportMessage ? <div className={`inline-alert${exportState === "error" ? " error" : ""}`}>{exportMessage}</div> : null}
 
       <section className="summary-cluster-list">
-        {reportClusters.map((cluster) => {
-          const clusterEntries = summaryEntries.filter((entry) => entry.dealership.clusterId === cluster.id);
-          if (!clusterEntries.length) return null;
-          const clusterAccent = getClusterAccent(cluster);
-          const reviewedClusterCount = clusterEntries.filter((entry) => summaryByDealership.get(entry.dealership.id)?.outcomeIds?.length).length;
-
+        {clusterSummaries.map(({ cluster, entries: clusterEntries, reviewed: reviewedClusterCount, included: includedClusterCount, accent: clusterAccent }) => {
           return (
             <section className="summary-cluster panel pad" key={cluster.id} style={{ "--cluster-accent": clusterAccent }}>
               <div className="section-head summary-cluster-head">
@@ -288,15 +351,10 @@ export function SummaryPage() {
                   <div className="kicker">Cluster</div>
                   <h2>{cluster.name}</h2>
                   <small>
-                    {clusterEntries.length} included, {reviewedClusterCount} reviewed
+                    {includedClusterCount}/{clusterEntries.length} added to report, {reviewedClusterCount} reviewed
                   </small>
                 </div>
-                <div className="action-row">
-                  <span className="pill">{clusterEntries.length}</span>
-                  <button className="btn primary" type="button" disabled={exportState === "exporting"} onClick={() => downloadClusterReport(cluster)}>
-                    {exportState === "exporting" ? "Generating..." : "Download PDF"}
-                  </button>
-                </div>
+                <span className="pill">{includedClusterCount} added</span>
               </div>
               <div className="summary-card-list">
                 {clusterEntries.map((entry) => (
@@ -312,6 +370,45 @@ export function SummaryPage() {
             </section>
           );
         })}
+      </section>
+
+      <section className="panel pad summary-final-panel">
+        <div className="section-head">
+          <div>
+            <div className="kicker">Final handoff</div>
+            <h2>Generate the weekly report when the reviewed dealerships are added.</h2>
+            <small>
+              {selectedReportSummary
+                ? `${selectedReportSummary.included}/${selectedReportSummary.entries.length} ${selectedReportSummary.cluster.name} dealerships added.`
+                : "Add at least one dealership to prepare a report."}
+            </small>
+          </div>
+          <span className="pill active">{reportIncludedCount} total added</span>
+        </div>
+        <div className="summary-final-controls">
+          <label>
+            Report cluster
+            <select
+              className="text-input"
+              value={selectedReportCluster?.id || ""}
+              onChange={(event) => setSelectedReportClusterId(event.target.value)}
+            >
+              {clusterSummaries.map(({ cluster, included, entries }) => (
+                <option key={cluster.id} value={cluster.id}>
+                  {cluster.name} - {included}/{entries.length} added
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            className="btn primary"
+            type="button"
+            disabled={exportState === "exporting" || !selectedReportCluster?.id || !selectedReportSummary?.included}
+            onClick={() => downloadClusterReport(selectedReportCluster)}
+          >
+            {exportState === "exporting" ? "Generating report..." : "Generate and download Report"}
+          </button>
+        </div>
       </section>
     </AppLayout>
   );
