@@ -1,11 +1,14 @@
 import express from "express";
+import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-chromium";
 
 const app = express();
+const execFileAsync = promisify(execFile);
 const port = process.env.PORT || 4174;
 const appDir = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(appDir, "dist");
@@ -51,6 +54,42 @@ function getRequestBaseUrl(request) {
 function getClusterNameFromState(state, clusterId) {
   const clusters = [...(state?.mapV2?.clusters || []), ...(state?.clusters || []), ...(state?.manualClusters || [])];
   return clusters.find((cluster) => cluster.id === clusterId)?.name || "cluster";
+}
+
+let chromiumInstallPromise = null;
+
+function isMissingChromiumError(error) {
+  const message = String(error?.message || "");
+  return message.includes("Executable doesn't exist") || message.includes("playwright install");
+}
+
+async function installChromiumForPdf() {
+  if (!chromiumInstallPromise) {
+    const npxCommand = process.platform === "win32" ? "npx.cmd" : "npx";
+    chromiumInstallPromise = execFileAsync(npxCommand, ["playwright", "install", "chromium"], {
+      cwd: appDir,
+      timeout: 180000,
+      maxBuffer: 1024 * 1024 * 8,
+    }).finally(() => {
+      chromiumInstallPromise = null;
+    });
+  }
+
+  await chromiumInstallPromise;
+}
+
+async function launchPdfBrowser() {
+  const launchOptions = {
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  };
+
+  try {
+    return await chromium.launch(launchOptions);
+  } catch (error) {
+    if (!isMissingChromiumError(error)) throw error;
+    await installChromiumForPdf();
+    return chromium.launch(launchOptions);
+  }
 }
 
 async function supabaseRest(pathname, options = {}) {
@@ -224,9 +263,7 @@ app.get("/api/reports/pdf", async (request, response) => {
     if (clusterId) printUrl.searchParams.set("cluster", clusterId);
     printUrl.searchParams.set("pdf", "1");
 
-    browser = await chromium.launch({
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    browser = await launchPdfBrowser();
     const context = await browser.newContext({
       viewport: { width: 1240, height: 1754 },
     });
