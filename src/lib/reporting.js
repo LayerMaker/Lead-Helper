@@ -13,6 +13,17 @@ const clusterColourMap = {
   violet: "#d8a7ff",
 };
 
+const dealershipReportColours = [
+  "#7ae3b8",
+  "#ff7fa7",
+  "#2fd4d4",
+  "#f3a53d",
+  "#d8a7ff",
+  "#f0df88",
+  "#80b7ff",
+  "#ff9b73",
+];
+
 function slugify(value) {
   return String(value || "")
     .toLowerCase()
@@ -391,6 +402,16 @@ function getReportClusterColour(cluster) {
   return clusterColourMap[cluster?.colour] || "#f3a53d";
 }
 
+function getDealershipReportColour(dealership, index) {
+  const identity = slugify(`${dealership?.name || ""} ${dealership?.id || ""}`);
+  if (identity.includes("west4-auto-centre") || identity.includes("west-4-auto-centre") || identity.includes("west4")) {
+    return "#7ae3b8";
+  }
+
+  const nonGreenColours = dealershipReportColours.filter((colour) => colour !== "#7ae3b8");
+  return nonGreenColours[index % nonGreenColours.length];
+}
+
 export function buildClusterReportModel({
   state,
   cluster,
@@ -415,8 +436,9 @@ export function buildClusterReportModel({
   const allGeoPoints = [...clusterPolygon, ...dealershipLocations, ...mapPins.map((pin) => pin.location)].filter(Boolean);
   const bounds = getBounds(allGeoPoints);
 
-  const rows = dealerships.map((dealership) => {
+  const rows = dealerships.map((dealership, index) => {
     const canonicalId = canonicalDealershipId(dealership.id);
+    const reportColour = getDealershipReportColour(dealership, index);
     const visit = clusterVisits.find((entry) => canonicalDealershipId(entry.dealershipId) === canonicalId) || null;
     const draft = getDraftForDealership(dealership.id);
     const contact = getLatestContact(dealership.id);
@@ -448,6 +470,7 @@ export function buildClusterReportModel({
     return {
       id: dealership.id,
       name: dealership.name,
+      reportColour,
       initials: getInitials(dealership.name),
       brands: dealership.brands || [],
       address: dealership.address,
@@ -527,6 +550,7 @@ export function buildClusterReportModel({
     actionsTaken: visitedRows.length
       ? visitedRows.slice(0, 6).map((row) => ({
           title: row.name,
+          colour: row.reportColour,
           detail: row.outcomeSummary || row.emailProofDetail || row.nextAction,
         }))
       : [{ title: "No visits logged", detail: "Visit rows will appear here after route activity is captured." }],
@@ -554,6 +578,7 @@ export function buildClusterReportModel({
           .map((row) => ({
             id: row.id,
             name: row.name,
+            colour: row.reportColour,
             status: row.status,
             visited: Boolean(row.visit),
             location: row.location,
@@ -564,6 +589,7 @@ export function buildClusterReportModel({
         .map((row) => ({
           id: row.id,
           name: row.name,
+          colour: row.reportColour,
           status: row.status,
           visited: Boolean(row.visit),
           x: row.projectedLocation[0],

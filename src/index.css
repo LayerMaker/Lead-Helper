@@ -882,6 +882,9 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
   border-color: oklch(76% 0.19 58 / 0.88);
   box-shadow: 0 0 0 1px oklch(76% 0.19 58 / 0.32), 0 12px 32px oklch(0% 0 0 / 0.3);
 }
+.report-pin-label-text {
+  text-shadow: 0 1px 8px oklch(0% 0 0 / 0.7);
+}
 .report-leaflet-map .leaflet-tooltip-top:before,
 .report-leaflet-map .leaflet-tooltip-bottom:before,
 .report-leaflet-map .leaflet-tooltip-left:before,

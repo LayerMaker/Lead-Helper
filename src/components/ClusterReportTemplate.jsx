@@ -88,24 +88,30 @@ function ReportLeafletMap({ leafletMap, clusterName }) {
         </>
       ) : null}
 
-      {points.map((point) => (
-        <CircleMarker
-          key={point.id}
-          center={point.location}
-          radius={point.visited ? 9 : 7}
-          pathOptions={{
-            color: point.visited ? "#fff4df" : colour,
-            weight: point.visited ? 3 : 2,
-            fillColor: point.visited ? "#f7c66f" : colour,
-            fillOpacity: 0.95,
-          }}
-          interactive={false}
-        >
-          <Tooltip permanent direction="top" offset={[0, -8]} className="map-tooltip marker report-pin-label">
-            {point.name}
-          </Tooltip>
-        </CircleMarker>
-      ))}
+      {points.map((point) => {
+        const pinColour = point.colour || colour;
+
+        return (
+          <CircleMarker
+            key={point.id}
+            center={point.location}
+            radius={point.visited ? 9 : 7}
+            pathOptions={{
+              color: point.visited ? "#fff4df" : pinColour,
+              weight: point.visited ? 3 : 2,
+              fillColor: pinColour,
+              fillOpacity: 0.95,
+            }}
+            interactive={false}
+          >
+            <Tooltip permanent direction="top" offset={[0, -8]} className="map-tooltip marker report-pin-label">
+              <span className="report-pin-label-text" style={{ color: pinColour }}>
+                {point.name}
+              </span>
+            </Tooltip>
+          </CircleMarker>
+        );
+      })}
     </MapContainer>
   );
 }
@@ -201,9 +207,11 @@ export function ClusterReportTemplate({ report, exportRef = null, mode = "previe
             <article className={`report-export-dealer-card${index === 0 ? " expanded" : ""}`} key={`${row.id}-${row.visit?.id || "seed"}`}>
               <div className="report-export-dealer-top">
                 <div className="report-export-dealer-brand">
-                  <span className="dealer-logo-chip">{row.initials}</span>
+                  <span className="dealer-logo-chip" style={{ borderColor: row.reportColour, color: row.reportColour }}>
+                    {row.initials}
+                  </span>
                   <div>
-                    <h3>{row.name}</h3>
+                    <h3 style={{ color: row.reportColour }}>{row.name}</h3>
                     <small>{row.address}</small>
                   </div>
                 </div>
@@ -271,7 +279,7 @@ export function ClusterReportTemplate({ report, exportRef = null, mode = "previe
             <ul>
               {report.actionsTaken.map((item) => (
                 <li key={`${item.title}-${item.detail}`}>
-                  <strong>{item.title}</strong>
+                  <strong style={{ color: item.colour }}>{item.title}</strong>
                   <span>{item.detail}</span>
                 </li>
               ))}
