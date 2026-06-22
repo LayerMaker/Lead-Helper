@@ -56,9 +56,35 @@ export function isMapV2ReportCluster(state, clusterId) {
   return Boolean(state?.mapV2?.clusters?.some((cluster) => cluster.id === clusterId));
 }
 
+function getClusterReportEvidenceScore(state, cluster) {
+  const clusterId = cluster?.id;
+  const reportPins = getReportPinsForCluster(state, clusterId);
+  const pinDealershipIds = new Set(
+    reportPins
+      .map((pin) => pin.legacyDealershipId || pin.dealershipId || pin.id)
+      .filter(Boolean)
+      .map((id) => canonicalDealershipId(id)),
+  );
+  const isPinnedDealership = (dealershipId) => pinDealershipIds.has(canonicalDealershipId(dealershipId));
+  const visits = (state?.visits || []).filter((visit) => visit.clusterId === clusterId || isPinnedDealership(visit.dealershipId)).length;
+  const contacts = (state?.contacts || []).filter((contact) => isPinnedDealership(contact.dealershipId)).length;
+  const emails = (state?.emailDrafts || []).filter((draft) => isPinnedDealership(draft.dealershipId) && draft.status !== "archived").length;
+  const actions = (state?.actions || []).filter((action) => isPinnedDealership(action.dealershipId)).length;
+
+  return visits * 100 + contacts * 45 + emails * 35 + actions * 20 + reportPins.length;
+}
+
 export function getDefaultReportClusterId(state) {
   const clusters = getReportClusters(state);
-  return clusters.find((cluster) => getReportPinsForCluster(state, cluster.id).length)?.id || clusters[0]?.id || "";
+  const rankedByEvidence = clusters
+    .map((cluster, index) => ({
+      cluster,
+      index,
+      score: getClusterReportEvidenceScore(state, cluster),
+    }))
+    .sort((left, right) => right.score - left.score || left.index - right.index);
+
+  return rankedByEvidence.find((item) => item.score > 0)?.cluster.id || clusters.find((cluster) => getReportPinsForCluster(state, cluster.id).length)?.id || clusters[0]?.id || "";
 }
 
 export function buildDealershipsFromReportPins({ pins = [], clusterId, allDealerships = [], getDealershipById }) {
