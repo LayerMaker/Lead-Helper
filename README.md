@@ -88,7 +88,7 @@ This app is ready to deploy as a Render Web Service.
 
 If you configure Render manually instead of using the blueprint:
 
-- Build Command: `npm ci && npm run build`
+- Build Command: `npm ci && npx playwright install chromium && npm run build`
 - Start Command: `npm start`
 
 ## Environment Variables

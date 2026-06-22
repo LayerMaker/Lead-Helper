@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "postinstall": "playwright install chromium",
     "preview": "vite preview",
     "start": "node server.mjs",
     "data:build": "node ./scripts/build-dealership-dataset.mjs",

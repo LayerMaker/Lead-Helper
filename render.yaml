@@ -2,7 +2,7 @@ services:
   - type: web
     name: lead-helper
     runtime: node
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci && npx playwright install chromium && npm run build
     startCommand: npm start
     autoDeployTrigger: commit
     envVars:
