@@ -1,9 +1,113 @@
+import { useEffect } from "react";
+import { latLngBounds } from "leaflet";
+import { CircleMarker, MapContainer, Polygon, Polyline, TileLayer, Tooltip, useMap } from "react-leaflet";
+
 function toneClass(tone) {
   if (tone === "mint" || tone === "success") return "mint";
   if (tone === "rose" || tone === "warm") return "rose";
   if (tone === "teal") return "teal";
   if (tone === "muted") return "muted";
   return "amber";
+}
+
+function FitReportMap({ leafletMap }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const points = [
+      ...(leafletMap?.polygon || []),
+      ...(leafletMap?.route || []),
+      ...(leafletMap?.points || []).map((point) => point.location),
+    ].filter((location) => Array.isArray(location));
+
+    const timer = window.setTimeout(() => {
+      map.invalidateSize();
+      if (points.length) {
+        map.fitBounds(latLngBounds(points), { padding: [28, 28], maxZoom: 14 });
+      }
+    }, 120);
+
+    return () => window.clearTimeout(timer);
+  }, [leafletMap, map]);
+
+  return null;
+}
+
+function ReportLeafletMap({ leafletMap, clusterName }) {
+  const points = leafletMap?.points || [];
+  const polygon = leafletMap?.polygon || [];
+  const route = leafletMap?.route || [];
+  const colour = leafletMap?.colour || "#f3a53d";
+  const center = points[0]?.location || polygon[0] || route[0] || [51.4838, -0.2153];
+
+  if (!points.length && !polygon.length && !route.length) return null;
+
+  return (
+    <MapContainer
+      center={center}
+      zoom={12}
+      scrollWheelZoom={false}
+      dragging={false}
+      touchZoom={false}
+      doubleClickZoom={false}
+      boxZoom={false}
+      keyboard={false}
+      zoomControl={false}
+      className="report-leaflet-map"
+      attributionControl
+    >
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      <FitReportMap leafletMap={leafletMap} />
+
+      {polygon.length ? (
+        <Polygon
+          positions={polygon}
+          pathOptions={{
+            color: colour,
+            weight: 5,
+            fillColor: colour,
+            fillOpacity: 0.2,
+            opacity: 0.98,
+            lineJoin: "miter",
+          }}
+          interactive={false}
+        >
+          <Tooltip permanent direction="center" className="map-tooltip selected report-cluster-label">
+            {clusterName} cluster
+          </Tooltip>
+        </Polygon>
+      ) : null}
+
+      {route.length > 1 ? (
+        <>
+          <Polyline positions={route} pathOptions={{ color: "#1c140e", weight: 10, opacity: 0.35 }} interactive={false} />
+          <Polyline positions={route} pathOptions={{ color: colour, weight: 5, opacity: 0.9, dashArray: "10 10" }} interactive={false} />
+        </>
+      ) : null}
+
+      {points.map((point) => (
+        <CircleMarker
+          key={point.id}
+          center={point.location}
+          radius={point.visited ? 9 : 7}
+          pathOptions={{
+            color: point.visited ? "#fff4df" : colour,
+            weight: point.visited ? 3 : 2,
+            fillColor: point.visited ? "#f7c66f" : colour,
+            fillOpacity: 0.95,
+          }}
+          interactive={false}
+        >
+          <Tooltip permanent direction="top" offset={[0, -8]} className="map-tooltip marker report-pin-label">
+            {point.name}
+          </Tooltip>
+        </CircleMarker>
+      ))}
+    </MapContainer>
+  );
 }
 
 export function ClusterReportTemplate({ report, exportRef = null, mode = "preview" }) {
@@ -13,6 +117,7 @@ export function ClusterReportTemplate({ report, exportRef = null, mode = "previe
   const closedPolygonPoints = polygonPoints && report.map.polygon[0] ? `${polygonPoints} ${report.map.polygon[0][0]},${report.map.polygon[0][1]}` : "";
   const routePoints = report.map.route.map(([x, y]) => `${x},${y}`).join(" ");
   const sheetClassName = `report-export-sheet${mode === "print" ? " print-mode" : ""}`;
+  const hasLeafletMap = Boolean(report.map.leaflet?.points?.length || report.map.leaflet?.polygon?.length || report.map.leaflet?.route?.length);
 
   return (
     <article className={sheetClassName} ref={exportRef}>
@@ -44,34 +149,40 @@ export function ClusterReportTemplate({ report, exportRef = null, mode = "previe
           <span className="pill active">Generated {report.exportDateLabel}</span>
         </div>
 
-        <div className="report-export-map">
-          <div className="report-export-grid"></div>
-          <div className="report-export-road road-a"></div>
-          <div className="report-export-road road-b"></div>
-          <div className="report-export-road road-c"></div>
+        <div className={`report-export-map${hasLeafletMap ? " leaflet" : ""}`}>
+          {hasLeafletMap ? (
+            <ReportLeafletMap leafletMap={report.map.leaflet} clusterName={report.clusterName} />
+          ) : (
+            <>
+              <div className="report-export-grid"></div>
+              <div className="report-export-road road-a"></div>
+              <div className="report-export-road road-b"></div>
+              <div className="report-export-road road-c"></div>
 
-          <svg className="report-export-svg" viewBox={`0 0 ${report.map.width} ${report.map.height}`} aria-hidden="true">
-            {polygonPoints ? <polygon className="report-export-polygon" points={polygonPoints} /> : null}
-            {closedPolygonPoints ? <polyline className="report-export-boundary-line" points={closedPolygonPoints} /> : null}
-            {routePoints ? <polyline className="report-export-route" points={routePoints} /> : null}
-            {report.map.polygon.map(([x, y], index) => (
-              <g key={`boundary-${index}-${x}-${y}`} transform={`translate(${x} ${y})`}>
-                <circle className="report-export-boundary-vertex" r="7" />
-                <circle className="report-export-boundary-vertex-core" r="2.5" />
-              </g>
-            ))}
-            {report.map.points.map((point) => (
-              <g key={point.id} transform={`translate(${point.x} ${point.y})`}>
-                <circle className={`report-export-node${point.visited ? " visited" : ""}`} r="10" />
-                <circle className="report-export-node-core" r="3.5" />
-              </g>
-            ))}
-            {report.map.labels.map((label) => (
-              <text key={`${label.text}-${label.x}`} className="report-export-label" x={label.x} y={label.y}>
-                {label.text}
-              </text>
-            ))}
-          </svg>
+              <svg className="report-export-svg" viewBox={`0 0 ${report.map.width} ${report.map.height}`} aria-hidden="true">
+                {polygonPoints ? <polygon className="report-export-polygon" points={polygonPoints} /> : null}
+                {closedPolygonPoints ? <polyline className="report-export-boundary-line" points={closedPolygonPoints} /> : null}
+                {routePoints ? <polyline className="report-export-route" points={routePoints} /> : null}
+                {report.map.polygon.map(([x, y], index) => (
+                  <g key={`boundary-${index}-${x}-${y}`} transform={`translate(${x} ${y})`}>
+                    <circle className="report-export-boundary-vertex" r="7" />
+                    <circle className="report-export-boundary-vertex-core" r="2.5" />
+                  </g>
+                ))}
+                {report.map.points.map((point) => (
+                  <g key={point.id} transform={`translate(${point.x} ${point.y})`}>
+                    <circle className={`report-export-node${point.visited ? " visited" : ""}`} r="10" />
+                    <circle className="report-export-node-core" r="3.5" />
+                  </g>
+                ))}
+                {report.map.labels.map((label) => (
+                  <text key={`${label.text}-${label.x}`} className="report-export-label" x={label.x} y={label.y}>
+                    {label.text}
+                  </text>
+                ))}
+              </svg>
+            </>
+          )}
         </div>
       </section>
 

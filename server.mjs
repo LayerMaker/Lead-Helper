@@ -244,6 +244,17 @@ app.get("/api/reports/pdf", async (request, response) => {
     await page.goto(printUrl.toString(), { waitUntil: "networkidle", timeout: 45000 });
     await page.emulateMedia({ media: "print" });
     await page.waitForSelector(".report-export-sheet", { state: "visible", timeout: 15000 });
+    await page
+      .waitForFunction(
+        () => {
+          const map = document.querySelector(".report-leaflet-map");
+          if (!map) return true;
+          const tiles = [...map.querySelectorAll(".leaflet-tile")];
+          return tiles.length > 0 && tiles.every((tile) => tile.complete && tile.naturalWidth > 0);
+        },
+        { timeout: 12000 },
+      )
+      .catch(() => {});
     await page.waitForTimeout(350);
 
     const pdfBuffer = await page.pdf({

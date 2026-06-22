@@ -4,6 +4,14 @@ import { getMapV2BoundaryForPins } from "./mapV2Model";
 const MAP_WIDTH = 980;
 const MAP_HEIGHT = 320;
 const MAP_PADDING = 30;
+const clusterColourMap = {
+  amber: "#f3a53d",
+  mint: "#7ae3b8",
+  rose: "#ff7fa7",
+  teal: "#2fd4d4",
+  lime: "#b8de6f",
+  violet: "#d8a7ff",
+};
 
 function slugify(value) {
   return String(value || "")
@@ -379,6 +387,10 @@ function statusTone(status) {
   return "default";
 }
 
+function getReportClusterColour(cluster) {
+  return clusterColourMap[cluster?.colour] || "#f3a53d";
+}
+
 export function buildClusterReportModel({
   state,
   cluster,
@@ -530,6 +542,23 @@ export function buildClusterReportModel({
       sourceLabel: usingMapV2Pins ? "Map pin assignments" : "Operational cluster data",
       polygon: projectedPolygon,
       route: projectedRoute,
+      leaflet: {
+        colour: getReportClusterColour(cluster),
+        polygon: clusterPolygon,
+        route: dealerships
+          .filter((dealership) => Array.isArray(dealership.location))
+          .sort((left, right) => (left.order || 999) - (right.order || 999))
+          .map((dealership) => dealership.location),
+        points: rows
+          .filter((row) => Array.isArray(row.location))
+          .map((row) => ({
+            id: row.id,
+            name: row.name,
+            status: row.status,
+            visited: Boolean(row.visit),
+            location: row.location,
+          })),
+      },
       points: rows
         .filter((row) => row.projectedLocation)
         .map((row) => ({

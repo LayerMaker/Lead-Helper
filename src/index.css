@@ -838,6 +838,56 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
 .report-export-sheet.print-mode .report-export-map {
   min-height: 260px;
 }
+.report-export-map.leaflet {
+  min-height: 320px;
+  background: oklch(8% 0.012 55);
+}
+.report-export-sheet.print-mode .report-export-map.leaflet {
+  min-height: 260px;
+}
+.report-leaflet-map {
+  width: 100%;
+  height: 320px;
+  min-height: 320px;
+  background:
+    radial-gradient(circle at 24% 34%, oklch(72% 0.18 75 / 0.14), transparent 14rem),
+    radial-gradient(circle at 74% 66%, oklch(50% 0.16 130 / 0.1), transparent 13rem),
+    oklch(12% 0.035 76);
+}
+.report-export-sheet.print-mode .report-leaflet-map {
+  height: 260px;
+  min-height: 260px;
+}
+.report-leaflet-map .leaflet-pane.leaflet-tile-pane {
+  filter: sepia(1) hue-rotate(325deg) saturate(0.8) brightness(0.34) contrast(1.2);
+}
+.report-leaflet-map .leaflet-control-attribution {
+  background: oklch(12% 0.018 55 / 0.9);
+  color: var(--fg);
+  border-color: var(--border);
+  font-size: 9px;
+}
+.report-leaflet-map .leaflet-tooltip.map-tooltip {
+  padding: 5px 9px;
+  border: 1px solid oklch(95% 0.02 85 / 0.26);
+  border-radius: 999px;
+  background: oklch(10% 0.018 55 / 0.92);
+  color: var(--fg);
+  box-shadow: 0 10px 30px oklch(0% 0 0 / 0.28);
+  font: 700 10px/1.2 var(--font-mono);
+  white-space: nowrap;
+}
+.report-leaflet-map .leaflet-tooltip.map-tooltip.selected,
+.report-leaflet-map .leaflet-tooltip.report-pin-label {
+  border-color: oklch(76% 0.19 58 / 0.88);
+  box-shadow: 0 0 0 1px oklch(76% 0.19 58 / 0.32), 0 12px 32px oklch(0% 0 0 / 0.3);
+}
+.report-leaflet-map .leaflet-tooltip-top:before,
+.report-leaflet-map .leaflet-tooltip-bottom:before,
+.report-leaflet-map .leaflet-tooltip-left:before,
+.report-leaflet-map .leaflet-tooltip-right:before {
+  display: none;
+}
 .report-export-grid {
   position: absolute;
   inset: 0;
