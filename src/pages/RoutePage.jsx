@@ -1,230 +1,227 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import {
-  buildDraftBody,
-  buildAdminEntries,
-  buildGoogleMapsRouteUrl,
-  defaultVisitOutcomes,
-  fromDateTimeLocalValue,
-  getOptimizedDealershipsForCluster,
-  toDateTimeLocalValue,
-} from "../lib/leadHelperModel";
 import { AppLayout } from "../components/AppLayout";
 import { useAppState } from "../state/AppState";
 
-const routeOutcomes = [
-  "Met manager",
-  "Interested",
-  "Needs email",
-  "Follow-up required",
-  "Not a good time",
-  "Management not present",
-  "Site walk booked",
-  "Deferred to decision maker",
-  "Card captured",
-  "Not suitable",
-];
+const routeClusterColours = {
+  amber: "#f3a53d",
+  mint: "#7ae3b8",
+  rose: "#ff7fa7",
+  teal: "#2fd4d4",
+  lime: "#b8de6f",
+  violet: "#d8a7ff",
+  cyan: "#53d7ff",
+  coral: "#ff9b73",
+  blue: "#80b7ff",
+  gold: "#f0df88",
+  orchid: "#e58cff",
+  slate: "#9aa7b8",
+};
 
-function RouteComposer({ state, dealerships, selectedDealership, currentVisit, dispatch }) {
-  const [selectedOutcomes, setSelectedOutcomes] = useState(currentVisit?.outcomes || defaultVisitOutcomes);
-  const [quickNote, setQuickNote] = useState(currentVisit?.note || "");
-  const [scheduleValue, setScheduleValue] = useState("");
-  const adminEntries = useMemo(() => buildAdminEntries(selectedOutcomes), [selectedOutcomes]);
-  const generatedDraft = useMemo(
-    () => buildDraftBody(state, selectedDealership.id, selectedOutcomes),
-    [selectedDealership.id, selectedOutcomes, state],
+function getRouteClusterColour(cluster) {
+  return routeClusterColours[cluster?.colour] || "#f3a53d";
+}
+
+function getRouteClusterLabel(cluster, index, pinCount = 0) {
+  const cleanName = String(cluster?.name || "").trim();
+  const fallback = cluster?.lifecycle === "manual" ? `Field cluster ${index + 1}` : `Cluster ${index + 1}`;
+  const name = cleanName && !/^manual field cluster$/i.test(cleanName) ? cleanName : fallback;
+  return `${String(index + 1).padStart(2, "0")} - ${name}${pinCount ? ` (${pinCount} pins)` : ""}`;
+}
+
+function getMapV2PinsForRouteCluster(state, clusterId) {
+  const assignedPinIds = new Set(
+    (state.mapV2?.assignments || [])
+      .filter((assignment) => assignment.clusterId === clusterId && assignment.assignmentType !== "rejected")
+      .map((assignment) => assignment.pinId),
   );
+  return (state.mapV2?.pins || []).filter((pin) => assignedPinIds.has(pin.id));
+}
 
-  function toggleOutcome(outcome) {
-    setSelectedOutcomes((current) =>
-      current.includes(outcome) ? current.filter((item) => item !== outcome) : [...current, outcome],
-    );
-  }
+function getRouteClusterItems(state) {
+  return (state.mapV2?.clusters || [])
+    .map((cluster, index) => ({
+      cluster,
+      index,
+      pins: getMapV2PinsForRouteCluster(state, cluster.id),
+    }))
+    .filter((item) => item.pins.length);
+}
 
-  async function copyDraft() {
-    try {
-      await window.navigator.clipboard.writeText(generatedDraft);
-    } catch {
-      // Quiet fallback for environments without clipboard support.
-    }
-  }
+function getDistanceMiles(left, right) {
+  if (!Array.isArray(left) || !Array.isArray(right)) return Number.POSITIVE_INFINITY;
+  const earthMiles = 3958.8;
+  const toRadians = (value) => (value * Math.PI) / 180;
+  const deltaLat = toRadians(right[0] - left[0]);
+  const deltaLng = toRadians(right[1] - left[1]);
+  const lat1 = toRadians(left[0]);
+  const lat2 = toRadians(right[0]);
+  const a =
+    Math.sin(deltaLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLng / 2) ** 2;
+  return earthMiles * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
+function getCenterLocation(stops) {
+  const locations = stops.map((stop) => stop.location).filter((location) => Array.isArray(location));
+  if (!locations.length) return null;
+  return [
+    locations.reduce((total, location) => total + location[0], 0) / locations.length,
+    locations.reduce((total, location) => total + location[1], 0) / locations.length,
+  ];
+}
+
+function sortRouteStops(stops) {
+  const center = getCenterLocation(stops);
+  return [...stops].sort((left, right) => {
+    const leftDistance = getDistanceMiles(center, left.location);
+    const rightDistance = getDistanceMiles(center, right.location);
+    return leftDistance - rightDistance || left.name.localeCompare(right.name);
+  });
+}
+
+function buildStopFromPin({ pin, getDealershipById }) {
+  const dealershipId = pin.legacyDealershipId || pin.dealershipId || "";
+  const dealership = dealershipId ? getDealershipById(dealershipId) : null;
+  const hasDealership = Boolean(dealership?.id);
+  const id = hasDealership ? dealership.id : pin.id;
+
+  return {
+    id,
+    pinId: pin.id,
+    dealershipId: hasDealership ? dealership.id : "",
+    name: dealership?.name || pin.name || "Unnamed dealership",
+    address: dealership?.address || pin.address || "Address not captured",
+    roleHint: dealership?.roleHint || "Ask for showroom manager or business manager",
+    contactHint: dealership?.contactHint || "",
+    location: Array.isArray(dealership?.location) ? dealership.location : pin.location,
+  };
+}
+
+function buildSelectedMapsUrl(stop) {
+  const destination = Array.isArray(stop?.location) ? stop.location.join(",") : `${stop?.name || ""} ${stop?.address || ""}`.trim();
+  if (!destination) return "https://www.google.com/maps";
+  const params = new URLSearchParams({
+    api: "1",
+    destination,
+    travelmode: "driving",
+  });
+  return `https://www.google.com/maps/dir/?${params.toString()}`;
+}
+
+function RouteClusterPicker({ routeClusterId, routeItems, onChange }) {
   return (
-    <section className="grid two">
-      <div className="panel table">
-        {dealerships.map((dealership, index) => {
-          const isCurrent = dealership.id === selectedDealership.id;
-
+    <section className="dashboard-focus-control route-focus-control">
+      <div>
+        <div className="kicker">Route cluster</div>
+        <h2>Select the cluster you are working.</h2>
+        <small>Live from the clusters drawn on the map. Pick by colour, then choose the next dealership below.</small>
+      </div>
+      <div className="dashboard-focus-picker" aria-label="Route cluster selection">
+        {routeItems.map(({ cluster, index, pins }) => {
+          const isSelected = cluster.id === routeClusterId;
           return (
-            <div key={dealership.id}>
-              <div className={`row${isCurrent ? " selected" : ""}`}>
-                <span className="number">{String(index + 1).padStart(2, "0")}</span>
-                <div>
-                  <h3>{dealership.name}</h3>
-                  <small>
-                    {dealership.address} - {dealership.roleHint}
-                  </small>
-                </div>
-                <button className={`btn${isCurrent ? " primary" : ""}`} type="button" onClick={() => dispatch({ type: "select-dealership", dealershipId: dealership.id })}>
-                  Log visit
-                </button>
-              </div>
-              {isCurrent ? (
-                <div className="visit-panel open">
-                  <h3>Visit outcome</h3>
-                  <div className="outcomes">
-                    {routeOutcomes.map((outcome) => (
-                      <button
-                        key={outcome}
-                        className={`chip${selectedOutcomes.includes(outcome) ? " selected" : ""}`}
-                        type="button"
-                        onClick={() => toggleOutcome(outcome)}
-                      >
-                        {outcome}
-                      </button>
-                    ))}
-                  </div>
-                  <p>
-                    {dealership.phone} - {dealership.website}. Lead score {dealership.leadScore}. Next action: {dealership.nextAction}.
-                  </p>
-                  <div className="field" style={{ marginTop: 12 }}>
-                    <label>Quick note</label>
-                    <textarea
-                      className="input"
-                      rows="3"
-                      value={quickNote}
-                      onChange={(event) => setQuickNote(event.target.value)}
-                      placeholder="Optional note for the report card or follow-up."
-                    />
-                  </div>
-                  <div className="field" style={{ marginTop: 12 }}>
-                    <label>Next action due</label>
-                    <input
-                      className="text-input"
-                      type="datetime-local"
-                      value={scheduleValue}
-                      onChange={(event) => setScheduleValue(event.target.value)}
-                    />
-                  </div>
-                  <div className="action-row">
-                    <button
-                      className="btn"
-                      type="button"
-                      onClick={() => {
-                        const next = new Date();
-                        next.setHours(16, 30, 0, 0);
-                        setScheduleValue(toDateTimeLocalValue(next.toISOString()));
-                      }}
-                    >
-                      Today 16:30
-                    </button>
-                    <button
-                      className="btn"
-                      type="button"
-                      onClick={() => {
-                        const next = new Date();
-                        next.setDate(next.getDate() + 1);
-                        next.setHours(10, 30, 0, 0);
-                        setScheduleValue(toDateTimeLocalValue(next.toISOString()));
-                      }}
-                    >
-                      Tomorrow 10:30
-                    </button>
-                    <button
-                      className="btn"
-                      type="button"
-                      onClick={() => {
-                        const next = new Date();
-                        next.setDate(next.getDate() + 2);
-                        next.setHours(11, 0, 0, 0);
-                        setScheduleValue(toDateTimeLocalValue(next.toISOString()));
-                      }}
-                    >
-                      +2 days
-                    </button>
-                  </div>
-                  <div className="action-row" style={{ marginTop: 12 }}>
-                    <button
-                      className="btn primary"
-                      type="button"
-                      disabled={selectedOutcomes.length === 0}
-                      onClick={() =>
-                        dispatch({
-                          type: "generate-visit",
-                          dealershipId: dealership.id,
-                          outcomes: selectedOutcomes,
-                          note: quickNote || "Generated from route logging",
-                          scheduleAt: fromDateTimeLocalValue(scheduleValue),
-                        })
-                      }
-                    >
-                      Generate admin
-                    </button>
-                  </div>
-                </div>
-              ) : null}
-            </div>
+            <button
+              className={`dashboard-focus-chip${isSelected ? " selected" : ""}`}
+              key={cluster.id}
+              style={{ "--focus-cluster-colour": getRouteClusterColour(cluster) }}
+              type="button"
+              onClick={() => onChange(cluster.id)}
+            >
+              <span className="dashboard-focus-dot" aria-hidden="true"></span>
+              <span>
+                <b>{getRouteClusterLabel(cluster, index, pins.length)}</b>
+                <small>{cluster.lifecycle === "manual" ? "Drawn map cluster" : "Map cluster"}</small>
+              </span>
+            </button>
           );
         })}
       </div>
-
-      <aside className="panel pad">
-        <div className="kicker">Generated admin</div>
-        <h2>{selectedDealership.name} ready-to-send admin</h2>
-        <p className="draft">{generatedDraft}</p>
-        <div className="admin-actions">
-          {adminEntries.map((entry, index) => (
-            <div className={`row${index === 0 ? " selected" : ""}`} key={entry.label}>
-              <span className="number">{String(index + 1).padStart(2, "0")}</span>
-              <div>
-                <h3>{entry.label}</h3>
-                <small>{entry.detail}</small>
-              </div>
-              <span className={`pill${index === 0 ? " active" : ""}`}>{entry.type}</span>
-            </div>
-          ))}
-        </div>
-        <div className="grid two" style={{ marginTop: 12 }}>
-          <Link className="btn" to="/email">
-            Open draft
-          </Link>
-          <button className="btn primary" type="button" onClick={copyDraft}>
-            Copy note
-          </button>
-        </div>
-      </aside>
     </section>
   );
 }
 
 export function RoutePage() {
-  const { state, selectedCluster, selectedDealership, getLatestVisit, dispatch } = useAppState();
-  const dealerships = useMemo(() => getOptimizedDealershipsForCluster(state, selectedCluster.id), [selectedCluster.id, state]);
-  const visitCount = state.visits.filter((visit) => visit.clusterId === selectedCluster.id).length;
-  const currentVisit = getLatestVisit(selectedDealership.id);
-  const mapsRouteUrl = buildGoogleMapsRouteUrl(state, selectedCluster.id);
+  const { state, getDealershipById, dispatch } = useAppState();
+  const routeItems = useMemo(() => getRouteClusterItems(state), [state]);
+  const [routeClusterId, setRouteClusterId] = useState(routeItems[0]?.cluster.id || "");
+  const activeRouteItem = routeItems.find((item) => item.cluster.id === routeClusterId) || routeItems[0] || null;
+  const routeCluster = activeRouteItem?.cluster || null;
+  const routeStops = useMemo(
+    () =>
+      activeRouteItem
+        ? sortRouteStops(activeRouteItem.pins.map((pin) => buildStopFromPin({ pin, getDealershipById })))
+        : [],
+    [activeRouteItem, getDealershipById],
+  );
+  const [selectedStopId, setSelectedStopId] = useState("");
+  const selectedStop = routeStops.find((stop) => stop.id === selectedStopId || stop.pinId === selectedStopId) || routeStops[0] || null;
+  const mapsUrl = buildSelectedMapsUrl(selectedStop);
+  const clusterIndex = activeRouteItem?.index ?? 0;
+
+  function selectStop(stop) {
+    setSelectedStopId(stop.id);
+    if (stop.dealershipId) {
+      dispatch({ type: "select-dealership", dealershipId: stop.dealershipId });
+    }
+  }
 
   return (
-    <AppLayout statusLine={`${selectedCluster.name} Route - ${visitCount} of ${dealerships.length} visited`}>
+    <AppLayout statusLine={routeCluster ? `${routeCluster.name} Route - ${routeStops.length} stops` : "Route - select a map cluster"}>
       <section className="title-row">
         <div>
           <div className="kicker">Cluster route</div>
-          <h1>{selectedCluster.name} Route keeps the next stop and admin in one thumb zone.</h1>
-          <p className="subtle-copy">Route order is now optimized from the cluster geography so the next stop is based on the shortest next hop, not a fixed seed list.</p>
+          <h1>{routeCluster ? getRouteClusterLabel(routeCluster, clusterIndex, routeStops.length) : "Select a route cluster."}</h1>
+          <p className="subtle-copy">Choose the map cluster you are working, tap the dealership you want next, then open it in your phone maps app.</p>
         </div>
-        <a className="btn primary" href={mapsRouteUrl} target="_blank" rel="noreferrer">
-          Open in maps
+        <a className={`btn primary${selectedStop ? "" : " disabled"}`} href={selectedStop ? mapsUrl : "#"} target="_blank" rel="noreferrer">
+          Open selected in maps
         </a>
       </section>
 
-      <RouteComposer
-        key={`${selectedDealership.id}-${currentVisit?.createdAt || "new"}`}
-        state={state}
-        dealerships={dealerships}
-        selectedDealership={selectedDealership}
-        currentVisit={currentVisit}
-        dispatch={dispatch}
-      />
+      {routeItems.length ? (
+        <RouteClusterPicker
+          routeClusterId={activeRouteItem?.cluster.id || ""}
+          routeItems={routeItems}
+          onChange={(clusterId) => {
+            setRouteClusterId(clusterId);
+            setSelectedStopId("");
+          }}
+        />
+      ) : (
+        <section className="panel pad">
+          <div className="kicker">No route clusters</div>
+          <h2>Create a cluster on the Map first.</h2>
+          <small>Route uses map clusters with assigned dealership pins as its source of truth.</small>
+        </section>
+      )}
+
+      <section className="panel table route-stop-list" style={{ "--focus-cluster-colour": getRouteClusterColour(routeCluster) }}>
+        {routeStops.length ? (
+          routeStops.map((stop, index) => {
+            const isSelected = selectedStop?.id === stop.id || selectedStop?.pinId === stop.pinId;
+            return (
+              <button className={`row route-stop-row${isSelected ? " selected" : ""}`} key={stop.pinId} type="button" onClick={() => selectStop(stop)}>
+                <span className="number">{String(index + 1).padStart(2, "0")}</span>
+                <div>
+                  <h3>{stop.name}</h3>
+                  <small>
+                    {stop.address} - {stop.contactHint || stop.roleHint}
+                  </small>
+                </div>
+                <span className={`pill${isSelected ? " active" : ""}`}>{isSelected ? "Selected" : "Tap"}</span>
+              </button>
+            );
+          })
+        ) : (
+          <div className="row">
+            <span className="number">--</span>
+            <div>
+              <h3>No dealerships in this cluster</h3>
+              <small>Assign pins to this cluster on the Map, then Route will populate automatically.</small>
+            </div>
+          </div>
+        )}
+      </section>
     </AppLayout>
   );
 }

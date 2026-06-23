@@ -1373,6 +1373,28 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
 .dashboard-focus-banner h2 {
   color: var(--focus-cluster-colour);
 }
+.route-focus-control {
+  margin-top: 0;
+}
+.route-stop-list {
+  display: grid;
+  gap: 0;
+}
+.route-stop-row {
+  width: 100%;
+  color: var(--fg);
+  text-align: left;
+}
+.route-stop-row.selected {
+  border-color: color-mix(in oklab, var(--focus-cluster-colour, var(--accent)), transparent 34%);
+  background:
+    linear-gradient(90deg, color-mix(in oklab, var(--focus-cluster-colour, var(--accent)), transparent 86%), transparent 46%),
+    oklch(12% 0.018 55 / 0.76);
+}
+.route-stop-row.selected .number {
+  color: var(--focus-cluster-colour);
+  border-color: color-mix(in oklab, var(--focus-cluster-colour, var(--accent)), transparent 34%);
+}
 .dashboard-bucket {
   display: grid;
   gap: 12px;
