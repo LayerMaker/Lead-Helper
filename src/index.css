@@ -1379,17 +1379,32 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
 .route-stop-list {
   display: grid;
   gap: 0;
+  overflow: hidden;
 }
 .route-stop-row {
   width: 100%;
+  border: 0;
+  border-top: 1px solid oklch(100% 0 0 / 0.06);
+  background: oklch(10% 0.014 55 / 0.72);
   color: var(--fg);
   text-align: left;
 }
+.route-stop-row:first-child {
+  border-top: 0;
+}
+.route-stop-row:hover,
+.route-stop-row:focus-visible {
+  background:
+    linear-gradient(90deg, oklch(100% 0 0 / 0.045), transparent 42%),
+    oklch(11% 0.016 55 / 0.78);
+  outline: none;
+}
 .route-stop-row.selected {
-  border-color: color-mix(in oklab, var(--focus-cluster-colour, var(--accent)), transparent 34%);
+  border-top-color: color-mix(in oklab, var(--focus-cluster-colour, var(--accent)), transparent 34%);
   background:
     linear-gradient(90deg, color-mix(in oklab, var(--focus-cluster-colour, var(--accent)), transparent 86%), transparent 46%),
     oklch(12% 0.018 55 / 0.76);
+  box-shadow: inset 3px 0 0 var(--focus-cluster-colour);
 }
 .route-stop-row.selected .number {
   color: var(--focus-cluster-colour);
