@@ -1,6 +1,7 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { AppLayout } from "../components/AppLayout";
+import { getDistanceMilesBetweenPoints } from "../lib/leadHelperModel";
 import { geocodeAddress } from "../lib/osmService";
 import { useAppState } from "../state/AppState";
 
@@ -12,6 +13,11 @@ const AUTO_WEST_TEST_LEAD = {
   roleHint: "Showroom manager",
   contactHint: "Met on site, brochure already sent",
 };
+
+const DUPLICATE_DISTANCE_MILES = 0.12;
+const MAP_DETAILS_PHONE_PATTERN = /(?:\+44|0)(?:[\d\s().-]){8,}/;
+const UK_POSTCODE_PATTERN = /\b[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}\b/i;
+const ADDRESS_WORD_PATTERN = /\b(?:road|rd|street|st|lane|ln|avenue|ave|drive|dr|way|mews|place|pl|park|high street|devonshire)\b/i;
 
 function emptyLocationForm() {
   return {
@@ -36,11 +42,78 @@ function createManualDealershipId(name, address) {
   return `manual-${slugify(name)}-${slugify(address).slice(0, 32)}`;
 }
 
+function formatMiles(value) {
+  if (!Number.isFinite(value)) return "";
+  if (value < 0.1) return `${Math.round(value * 5280)} ft`;
+  return `${value.toFixed(2)} mi`;
+}
+
+function sanitizeWebsite(value) {
+  return String(value || "")
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .replace(/^www\./i, "")
+    .replace(/\/$/, "");
+}
+
+function sanitizePhone(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function findNearestPin(location, pins = []) {
+  if (!Array.isArray(location)) return null;
+  return pins
+    .filter((pin) => Array.isArray(pin.location))
+    .map((pin) => ({
+      ...pin,
+      distanceMiles: getDistanceMilesBetweenPoints(location, pin.location),
+    }))
+    .sort((left, right) => left.distanceMiles - right.distanceMiles || left.name.localeCompare(right.name))[0] || null;
+}
+
+function parseMapsDetails(rawText) {
+  const lines = String(rawText || "")
+    .replace(/\r/g, "\n")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const text = lines.join("\n");
+  const phoneMatch = text.match(MAP_DETAILS_PHONE_PATTERN);
+  const urlMatch = text.match(/https?:\/\/[^\s]+|(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)+[^\s,]*/i);
+  const addressLine =
+    lines.find((line) => UK_POSTCODE_PATTERN.test(line)) ||
+    lines.find((line) => /London/i.test(line) && ADDRESS_WORD_PATTERN.test(line)) ||
+    lines.find((line) => ADDRESS_WORD_PATTERN.test(line));
+  const ignoredLinePattern = /^(directions|save|nearby|send to phone|share|call|website|route|open|closed|hours|photos|reviews?)$/i;
+  const nameLine = lines.find((line) => {
+    if (ignoredLinePattern.test(line)) return false;
+    if (line === addressLine) return false;
+    if (phoneMatch && line.includes(phoneMatch[0])) return false;
+    if (urlMatch && line.includes(urlMatch[0])) return false;
+    if (UK_POSTCODE_PATTERN.test(line)) return false;
+    if (/^\d+(\.\d+)?\s*★/.test(line)) return false;
+    return /[a-z]/i.test(line);
+  });
+
+  return {
+    name: nameLine || "",
+    address: addressLine || "",
+    phone: phoneMatch ? sanitizePhone(phoneMatch[0]) : "",
+    website: urlMatch ? sanitizeWebsite(urlMatch[0]) : "",
+  };
+}
+
 export function LocationPage() {
-  const { selectedDealership, dispatch } = useAppState();
+  const { selectedDealership, mapV2, dispatch } = useAppState();
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("Add a dealership first, then capture contact details on the Leads page.");
   const [error, setError] = useState("");
+  const [mapDetailsText, setMapDetailsText] = useState("");
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationStatus, setLocationStatus] = useState("Use your phone location to check for an existing nearby map pin.");
+  const [selectedPinId, setSelectedPinId] = useState("");
   const nameInputRef = useRef(null);
   const addressInputRef = useRef(null);
   const websiteInputRef = useRef(null);
@@ -48,6 +121,8 @@ export function LocationPage() {
   const roleInputRef = useRef(null);
   const hintInputRef = useRef(null);
   const [form, setForm] = useState(() => emptyLocationForm());
+  const selectedPin = useMemo(() => mapV2.pins.find((pin) => pin.id === selectedPinId) || null, [mapV2.pins, selectedPinId]);
+  const nearestUserPin = useMemo(() => findNearestPin(userLocation, mapV2.pins), [mapV2.pins, userLocation]);
 
   function updateField(key, value) {
     setForm((current) => ({
@@ -62,6 +137,78 @@ export function LocationPage() {
     setForm({
       ...AUTO_WEST_TEST_LEAD,
     });
+  }
+
+  function applyFormPatch(patch) {
+    setForm((current) => ({
+      ...current,
+      ...Object.fromEntries(Object.entries(patch).filter(([, value]) => String(value || "").trim())),
+    }));
+  }
+
+  function applyMapsDetails(text) {
+    const parsed = parseMapsDetails(text);
+    const hasUsefulFields = Object.values(parsed).some(Boolean);
+    if (!hasUsefulFields) {
+      setError("I could not find a dealership name, address, phone, or website in that pasted text.");
+      return;
+    }
+    setError("");
+    applyFormPatch(parsed);
+    setStatus("Google Maps details extracted. Check the fields, then add or update the map pin.");
+  }
+
+  async function pasteMapsDetailsFromClipboard() {
+    if (!navigator.clipboard?.readText) {
+      setError("Clipboard access is not available in this browser. Paste the Maps text into the box instead.");
+      return;
+    }
+    try {
+      const text = await navigator.clipboard.readText();
+      setMapDetailsText(text);
+      applyMapsDetails(text);
+    } catch {
+      setError("Clipboard permission was blocked. Paste the Maps text into the box instead.");
+    }
+  }
+
+  function selectExistingPin(pin) {
+    if (!pin) return;
+    setSelectedPinId(pin.id);
+    setError("");
+    setStatus(`Ready to update existing map pin: ${pin.name}`);
+    setForm({
+      name: pin.name || "",
+      address: pin.address || "",
+      website: pin.website || "",
+      phone: pin.phone || "",
+      roleHint: form.roleHint,
+      contactHint: form.contactHint,
+    });
+  }
+
+  function requestCurrentLocation() {
+    if (!("geolocation" in navigator)) {
+      setLocationStatus("Location is not available on this device.");
+      return;
+    }
+    setLocationStatus("Checking your current position");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const nextLocation = [position.coords.latitude, position.coords.longitude];
+        const nearest = findNearestPin(nextLocation, mapV2.pins);
+        setUserLocation(nextLocation);
+        setLocationStatus(
+          nearest
+            ? `Nearest existing pin: ${nearest.name}, ${formatMiles(nearest.distanceMiles)} away.`
+            : "Location found. No dealership pins are close enough to flag.",
+        );
+      },
+      () => {
+        setLocationStatus("Location permission was blocked or unavailable.");
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 },
+    );
   }
 
   async function addLocation() {
@@ -92,7 +239,12 @@ export function LocationPage() {
 
     try {
       const [bestMatch] = await geocodeAddress(address);
-      const manualDealershipId = createManualDealershipId(name, address);
+      const resolvedLocation = [bestMatch.lat, bestMatch.lng];
+      const nearestResolvedPin = findNearestPin(resolvedLocation, mapV2.pins);
+      const pinToUpdate =
+        selectedPin ||
+        (nearestResolvedPin && nearestResolvedPin.distanceMiles <= DUPLICATE_DISTANCE_MILES ? nearestResolvedPin : null);
+      const manualDealershipId = pinToUpdate?.legacyDealershipId || createManualDealershipId(name, address);
       dispatch({
         type: "upsert-manual-dealership",
         payload: {
@@ -103,7 +255,7 @@ export function LocationPage() {
           phone,
           roleHint,
           contactHint,
-          location: [bestMatch.lat, bestMatch.lng],
+          location: resolvedLocation,
           geocodeLabel: bestMatch.displayName,
           intelDistance: "Manual add",
           nextAction: "Capture contact and log visit outcomes",
@@ -112,17 +264,24 @@ export function LocationPage() {
       dispatch({
         type: "upsert-map-v2-pin",
         payload: {
+          pinId: pinToUpdate?.id,
           legacyDealershipId: manualDealershipId,
           name,
           address,
           website,
           phone,
-          location: [bestMatch.lat, bestMatch.lng],
+          location: resolvedLocation,
           sourceRef: "add-location",
         },
       });
-      setStatus(`Pinned to Map as an unassigned location from: ${bestMatch.displayName}`);
+      setStatus(
+        pinToUpdate
+          ? `Updated existing map pin: ${pinToUpdate.name} -> ${name}.`
+          : `Pinned to Map as an unassigned location from: ${bestMatch.displayName}`,
+      );
       setForm(emptyLocationForm());
+      setMapDetailsText("");
+      setSelectedPinId("");
     } catch (addError) {
       setError(addError.message || "Address lookup failed.");
       setStatus("Location needs a valid map match before it can join the dealership database.");
@@ -165,7 +324,52 @@ export function LocationPage() {
             <button className="btn" type="button" onClick={loadAutoWestTestLead}>
               Load Auto West test lead
             </button>
+            <button className="btn" type="button" onClick={requestCurrentLocation}>
+              Check nearby pins
+            </button>
           </div>
+
+          <div className="location-import-box">
+            <div className="section-head compact">
+              <div>
+                <div className="kicker">Fast import</div>
+                <h3>Paste Google Maps details</h3>
+              </div>
+              <button className="btn" type="button" onClick={pasteMapsDetailsFromClipboard}>
+                Paste clipboard
+              </button>
+            </div>
+            <textarea
+              className="input small-draft"
+              value={mapDetailsText}
+              onChange={(event) => setMapDetailsText(event.target.value)}
+              placeholder="Paste a Google Maps listing, address block, website, or phone details here."
+            />
+            <div className="action-row">
+              <button className="btn" type="button" onClick={() => applyMapsDetails(mapDetailsText)}>
+                Extract fields
+              </button>
+              <small className="muted">Copy one listing from Maps, paste once, then check the filled fields below.</small>
+            </div>
+          </div>
+
+          <div className="nearby-pin-card">
+            <div>
+              <b>Duplicate check</b>
+              <small>{locationStatus}</small>
+            </div>
+            {nearestUserPin && nearestUserPin.distanceMiles <= DUPLICATE_DISTANCE_MILES ? (
+              <button className="btn" type="button" onClick={() => selectExistingPin(nearestUserPin)}>
+                Update this pin
+              </button>
+            ) : null}
+          </div>
+
+          {selectedPin ? (
+            <div className="inline-alert">
+              Updating existing map pin: <b>{selectedPin.name}</b>. The saved pin will use the edited name and address below.
+            </div>
+          ) : null}
 
           <div className="grid two compact-form">
             <div className="field">

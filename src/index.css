@@ -473,6 +473,37 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
 .location-card {
   margin-bottom: 2px;
 }
+.location-import-box,
+.nearby-pin-card {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, oklch(72% 0.19 55 / 0.08), transparent 42%),
+    oklch(9% 0.012 55 / 0.68);
+}
+.location-import-box .section-head {
+  margin-bottom: 0;
+}
+.nearby-pin-card {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+.nearby-pin-card b,
+.nearby-pin-card small {
+  display: block;
+}
+.nearby-pin-card small {
+  margin-top: 4px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.muted {
+  color: var(--muted);
+}
 .geo-radar {
   position: relative;
   min-height: 270px;
