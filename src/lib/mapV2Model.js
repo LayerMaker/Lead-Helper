@@ -11,7 +11,7 @@ const clusterSeed = [
   { id: "wandsworth", name: "Wandsworth", colour: "rose", lifecycle: "accepted", strategy: "legacy" },
   { id: "brentford", name: "Brentford", colour: "teal", lifecycle: "accepted", strategy: "legacy" },
 ];
-const clusterPalette = ["amber", "mint", "rose", "teal", "lime", "violet"];
+const clusterPalette = ["amber", "mint", "rose", "teal", "lime", "violet", "cyan", "coral", "blue", "gold", "orchid", "slate"];
 
 function slugify(value) {
   return String(value || "")
@@ -238,9 +238,11 @@ export function createMapV2ClusterFromPins(mapV2, pinIds = [], preferredName = "
   if (!selectedPinIds.length) return mapV2;
 
   const createdAt = nowIso();
-  const clusterName = String(preferredName || "").trim() || `Manual field cluster ${new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
+  const manualClusterCount = (mapV2.clusters || []).filter((cluster) => cluster.lifecycle === "manual").length + 1;
+  const clusterName = String(preferredName || "").trim() || `Field cluster ${manualClusterCount}`;
   const clusterId = `manual-${slugify(clusterName)}-${Date.now().toString(36).slice(-4)}`;
-  const colour = clusterPalette[(mapV2.clusters || []).length % clusterPalette.length];
+  const usedColours = new Set((mapV2.clusters || []).map((cluster) => cluster.colour).filter(Boolean));
+  const colour = clusterPalette.find((candidate) => !usedColours.has(candidate)) || clusterPalette[(mapV2.clusters || []).length % clusterPalette.length];
   const nextCluster = {
     id: clusterId,
     name: clusterName,

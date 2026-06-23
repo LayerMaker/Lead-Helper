@@ -21,6 +21,12 @@ const clusterColours = {
   teal: "#2fd4d4",
   lime: "#b8de6f",
   violet: "#d8a7ff",
+  cyan: "#53d7ff",
+  coral: "#ff9b73",
+  blue: "#80b7ff",
+  gold: "#f0df88",
+  orchid: "#e58cff",
+  slate: "#9aa7b8",
 };
 
 function getClusterColour(cluster) {
@@ -348,7 +354,7 @@ export function MapV2Page() {
   const [selectedPinId, setSelectedPinId] = useState(unassignedPins[0]?.id || pins[0]?.id || "");
   const [drawMode, setDrawMode] = useState(false);
   const [lassoPinIds, setLassoPinIds] = useState([]);
-  const [manualClusterName, setManualClusterName] = useState("Manual field cluster");
+  const [manualClusterName, setManualClusterName] = useState("");
 
   const selectedCluster = clusters.find((cluster) => cluster.id === selectedClusterId) || clusters[0];
   const selectedPin = pins.find((pin) => pin.id === selectedPinId) || unassignedPins[0] || pins[0] || null;

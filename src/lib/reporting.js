@@ -11,6 +11,12 @@ const clusterColourMap = {
   teal: "#2fd4d4",
   lime: "#b8de6f",
   violet: "#d8a7ff",
+  cyan: "#53d7ff",
+  coral: "#ff9b73",
+  blue: "#80b7ff",
+  gold: "#f0df88",
+  orchid: "#e58cff",
+  slate: "#9aa7b8",
 };
 
 const dealershipReportColours = [

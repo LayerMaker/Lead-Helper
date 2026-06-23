@@ -1,8 +1,23 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { AppLayout } from "../components/AppLayout";
-import { fromDateTimeLocalValue, getPendingActionBuckets, toDateTimeLocalValue } from "../lib/leadHelperModel";
+import { canonicalDealershipId, fromDateTimeLocalValue, getPendingActionBuckets, toDateTimeLocalValue } from "../lib/leadHelperModel";
 import { useAppState } from "../state/AppState";
+
+const focusClusterColours = {
+  amber: "#f3a53d",
+  mint: "#7ae3b8",
+  rose: "#ff7fa7",
+  teal: "#2fd4d4",
+  lime: "#b8de6f",
+  violet: "#d8a7ff",
+  cyan: "#53d7ff",
+  coral: "#ff9b73",
+  blue: "#80b7ff",
+  gold: "#f0df88",
+  orchid: "#e58cff",
+  slate: "#9aa7b8",
+};
 
 function getCompletionOptions(action) {
   const title = String(action.title || "").toLowerCase();
@@ -70,6 +85,46 @@ function buildHoldDueAt() {
   dueAt.setDate(dueAt.getDate() + 7);
   dueAt.setHours(10, 30, 0, 0);
   return dueAt.toISOString();
+}
+
+function getFocusClusterColour(cluster) {
+  return focusClusterColours[cluster?.colour] || "#f3a53d";
+}
+
+function getFocusClusterLabel(cluster, index, pinCount = 0) {
+  const cleanName = String(cluster?.name || "").trim();
+  const fallback = cluster?.lifecycle === "manual" ? `Field cluster ${index + 1}` : `Cluster ${index + 1}`;
+  const name = cleanName && !/^manual field cluster$/i.test(cleanName) ? cleanName : fallback;
+  return `${String(index + 1).padStart(2, "0")} - ${name}${pinCount ? ` (${pinCount} pins)` : ""}`;
+}
+
+function getMapV2PinsForDashboardCluster(state, clusterId) {
+  const assignedPinIds = new Set(
+    (state.mapV2?.assignments || [])
+      .filter((assignment) => assignment.clusterId === clusterId && assignment.assignmentType !== "rejected")
+      .map((assignment) => assignment.pinId),
+  );
+  return (state.mapV2?.pins || []).filter((pin) => assignedPinIds.has(pin.id));
+}
+
+function getFocusDealershipIds(state, clusterId) {
+  if (!clusterId) return new Set();
+  const pins = getMapV2PinsForDashboardCluster(state, clusterId);
+  return new Set(
+    pins
+      .flatMap((pin) => [pin.legacyDealershipId, pin.dealershipId, pin.id])
+      .filter(Boolean)
+      .map((id) => canonicalDealershipId(id)),
+  );
+}
+
+function sortActionsByFocus(actions, focusDealershipIds) {
+  if (!focusDealershipIds.size) return actions;
+  return [...actions].sort((left, right) => {
+    const leftFocused = focusDealershipIds.has(canonicalDealershipId(left.dealershipId)) ? 0 : 1;
+    const rightFocused = focusDealershipIds.has(canonicalDealershipId(right.dealershipId)) ? 0 : 1;
+    return leftFocused - rightFocused;
+  });
 }
 
 function ScheduledActionRow({ action, getDealershipById, dispatch, tone = "active" }) {
@@ -219,6 +274,7 @@ function ActionBucket({ title, description, actions, emptyText, getDealershipByI
 
 export function DashboardPage() {
   const {
+    state,
     pendingActions,
     pendingDrafts,
     clustersWithVisits,
@@ -228,13 +284,26 @@ export function DashboardPage() {
     getDealershipById,
     dispatch,
   } = useAppState();
+  const [focusClusterId, setFocusClusterId] = useState("");
   const clusterDealers = getDealershipsForCluster(selectedCluster.id);
+  const dashboardFocusClusters = useMemo(() => state.mapV2?.clusters || [], [state.mapV2?.clusters]);
+  const focusCluster = dashboardFocusClusters.find((cluster) => cluster.id === focusClusterId) || null;
+  const focusDealershipIds = useMemo(() => getFocusDealershipIds(state, focusClusterId), [focusClusterId, state]);
+  const focusPinCount = focusCluster ? getMapV2PinsForDashboardCluster(state, focusCluster.id).length : 0;
   const activePendingActions = useMemo(() => pendingActions.filter((action) => !isSoftWaitingAction(action)), [pendingActions]);
   const waitingPendingActions = useMemo(() => pendingActions.filter((action) => isSoftWaitingAction(action)), [pendingActions]);
   const actionBuckets = useMemo(() => getPendingActionBuckets(activePendingActions), [activePendingActions]);
   const waitingBuckets = useMemo(() => getPendingActionBuckets(waitingPendingActions), [waitingPendingActions]);
-  const waitingActions = [...waitingBuckets.overdue, ...waitingBuckets.today, ...waitingBuckets.upcoming];
-  const leadAction = actionBuckets.overdue[0] || actionBuckets.today[0] || actionBuckets.upcoming[0] || null;
+  const focusedActionBuckets = useMemo(
+    () => ({
+      overdue: sortActionsByFocus(actionBuckets.overdue, focusDealershipIds),
+      today: sortActionsByFocus(actionBuckets.today, focusDealershipIds),
+      upcoming: sortActionsByFocus(actionBuckets.upcoming, focusDealershipIds),
+    }),
+    [actionBuckets, focusDealershipIds],
+  );
+  const waitingActions = sortActionsByFocus([...waitingBuckets.overdue, ...waitingBuckets.today, ...waitingBuckets.upcoming], focusDealershipIds);
+  const leadAction = focusedActionBuckets.overdue[0] || focusedActionBuckets.today[0] || focusedActionBuckets.upcoming[0] || null;
   const latestVisit = leadAction ? getLatestVisit(leadAction.dealershipId) : null;
 
   return (
@@ -244,10 +313,39 @@ export function DashboardPage() {
           <div className="kicker">Dashboard</div>
           <h1>Start with what is overdue, then clear today, then move into the field route.</h1>
         </div>
-        <Link className="btn primary" to="/map">
-          Choose cluster
-        </Link>
+        <div className="dashboard-focus-control" style={{ "--focus-cluster-colour": getFocusClusterColour(focusCluster) }}>
+          <label>
+            Dashboard focus
+            <span className="dashboard-focus-select">
+              <span className="dashboard-focus-dot" aria-hidden="true"></span>
+              <select className="text-input" value={focusClusterId} onChange={(event) => setFocusClusterId(event.target.value)}>
+                <option value="">All clusters - natural priority</option>
+                {dashboardFocusClusters.map((cluster, index) => (
+                  <option key={cluster.id} value={cluster.id}>
+                    {getFocusClusterLabel(cluster, index, getMapV2PinsForDashboardCluster(state, cluster.id).length)}
+                  </option>
+                ))}
+              </select>
+            </span>
+          </label>
+          {focusCluster ? (
+            <button className="btn" type="button" onClick={() => setFocusClusterId("")}>
+              Clear focus
+            </button>
+          ) : null}
+        </div>
       </section>
+
+      {focusCluster ? (
+        <section className="dashboard-focus-banner panel pad" style={{ "--focus-cluster-colour": getFocusClusterColour(focusCluster) }}>
+          <span className="dashboard-focus-dot" aria-hidden="true"></span>
+          <div>
+            <div className="kicker">Focus active</div>
+            <h2>{getFocusClusterLabel(focusCluster, dashboardFocusClusters.indexOf(focusCluster), focusPinCount)}</h2>
+            <small>Actions from this cluster are bumped to the top. Everything else remains visible underneath.</small>
+          </div>
+        </section>
+      ) : null}
 
       <section className="pipeline-strip panel pad" aria-label="Visit data pipeline">
         <div>
@@ -292,7 +390,7 @@ export function DashboardPage() {
           <ActionBucket
             title="Overdue"
             description="Missed follow-ups and callbacks"
-            actions={actionBuckets.overdue}
+            actions={focusedActionBuckets.overdue}
             emptyText="Nothing overdue right now."
             getDealershipById={getDealershipById}
             dispatch={dispatch}
@@ -300,7 +398,7 @@ export function DashboardPage() {
           <ActionBucket
             title="Due today"
             description="Clear these before moving on"
-            actions={actionBuckets.today}
+            actions={focusedActionBuckets.today}
             emptyText="No same-day actions waiting."
             getDealershipById={getDealershipById}
             dispatch={dispatch}
@@ -308,7 +406,7 @@ export function DashboardPage() {
           <ActionBucket
             title="Upcoming"
             description="Scheduled next touches and meetings"
-            actions={actionBuckets.upcoming}
+            actions={focusedActionBuckets.upcoming}
             emptyText="Nothing queued yet."
             getDealershipById={getDealershipById}
             dispatch={dispatch}

@@ -1300,6 +1300,55 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
 .dashboard-main-grid {
   align-content: start;
 }
+.dashboard-focus-control {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: min(100%, 360px);
+}
+.dashboard-focus-control label {
+  display: grid;
+  gap: 8px;
+  min-width: min(100%, 280px);
+  color: var(--muted);
+  font: 700 11px/1 var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.dashboard-focus-select {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.dashboard-focus-select .text-input {
+  padding-left: 36px;
+}
+.dashboard-focus-dot {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  border-radius: 999px;
+  background: var(--focus-cluster-colour, var(--accent));
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--focus-cluster-colour, var(--accent)), transparent 78%);
+}
+.dashboard-focus-select .dashboard-focus-dot {
+  position: absolute;
+  left: 13px;
+  z-index: 1;
+}
+.dashboard-focus-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  border-color: color-mix(in oklab, var(--focus-cluster-colour), transparent 62%);
+  box-shadow: inset 4px 0 0 var(--focus-cluster-colour);
+}
+.dashboard-focus-banner h2 {
+  color: var(--focus-cluster-colour);
+}
 .dashboard-bucket {
   display: grid;
   gap: 12px;
@@ -1485,6 +1534,14 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
   .dashboard-completion-options {
     justify-content: stretch;
     max-width: none;
+  }
+  .dashboard-focus-control {
+    width: 100%;
+    justify-content: stretch;
+  }
+  .dashboard-focus-control label,
+  .dashboard-focus-control .btn {
+    width: 100%;
   }
   .dashboard-completion-options .btn {
     flex: 1 1 140px;
