@@ -44,6 +44,13 @@ function buildNextWeekDueAt() {
   return dueAt.toISOString();
 }
 
+function buildWaitingResponseDueAt() {
+  const dueAt = new Date();
+  dueAt.setDate(dueAt.getDate() + 5);
+  dueAt.setHours(10, 30, 0, 0);
+  return dueAt.toISOString();
+}
+
 function reducer(state, action) {
   const next = cloneState(state);
 
@@ -151,6 +158,7 @@ function reducer(state, action) {
   }
 
   if (action.type === "complete-action") {
+    const completedAction = next.actions.find((item) => item.id === action.actionId);
     next.actions = next.actions.map((item) =>
       item.id === action.actionId
         ? {
@@ -163,6 +171,32 @@ function reducer(state, action) {
           }
         : item,
     );
+
+    if (completedAction && ["follow_up_sent", "no_reply_yet"].includes(action.outcome)) {
+      const existingWaitingAction = next.actions.find(
+        (item) =>
+          item.status === "pending" &&
+          item.dealershipId === completedAction.dealershipId &&
+          (item.sourceCompletedAction === completedAction.id || item.sourceSummaryOutcome === "no_response_yet"),
+      );
+      if (!existingWaitingAction) {
+        next.actions.unshift(
+          normalizeActionRecord({
+            id: uid("action"),
+            dealershipId: completedAction.dealershipId,
+            title: "Await response to site pack",
+            type: "waiting_response",
+            dueAt: buildWaitingResponseDueAt(),
+            dueText: "",
+            priority: "low",
+            status: "pending",
+            note: "Site pack or follow-up media sent. Waiting on the lead to respond before chasing too hard.",
+            sourceCompletedAction: completedAction.id,
+          }),
+        );
+      }
+    }
+
     return next;
   }
 

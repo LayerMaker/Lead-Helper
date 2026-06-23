@@ -1304,8 +1304,23 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
   display: grid;
   gap: 12px;
 }
+.dashboard-bucket.waiting-bucket {
+  border-color: oklch(74% 0.13 190 / 0.22);
+  background:
+    linear-gradient(135deg, oklch(74% 0.13 190 / 0.06), transparent 34%),
+    var(--panel);
+}
 .dashboard-action-row {
   align-items: start;
+}
+.dashboard-action-row.waiting-action-row {
+  border-color: oklch(74% 0.13 190 / 0.18);
+  background: oklch(10% 0.012 55 / 0.46);
+}
+.dashboard-action-row.waiting-action-row .number {
+  color: oklch(82% 0.08 190);
+  border-color: oklch(74% 0.13 190 / 0.34);
+  background: oklch(20% 0.04 190 / 0.18);
 }
 .dashboard-action-tools {
   display: flex;

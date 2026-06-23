@@ -7,6 +7,13 @@ import { useAppState } from "../state/AppState";
 function getCompletionOptions(action) {
   const title = String(action.title || "").toLowerCase();
 
+  if (isSoftWaitingAction(action)) {
+    return [
+      { label: "Responded", outcome: "responded" },
+      { label: "Close for now", outcome: "closed_for_now" },
+    ];
+  }
+
   if (action.type === "email") {
     const sentLabel = title.includes("pack") || title.includes("details") || title.includes("summary") ? "Site pack sent" : "Email sent";
     return [
@@ -39,24 +46,51 @@ function getCompletionOptions(action) {
   ];
 }
 
-function ScheduledActionRow({ action, getDealershipById, dispatch }) {
+function isSoftWaitingAction(action) {
+  const haystack = [action.title, action.note, action.type, action.sourceSummaryOutcome].filter(Boolean).join(" ").toLowerCase();
+  const softSummaryOutcomes = new Set(["no_response_yet", "chase_next_week"]);
+  if (softSummaryOutcomes.has(action.sourceSummaryOutcome)) return true;
+
+  return [
+    "no response",
+    "awaiting",
+    "waiting",
+    "sharing with team",
+    "team feedback",
+    "team approval",
+    "senior team",
+    "site pack response",
+    "weekly follow-up",
+    "chase site pack response",
+  ].some((phrase) => haystack.includes(phrase));
+}
+
+function buildHoldDueAt() {
+  const dueAt = new Date();
+  dueAt.setDate(dueAt.getDate() + 7);
+  dueAt.setHours(10, 30, 0, 0);
+  return dueAt.toISOString();
+}
+
+function ScheduledActionRow({ action, getDealershipById, dispatch, tone = "active" }) {
   const [scheduleValue, setScheduleValue] = useState(toDateTimeLocalValue(action.dueAt));
   const dealership = getDealershipById(action.dealershipId);
   const completionOptions = getCompletionOptions(action);
+  const isWaiting = tone === "waiting";
 
   function openDestination() {
     dispatch({ type: "select-dealership", dealershipId: action.dealershipId });
   }
 
   return (
-    <div className="row dashboard-action-row">
-      <span className="number">{action.priority === "high" ? "HI" : "UP"}</span>
+    <div className={`row dashboard-action-row${isWaiting ? " waiting-action-row" : ""}`}>
+      <span className="number">{isWaiting ? "WAIT" : action.priority === "high" ? "HI" : "UP"}</span>
       <div>
         <h3>
           {dealership?.name || action.dealershipId}: {action.title}
         </h3>
         <small>
-          {action.note} Due {action.dueText}.
+          {isWaiting ? "Waiting on their side. Keep visible without treating it as urgent." : action.note} Due {action.dueText}.
         </small>
         <div className="dashboard-action-tools">
           <input
@@ -98,7 +132,11 @@ function ScheduledActionRow({ action, getDealershipById, dispatch }) {
         </div>
       </div>
       <div className="dashboard-action-cta">
-        {action.type === "email" ? (
+        {isWaiting ? (
+          <Link className="btn" to="/leads" onClick={openDestination}>
+            Review lead
+          </Link>
+        ) : action.type === "email" ? (
           <Link className="btn primary" to="/email" onClick={openDestination}>
             Open FGI
           </Link>
@@ -125,15 +163,32 @@ function ScheduledActionRow({ action, getDealershipById, dispatch }) {
               {option.label}
             </button>
           ))}
+          {isWaiting ? (
+            <button
+              className="btn"
+              type="button"
+              onClick={() => {
+                const holdDueAt = buildHoldDueAt();
+                setScheduleValue(toDateTimeLocalValue(holdDueAt));
+                dispatch({
+                  type: "reschedule-action",
+                  actionId: action.id,
+                  dueAt: holdDueAt,
+                });
+              }}
+            >
+              Hold 7 days
+            </button>
+          ) : null}
         </div>
       </div>
     </div>
   );
 }
 
-function ActionBucket({ title, description, actions, emptyText, getDealershipById, dispatch }) {
+function ActionBucket({ title, description, actions, emptyText, getDealershipById, dispatch, tone = "active" }) {
   return (
-    <section className="panel pad dashboard-bucket">
+    <section className={`panel pad dashboard-bucket${tone === "waiting" ? " waiting-bucket" : ""}`}>
       <div className="section-head">
         <div>
           <div className="kicker">{title}</div>
@@ -145,7 +200,7 @@ function ActionBucket({ title, description, actions, emptyText, getDealershipByI
       <div className="admin-actions">
         {actions.length ? (
           actions.map((action) => (
-            <ScheduledActionRow key={action.id} action={action} getDealershipById={getDealershipById} dispatch={dispatch} />
+            <ScheduledActionRow key={action.id} action={action} getDealershipById={getDealershipById} dispatch={dispatch} tone={tone} />
           ))
         ) : (
           <div className="row">
@@ -174,7 +229,11 @@ export function DashboardPage() {
     dispatch,
   } = useAppState();
   const clusterDealers = getDealershipsForCluster(selectedCluster.id);
-  const actionBuckets = useMemo(() => getPendingActionBuckets(pendingActions), [pendingActions]);
+  const activePendingActions = useMemo(() => pendingActions.filter((action) => !isSoftWaitingAction(action)), [pendingActions]);
+  const waitingPendingActions = useMemo(() => pendingActions.filter((action) => isSoftWaitingAction(action)), [pendingActions]);
+  const actionBuckets = useMemo(() => getPendingActionBuckets(activePendingActions), [activePendingActions]);
+  const waitingBuckets = useMemo(() => getPendingActionBuckets(waitingPendingActions), [waitingPendingActions]);
+  const waitingActions = [...waitingBuckets.overdue, ...waitingBuckets.today, ...waitingBuckets.upcoming];
   const leadAction = actionBuckets.overdue[0] || actionBuckets.today[0] || actionBuckets.upcoming[0] || null;
   const latestVisit = leadAction ? getLatestVisit(leadAction.dealershipId) : null;
 
@@ -215,16 +274,16 @@ export function DashboardPage() {
 
       <section className="grid three">
         <div className="panel metric">
-          <strong>{actionBuckets.overdue.length}</strong>
-          <span>overdue actions needing attention first</span>
-        </div>
-        <div className="panel metric">
-          <strong>{actionBuckets.today.length}</strong>
-          <span>actions due today before field work drifts</span>
+          <strong>{actionBuckets.overdue.length + actionBuckets.today.length}</strong>
+          <span>active obligations to clear before field work</span>
         </div>
         <div className="panel metric">
           <strong>{actionBuckets.upcoming.length}</strong>
-          <span>upcoming actions already scheduled</span>
+          <span>scheduled actions that are still on your side</span>
+        </div>
+        <div className="panel metric">
+          <strong>{waitingActions.length}</strong>
+          <span>waiting on their side, visible but lower pressure</span>
         </div>
       </section>
 
@@ -254,6 +313,15 @@ export function DashboardPage() {
             getDealershipById={getDealershipById}
             dispatch={dispatch}
           />
+          <ActionBucket
+            title="Waiting on them"
+            description="Keep these visible without over-chasing the lead"
+            actions={waitingActions}
+            emptyText="No soft follow-ups waiting on the lead right now."
+            getDealershipById={getDealershipById}
+            dispatch={dispatch}
+            tone="waiting"
+          />
         </div>
 
         <aside className="panel pad">
@@ -265,7 +333,7 @@ export function DashboardPage() {
               <small>
                 {clusterDealers.length} scraped pins,{" "}
                 {clusterDealers.filter((dealer) => dealer.status === "Interested" || dealer.status === "Site walk booked").length} warm
-                leads, {pendingActions.length} open actions
+                leads, {activePendingActions.length} active actions, {waitingActions.length} waiting
               </small>
             </div>
             <span className="pill active">Active</span>
@@ -297,8 +365,8 @@ export function DashboardPage() {
             <div>
               <b>Generated downstream</b>
               <small>
-                {pendingDrafts.length} draft ready, {pendingActions.length} pending actions, and {clustersWithVisits.size} reportable
-                clusters.
+                {pendingDrafts.length} draft ready, {activePendingActions.length} active actions, {waitingActions.length} waiting on them,
+                and {clustersWithVisits.size} reportable clusters.
               </small>
             </div>
           </div>
