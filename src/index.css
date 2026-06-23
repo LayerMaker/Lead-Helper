@@ -1301,29 +1301,54 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
   align-content: start;
 }
 .dashboard-focus-control {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  justify-content: flex-end;
-  gap: 10px;
-  min-width: min(100%, 360px);
-}
-.dashboard-focus-control label {
   display: grid;
-  gap: 8px;
-  min-width: min(100%, 280px);
-  color: var(--muted);
-  font: 700 11px/1 var(--font-mono);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  grid-template-columns: minmax(180px, 0.32fr) 1fr;
+  gap: 14px;
+  align-items: start;
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: oklch(10% 0.014 55 / 0.66);
 }
-.dashboard-focus-select {
-  position: relative;
+.dashboard-focus-control small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.dashboard-focus-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 8px;
+}
+.dashboard-focus-chip {
   display: flex;
   align-items: center;
+  gap: 10px;
+  min-height: 58px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in oklab, var(--focus-cluster-colour, var(--border)), transparent 56%);
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, color-mix(in oklab, var(--focus-cluster-colour, var(--accent)), transparent 90%), transparent 42%),
+    oklch(9% 0.012 55 / 0.72);
+  color: var(--fg);
+  text-align: left;
 }
-.dashboard-focus-select .text-input {
-  padding-left: 36px;
+.dashboard-focus-chip.selected {
+  border-color: color-mix(in oklab, var(--focus-cluster-colour, var(--accent)), transparent 24%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--focus-cluster-colour, var(--accent)), transparent 72%),
+    0 10px 28px oklch(0% 0 0 / 0.22);
+}
+.dashboard-focus-chip b,
+.dashboard-focus-chip small {
+  display: block;
+}
+.dashboard-focus-chip small {
+  margin-top: 3px;
+  font-size: 11px;
 }
 .dashboard-focus-dot {
   width: 12px;
@@ -1333,10 +1358,9 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
   background: var(--focus-cluster-colour, var(--accent));
   box-shadow: 0 0 0 4px color-mix(in oklab, var(--focus-cluster-colour, var(--accent)), transparent 78%);
 }
-.dashboard-focus-select .dashboard-focus-dot {
-  position: absolute;
-  left: 13px;
-  z-index: 1;
+.dashboard-focus-dot.neutral {
+  background: var(--muted);
+  box-shadow: 0 0 0 4px oklch(100% 0 0 / 0.08);
 }
 .dashboard-focus-banner {
   display: flex;
@@ -1536,12 +1560,11 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
     max-width: none;
   }
   .dashboard-focus-control {
+    grid-template-columns: 1fr;
     width: 100%;
-    justify-content: stretch;
   }
-  .dashboard-focus-control label,
-  .dashboard-focus-control .btn {
-    width: 100%;
+  .dashboard-focus-picker {
+    grid-template-columns: 1fr;
   }
   .dashboard-completion-options .btn {
     flex: 1 1 140px;

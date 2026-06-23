@@ -107,6 +107,16 @@ function getMapV2PinsForDashboardCluster(state, clusterId) {
   return (state.mapV2?.pins || []).filter((pin) => assignedPinIds.has(pin.id));
 }
 
+function getDashboardFocusClusters(state) {
+  return (state.mapV2?.clusters || [])
+    .map((cluster, index) => ({
+      cluster,
+      index,
+      pins: getMapV2PinsForDashboardCluster(state, cluster.id),
+    }))
+    .filter((item) => item.pins.length);
+}
+
 function getFocusDealershipIds(state, clusterId) {
   if (!clusterId) return new Set();
   const pins = getMapV2PinsForDashboardCluster(state, clusterId);
@@ -125,6 +135,45 @@ function sortActionsByFocus(actions, focusDealershipIds) {
     const rightFocused = focusDealershipIds.has(canonicalDealershipId(right.dealershipId)) ? 0 : 1;
     return leftFocused - rightFocused;
   });
+}
+
+function DashboardFocusPicker({ focusClusterId, focusItems, onChange }) {
+  return (
+    <div className="dashboard-focus-control">
+      <div>
+        <div className="kicker">Dashboard focus</div>
+        <h2>Prioritise a map cluster</h2>
+        <small>Live from the clusters drawn on the map. Colour is the main identifier.</small>
+      </div>
+      <div className="dashboard-focus-picker" aria-label="Dashboard cluster focus">
+        <button className={`dashboard-focus-chip${!focusClusterId ? " selected" : ""}`} type="button" onClick={() => onChange("")}>
+          <span className="dashboard-focus-dot neutral" aria-hidden="true"></span>
+          <span>
+            <b>All clusters</b>
+            <small>Natural priority</small>
+          </span>
+        </button>
+        {focusItems.map(({ cluster, index, pins }) => {
+          const isSelected = cluster.id === focusClusterId;
+          return (
+            <button
+              className={`dashboard-focus-chip${isSelected ? " selected" : ""}`}
+              key={cluster.id}
+              style={{ "--focus-cluster-colour": getFocusClusterColour(cluster) }}
+              type="button"
+              onClick={() => onChange(cluster.id)}
+            >
+              <span className="dashboard-focus-dot" aria-hidden="true"></span>
+              <span>
+                <b>{getFocusClusterLabel(cluster, index, pins.length)}</b>
+                <small>{cluster.lifecycle === "manual" ? "Drawn map cluster" : "Map cluster"}</small>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function ScheduledActionRow({ action, getDealershipById, dispatch, tone = "active" }) {
@@ -286,10 +335,12 @@ export function DashboardPage() {
   } = useAppState();
   const [focusClusterId, setFocusClusterId] = useState("");
   const clusterDealers = getDealershipsForCluster(selectedCluster.id);
-  const dashboardFocusClusters = useMemo(() => state.mapV2?.clusters || [], [state.mapV2?.clusters]);
-  const focusCluster = dashboardFocusClusters.find((cluster) => cluster.id === focusClusterId) || null;
+  const dashboardFocusItems = useMemo(() => getDashboardFocusClusters(state), [state]);
+  const dashboardFocusClusters = useMemo(() => dashboardFocusItems.map((item) => item.cluster), [dashboardFocusItems]);
+  const focusItem = dashboardFocusItems.find((item) => item.cluster.id === focusClusterId) || null;
+  const focusCluster = focusItem?.cluster || null;
   const focusDealershipIds = useMemo(() => getFocusDealershipIds(state, focusClusterId), [focusClusterId, state]);
-  const focusPinCount = focusCluster ? getMapV2PinsForDashboardCluster(state, focusCluster.id).length : 0;
+  const focusPinCount = focusItem?.pins.length || 0;
   const activePendingActions = useMemo(() => pendingActions.filter((action) => !isSoftWaitingAction(action)), [pendingActions]);
   const waitingPendingActions = useMemo(() => pendingActions.filter((action) => isSoftWaitingAction(action)), [pendingActions]);
   const actionBuckets = useMemo(() => getPendingActionBuckets(activePendingActions), [activePendingActions]);
@@ -313,35 +364,16 @@ export function DashboardPage() {
           <div className="kicker">Dashboard</div>
           <h1>Start with what is overdue, then clear today, then move into the field route.</h1>
         </div>
-        <div className="dashboard-focus-control" style={{ "--focus-cluster-colour": getFocusClusterColour(focusCluster) }}>
-          <label>
-            Dashboard focus
-            <span className="dashboard-focus-select">
-              <span className="dashboard-focus-dot" aria-hidden="true"></span>
-              <select className="text-input" value={focusClusterId} onChange={(event) => setFocusClusterId(event.target.value)}>
-                <option value="">All clusters - natural priority</option>
-                {dashboardFocusClusters.map((cluster, index) => (
-                  <option key={cluster.id} value={cluster.id}>
-                    {getFocusClusterLabel(cluster, index, getMapV2PinsForDashboardCluster(state, cluster.id).length)}
-                  </option>
-                ))}
-              </select>
-            </span>
-          </label>
-          {focusCluster ? (
-            <button className="btn" type="button" onClick={() => setFocusClusterId("")}>
-              Clear focus
-            </button>
-          ) : null}
-        </div>
       </section>
+
+      <DashboardFocusPicker focusClusterId={focusClusterId} focusItems={dashboardFocusItems} onChange={setFocusClusterId} />
 
       {focusCluster ? (
         <section className="dashboard-focus-banner panel pad" style={{ "--focus-cluster-colour": getFocusClusterColour(focusCluster) }}>
-          <span className="dashboard-focus-dot" aria-hidden="true"></span>
-          <div>
-            <div className="kicker">Focus active</div>
-            <h2>{getFocusClusterLabel(focusCluster, dashboardFocusClusters.indexOf(focusCluster), focusPinCount)}</h2>
+            <span className="dashboard-focus-dot" aria-hidden="true"></span>
+            <div>
+              <div className="kicker">Focus active</div>
+            <h2>{getFocusClusterLabel(focusCluster, focusItem?.index ?? dashboardFocusClusters.indexOf(focusCluster), focusPinCount)}</h2>
             <small>Actions from this cluster are bumped to the top. Everything else remains visible underneath.</small>
           </div>
         </section>
