@@ -6,7 +6,6 @@ import {
   buildClusterReportModel,
   buildDealershipsFromReportPins,
   buildEmailProofSummary,
-  buildReportPdfUrl,
   buildReportPrintUrl,
   getDefaultReportClusterId,
   getReportClusters,
@@ -69,33 +68,11 @@ export function ReportsPage() {
     [getDraftForDealership, getLatestContact, getLatestMedia, selectedReportCluster, selectedReportDealerships, selectedReportPins, state],
   );
 
-  async function handleExportVisibleCluster() {
-    setExportState("exporting");
-    setExportMessage("");
-
-    try {
-      const response = await fetch(buildReportPdfUrl(reportModel.clusterId));
-      if (!response.ok) {
-        const payload = await response.json().catch(() => null);
-        throw new Error(payload?.error || "PDF export failed.");
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = reportModel.fileName;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      window.URL.revokeObjectURL(url);
-
-      setExportState("done");
-      setExportMessage("Styled PDF downloaded from the server-rendered report template.");
-    } catch (error) {
-      setExportState("error");
-      setExportMessage(error.message || "PDF export could not be generated.");
-    }
+  function handleExportVisibleCluster() {
+    const printUrl = `${buildReportPrintUrl(reportModel.clusterId)}&autoprint=1`;
+    window.open(printUrl, "_blank", "noopener,noreferrer");
+    setExportState("done");
+    setExportMessage("Print/PDF view opened using the local browser data.");
   }
 
   function scrollToPreview() {
@@ -119,7 +96,7 @@ export function ReportsPage() {
             Open print view
           </a>
           <button className="btn primary" type="button" disabled={exportState === "exporting"} onClick={handleExportVisibleCluster}>
-            {exportState === "exporting" ? "Generating..." : "Download styled PDF"}
+            Open PDF view
           </button>
         </div>
       </section>
@@ -224,7 +201,7 @@ export function ReportsPage() {
                               Print view
                             </a>
                             <button className="btn primary" type="button" onClick={handleExportVisibleCluster}>
-                              Download PDF
+                              Open PDF view
                             </button>
                           </div>
                         </div>

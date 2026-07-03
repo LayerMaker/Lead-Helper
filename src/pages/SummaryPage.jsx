@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { AppLayout } from "../components/AppLayout";
-import { buildReportPdfUrl, getReportClusters } from "../lib/reporting";
+import { buildReportPrintUrl, getReportClusters } from "../lib/reporting";
 import { useAppState } from "../state/AppState";
 
 const clusterAccentMap = {
@@ -258,38 +258,17 @@ export function SummaryPage() {
     reportClusters[0];
   const selectedReportSummary = clusterSummaries.find((item) => item.cluster.id === selectedReportCluster?.id);
 
-  async function downloadClusterReport(cluster) {
+  function openClusterReport(cluster) {
     if (!cluster?.id) {
       setExportState("error");
       setExportMessage("No report cluster is available yet.");
       return;
     }
 
-    setExportState("exporting");
-    setExportMessage("");
-
-    try {
-      const response = await fetch(buildReportPdfUrl(cluster.id));
-      if (!response.ok) {
-        const payload = await response.json().catch(() => null);
-        throw new Error(payload?.error || "PDF export failed.");
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = `${String(cluster.name || "cluster").toLowerCase().replace(/[^a-z0-9]+/g, "-")}-field-report.pdf`;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      window.URL.revokeObjectURL(url);
-      setExportState("done");
-      setExportMessage(`${cluster.name} report downloaded.`);
-    } catch (error) {
-      setExportState("error");
-      setExportMessage(error.message || "PDF export could not be generated.");
-    }
+    const printUrl = `${buildReportPrintUrl(cluster.id)}&autoprint=1`;
+    window.open(printUrl, "_blank", "noopener,noreferrer");
+    setExportState("done");
+    setExportMessage(`${cluster.name} print/PDF view opened using the local browser data.`);
   }
 
   return (
@@ -409,10 +388,10 @@ export function SummaryPage() {
           <button
             className="btn primary"
             type="button"
-            disabled={exportState === "exporting" || !selectedReportCluster?.id || !selectedReportSummary?.included}
-            onClick={() => downloadClusterReport(selectedReportCluster)}
+            disabled={!selectedReportCluster?.id || !selectedReportSummary?.included}
+            onClick={() => openClusterReport(selectedReportCluster)}
           >
-            {exportState === "exporting" ? "Generating report..." : "Generate and download Report"}
+            Open report PDF view
           </button>
         </div>
       </section>
