@@ -1,7 +1,7 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { AppLayout } from "../components/AppLayout";
-import { getDistanceMilesBetweenPoints } from "../lib/leadHelperModel";
+import { buildAdminEntries, getDistanceMilesBetweenPoints, visitOutcomeOptions } from "../lib/leadHelperModel";
 import { geocodeAddress } from "../lib/osmService";
 import { useAppState } from "../state/AppState";
 
@@ -27,6 +27,17 @@ function emptyLocationForm() {
     phone: "",
     roleHint: "",
     contactHint: "",
+  };
+}
+
+function formFromDealership(dealership) {
+  return {
+    name: dealership?.name || "",
+    address: dealership?.address || "",
+    website: dealership?.website || "",
+    phone: dealership?.phone || "",
+    roleHint: dealership?.roleHint || "",
+    contactHint: dealership?.contactHint || "",
   };
 }
 
@@ -106,7 +117,8 @@ function parseMapsDetails(rawText) {
 }
 
 export function LocationPage() {
-  const { selectedDealership, mapV2, dispatch } = useAppState();
+  const { selectedDealership, mapV2, getLatestVisit, dispatch } = useAppState();
+  const latestVisit = getLatestVisit(selectedDealership.id);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("Add a dealership first, then capture contact details on the Leads page.");
   const [error, setError] = useState("");
@@ -120,9 +132,25 @@ export function LocationPage() {
   const phoneInputRef = useRef(null);
   const roleInputRef = useRef(null);
   const hintInputRef = useRef(null);
-  const [form, setForm] = useState(() => emptyLocationForm());
+  const [form, setForm] = useState(() => formFromDealership(selectedDealership));
+  const [selectedVisitOutcomes, setSelectedVisitOutcomes] = useState(() => latestVisit?.outcomes || []);
+  const [visitNote, setVisitNote] = useState(latestVisit?.note || "");
+  const [visitSaveStatus, setVisitSaveStatus] = useState(latestVisit ? "Latest visit loaded" : "No visit saved yet");
   const selectedPin = useMemo(() => mapV2.pins.find((pin) => pin.id === selectedPinId) || null, [mapV2.pins, selectedPinId]);
   const nearestUserPin = useMemo(() => findNearestPin(userLocation, mapV2.pins), [mapV2.pins, userLocation]);
+  const visitAdminEntries = useMemo(() => buildAdminEntries(selectedVisitOutcomes), [selectedVisitOutcomes]);
+
+  useEffect(() => {
+    setForm(formFromDealership(selectedDealership));
+    const activePin = mapV2.pins.find(
+      (pin) => pin.legacyDealershipId === selectedDealership.id || pin.dealershipId === selectedDealership.id,
+    );
+    setSelectedPinId(activePin?.id || "");
+    setSelectedVisitOutcomes(latestVisit?.outcomes || []);
+    setVisitNote(latestVisit?.note || "");
+    setVisitSaveStatus(latestVisit ? "Latest visit loaded" : "No visit saved yet");
+    setStatus(`Loaded active map pin: ${selectedDealership.name}. Edit fields, then save to update the working record.`);
+  }, [latestVisit, mapV2.pins, selectedDealership]);
 
   function updateField(key, value) {
     setForm((current) => ({
@@ -175,6 +203,9 @@ export function LocationPage() {
   function selectExistingPin(pin) {
     if (!pin) return;
     setSelectedPinId(pin.id);
+    if (pin.legacyDealershipId || pin.dealershipId) {
+      dispatch({ type: "select-dealership", dealershipId: pin.legacyDealershipId || pin.dealershipId });
+    }
     setError("");
     setStatus(`Ready to update existing map pin: ${pin.name}`);
     setForm({
@@ -182,8 +213,8 @@ export function LocationPage() {
       address: pin.address || "",
       website: pin.website || "",
       phone: pin.phone || "",
-      roleHint: form.roleHint,
-      contactHint: form.contactHint,
+      roleHint: form.roleHint || selectedDealership.roleHint || "",
+      contactHint: form.contactHint || selectedDealership.contactHint || "",
     });
   }
 
@@ -290,6 +321,27 @@ export function LocationPage() {
     }
   }
 
+  function toggleVisitOutcome(outcome) {
+    setSelectedVisitOutcomes((current) =>
+      current.includes(outcome) ? current.filter((item) => item !== outcome) : [...current, outcome],
+    );
+    setVisitSaveStatus("Visit outcomes changed");
+  }
+
+  function saveVisitOutcomes() {
+    if (!selectedVisitOutcomes.length) {
+      setVisitSaveStatus("Select at least one outcome chip before saving.");
+      return;
+    }
+    dispatch({
+      type: "generate-visit",
+      dealershipId: selectedDealership.id,
+      outcomes: selectedVisitOutcomes,
+      note: visitNote || "Logged from Location page",
+    });
+    setVisitSaveStatus("Visit saved and added to report evidence");
+  }
+
   return (
     <AppLayout statusLine="+ Location - add dealership pins before lead capture">
       <section className="title-row">
@@ -321,6 +373,16 @@ export function LocationPage() {
           </div>
 
           <div className="action-row" style={{ marginBottom: 12 }}>
+            <button
+              className="btn primary"
+              type="button"
+              onClick={() => {
+                setForm(formFromDealership(selectedDealership));
+                setStatus(`Loaded active dealership: ${selectedDealership.name}`);
+              }}
+            >
+              Load active pin
+            </button>
             <button className="btn" type="button" onClick={loadAutoWestTestLead}>
               Load Auto West test lead
             </button>
@@ -450,6 +512,62 @@ export function LocationPage() {
             </button>
           </div>
         </article>
+
+        <aside className="panel pad">
+          <div className="section-head">
+            <div>
+              <div className="kicker">Visit close-out</div>
+              <h2>Log this selected pin</h2>
+            </div>
+            <span className={`pill${selectedVisitOutcomes.length ? " active" : ""}`}>{selectedVisitOutcomes.length || "No"} chips</span>
+          </div>
+
+          <div className="field">
+            <label>Outcome chips</label>
+            <div className="outcomes">
+              {visitOutcomeOptions.map((outcome) => (
+                <button
+                  key={outcome}
+                  className={`chip${selectedVisitOutcomes.includes(outcome) ? " selected" : ""}`}
+                  type="button"
+                  onClick={() => toggleVisitOutcome(outcome)}
+                >
+                  {outcome}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="field">
+            <label>Visit note</label>
+            <textarea
+              className="input"
+              rows="4"
+              value={visitNote}
+              onChange={(event) => {
+                setVisitNote(event.target.value);
+                setVisitSaveStatus("Visit outcomes changed");
+              }}
+              placeholder="Example: shutters down, looks permanently closed, signage removed."
+            />
+          </div>
+
+          <div className="inline-alert">
+            {visitSaveStatus}. {visitAdminEntries.length} report/admin item{visitAdminEntries.length === 1 ? "" : "s"} ready.
+          </div>
+
+          <div className="action-row">
+            <button className="btn primary" type="button" onClick={saveVisitOutcomes} disabled={!selectedVisitOutcomes.length}>
+              Save visit evidence
+            </button>
+            <Link className="btn" to="/summary">
+              Summary
+            </Link>
+            <Link className="btn" to="/reports">
+              Reports
+            </Link>
+          </div>
+        </aside>
 
         <aside className="panel table">
           <div className="row selected">

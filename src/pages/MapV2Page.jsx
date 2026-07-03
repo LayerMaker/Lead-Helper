@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { CircleMarker, MapContainer, Polygon, Polyline, TileLayer, Tooltip, useMap } from "react-leaflet";
 import { latLngBounds } from "leaflet";
 import { AppLayout } from "../components/AppLayout";
@@ -346,12 +347,17 @@ function MapV2Canvas({
 }
 
 export function MapV2Page() {
-  const { state, dispatch } = useAppState();
+  const { state, selectedDealership, dispatch } = useAppState();
   const clusters = getMapV2Clusters(state);
   const pins = getMapV2Pins(state);
   const unassignedPins = getMapV2UnassignedPins(state);
   const [selectedClusterId, setSelectedClusterId] = useState(clusters[0]?.id || "");
-  const [selectedPinId, setSelectedPinId] = useState(unassignedPins[0]?.id || pins[0]?.id || "");
+  const initialSelectedPin =
+    pins.find((pin) => pin.legacyDealershipId === selectedDealership.id || pin.dealershipId === selectedDealership.id) ||
+    unassignedPins[0] ||
+    pins[0] ||
+    null;
+  const [selectedPinId, setSelectedPinId] = useState(initialSelectedPin?.id || "");
   const [drawMode, setDrawMode] = useState(false);
   const [lassoPinIds, setLassoPinIds] = useState([]);
   const [manualClusterName, setManualClusterName] = useState("");
@@ -361,6 +367,30 @@ export function MapV2Page() {
   const selectedClusterPins = selectedCluster ? getMapV2PinsForCluster(state, selectedCluster.id) : [];
   const selectedPinCluster = selectedPin ? getMapV2ClusterForPin(state, selectedPin.id) : null;
   const lassoPins = pins.filter((pin) => lassoPinIds.includes(pin.id));
+  const selectedPinDealershipId = selectedPin?.legacyDealershipId || selectedPin?.dealershipId || "";
+
+  function selectPin(pinId) {
+    setSelectedPinId(pinId);
+    const pin = pins.find((item) => item.id === pinId);
+    const cluster = pin ? getMapV2ClusterForPin(state, pin.id) : null;
+    if (cluster?.id) setSelectedClusterId(cluster.id);
+    const dealershipId = pin?.legacyDealershipId || pin?.dealershipId || "";
+    if (dealershipId) {
+      dispatch({ type: "select-dealership", dealershipId });
+    }
+  }
+
+  function selectedPinMapsUrl() {
+    const destination = Array.isArray(selectedPin?.location)
+      ? selectedPin.location.join(",")
+      : `${selectedPin?.name || ""} ${selectedPin?.address || ""}`.trim();
+    const params = new URLSearchParams({
+      api: "1",
+      destination: destination || "London",
+      travelmode: "driving",
+    });
+    return `https://www.google.com/maps/dir/?${params.toString()}`;
+  }
 
   function startDrawing() {
     setDrawMode(true);
@@ -388,7 +418,7 @@ export function MapV2Page() {
       : pins.filter((pin) => isMapV2PointInsidePolygon(pin.location, polygon));
     setLassoPinIds(selectedPins.map((pin) => pin.id));
     if (selectedPins[0]) {
-      setSelectedPinId(selectedPins[0].id);
+      selectPin(selectedPins[0].id);
       setManualClusterName(`${selectedPins[0].name.split(/\s+/).slice(0, 2).join(" ")} field cluster`);
     }
   }
@@ -443,7 +473,7 @@ export function MapV2Page() {
                 selectedCluster={selectedCluster}
                 selectedPinId={selectedPin?.id || ""}
                 onSelectCluster={setSelectedClusterId}
-                onSelectPin={setSelectedPinId}
+                onSelectPin={selectPin}
                 lassoPinIds={lassoPinIds}
                 drawMode={drawMode}
                 onDrawComplete={handleDrawComplete}
@@ -503,7 +533,7 @@ export function MapV2Page() {
                     key={pin.id}
                     className={`row${pin.id === selectedPin?.id ? " selected" : ""}`}
                     type="button"
-                    onClick={() => setSelectedPinId(pin.id)}
+                    onClick={() => selectPin(pin.id)}
                   >
                     <span className="number">LS</span>
                     <div>
@@ -568,7 +598,22 @@ export function MapV2Page() {
                   <button className="btn primary" type="button" onClick={assignSelectedPin} disabled={!selectedCluster || !selectedPin}>
                     Assign selected pin
                   </button>
+                  <a className="btn" href={selectedPinMapsUrl()} target="_blank" rel="noreferrer">
+                    Open in Maps
+                  </a>
+                  <Link className="btn" to="/location">
+                    Location
+                  </Link>
+                  <Link className="btn primary" to="/leads">
+                    Work lead
+                  </Link>
+                  <Link className="btn" to="/route">
+                    Route
+                  </Link>
                 </div>
+                {!selectedPinDealershipId ? (
+                  <div className="inline-alert">This pin is not linked to a dealership record yet. Open Location to create or update the working record.</div>
+                ) : null}
               </>
             ) : (
               <p>Add a pin from + Location to populate the V2 pin inbox.</p>
@@ -589,7 +634,7 @@ export function MapV2Page() {
                   key={pin.id}
                   className={`row${pin.id === selectedPin?.id ? " selected" : ""}`}
                   type="button"
-                  onClick={() => setSelectedPinId(pin.id)}
+                  onClick={() => selectPin(pin.id)}
                 >
                   <span className="number">UC</span>
                   <div>
@@ -617,7 +662,7 @@ export function MapV2Page() {
                 key={pin.id}
                 className={`row${pin.id === selectedPin?.id ? " selected" : ""}`}
                 type="button"
-                onClick={() => setSelectedPinId(pin.id)}
+                onClick={() => selectPin(pin.id)}
               >
                 <span className="number">IN</span>
                 <div>

@@ -9,6 +9,7 @@ import {
   emailIntentCatalog,
   emailTypeCatalog,
   getEmailIntentDetails,
+  visitOutcomeOptions,
 } from "../lib/leadHelperModel";
 import { generateOpenRouterEmailDraft } from "../lib/emailService";
 import { AppLayout } from "../components/AppLayout";
@@ -36,12 +37,12 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
   const initialComposerState = normalizeDraftState({
     state,
     dealershipId: selectedDealership.id,
-    outcomes: storedDraft?.outcomes || latestVisit?.outcomes || ["Met manager", "Interested", "Needs email"],
-    emailIntents: storedDraft?.emailIntents || ["instant-follow-up", "brochure-to-follow"],
+    outcomes: storedDraft?.outcomes || latestVisit?.outcomes || [],
+    emailIntents: storedDraft?.emailIntents || [],
     preferredType: storedDraft?.emailType,
     storedDraft,
   });
-  const [selectedOutcomes] = useState(initialComposerState.outcomes);
+  const [selectedOutcomes, setSelectedOutcomes] = useState(initialComposerState.outcomes);
   const [selectedEmailIntents, setSelectedEmailIntents] = useState(initialComposerState.emailIntents);
   const [emailType, setEmailType] = useState(initialComposerState.emailType);
   const [toAddress, setToAddress] = useState(initialComposerState.toAddress);
@@ -66,12 +67,33 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
     () => buildEmailDraft(state, selectedDealership.id, selectedOutcomes, { emailType, emailIntents: selectedEmailIntents }),
     [emailType, selectedDealership.id, selectedEmailIntents, selectedOutcomes, state],
   );
+  const noEmailRequired = emailType === "No email required" || selectedOutcomes.some((outcome) => ["Closed today", "Permanently closed", "No one present"].includes(outcome));
+
+  function refreshDraftFromOutcomes(nextOutcomes, nextIntents = selectedEmailIntents, nextType = "") {
+    const derivedType = deriveEmailType(nextOutcomes, nextType);
+    const refreshed = buildEmailDraft(state, selectedDealership.id, nextOutcomes, {
+      emailType: derivedType,
+      emailIntents: nextIntents,
+    });
+    setEmailType(derivedType);
+    setSubject(refreshed.subject);
+    setBody(refreshed.body);
+    setSaveState("Draft changed");
+  }
+
+  function toggleOutcome(outcome) {
+    setSelectedOutcomes((current) => {
+      const next = current.includes(outcome) ? current.filter((item) => item !== outcome) : [...current, outcome];
+      refreshDraftFromOutcomes(next);
+      return next;
+    });
+  }
 
   function toggleEmailIntent(intentId) {
     setSelectedEmailIntents((current) => {
       const next = current.includes(intentId) ? current.filter((item) => item !== intentId) : [...current, intentId];
       const selectedIntent = getEmailIntentDetails(next)[0];
-      const derivedType = deriveEmailType(selectedOutcomes, selectedIntent?.emailType || emailType);
+      const derivedType = deriveEmailType(selectedOutcomes, selectedIntent?.emailType || "");
       const refreshed = buildEmailDraft(state, selectedDealership.id, selectedOutcomes, {
         emailType: derivedType,
         emailIntents: next,
@@ -127,6 +149,17 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
       draft: buildDraftPayload(modeOverride),
     });
     setSaveState("Saved draft");
+    setErrorState("");
+  }
+
+  function saveVisitOnly() {
+    dispatch({
+      type: "generate-visit",
+      dealershipId: selectedDealership.id,
+      outcomes: selectedOutcomes,
+      note: "Logged from Email page",
+    });
+    setSaveState("Visit saved to report");
     setErrorState("");
   }
 
@@ -237,16 +270,18 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
         <div className="field">
           <label>Saved visit outcomes</label>
           <div className="outcomes">
-            {selectedOutcomes.length ? (
-              selectedOutcomes.map((outcome) => (
-                <span key={outcome} className="chip selected">
-                  {outcome}
-                </span>
-              ))
-            ) : (
-              <span className="pill">No visit outcomes saved yet</span>
-            )}
+            {visitOutcomeOptions.map((outcome) => (
+              <button
+                key={outcome}
+                className={`chip${selectedOutcomes.includes(outcome) ? " selected" : ""}`}
+                type="button"
+                onClick={() => toggleOutcome(outcome)}
+              >
+                {outcome}
+              </button>
+            ))}
           </div>
+          {!selectedOutcomes.length ? <small className="muted-copy">Select what happened before saving or sending.</small> : null}
         </div>
 
         <div className="field">
@@ -409,19 +444,22 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
           <button className="btn" type="button" onClick={rebuildTemplate}>
             Rebuild template
           </button>
+          <button className="btn primary" type="button" onClick={saveVisitOnly} disabled={!selectedOutcomes.length}>
+            Save visit only
+          </button>
           <button className="btn" type="button" onClick={() => saveDraft()}>
             Save draft
           </button>
           <button className="btn" type="button" onClick={copyDraft}>
             Copy
           </button>
-          <button className="btn primary" type="button" onClick={openOutlookApp}>
+          <button className="btn primary" type="button" onClick={openOutlookApp} disabled={!selectedOutcomes.length || noEmailRequired}>
             Open Outlook app
           </button>
           <button
             className="btn"
             type="button"
-            disabled={Boolean(busyState)}
+            disabled={Boolean(busyState) || noEmailRequired}
             onClick={() => runAi("polish")}
           >
             AI polish
@@ -429,12 +467,12 @@ function EmailComposer({ state, settings, selectedDealership, selectedCluster, l
           <button
             className="btn"
             type="button"
-            disabled={Boolean(busyState)}
+            disabled={Boolean(busyState) || noEmailRequired}
             onClick={() => runAi("generate")}
           >
             AI generate
           </button>
-          <button className="btn primary" type="button" onClick={markSent}>
+          <button className="btn primary" type="button" onClick={markSent} disabled={!selectedOutcomes.length || noEmailRequired}>
             Mark sent
           </button>
         </div>

@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { AppLayout } from "../components/AppLayout";
 import { useAppState } from "../state/AppState";
 
@@ -141,9 +142,11 @@ function RouteClusterPicker({ routeClusterId, routeItems, onChange }) {
 }
 
 export function RoutePage() {
-  const { state, getDealershipById, dispatch } = useAppState();
+  const { state, selectedCluster, getDealershipById, dispatch } = useAppState();
   const routeItems = useMemo(() => getRouteClusterItems(state), [state]);
-  const [routeClusterId, setRouteClusterId] = useState(routeItems[0]?.cluster.id || "");
+  const [routeClusterId, setRouteClusterId] = useState(
+    routeItems.find((item) => item.cluster.id === selectedCluster.id)?.cluster.id || routeItems[0]?.cluster.id || "",
+  );
   const activeRouteItem = routeItems.find((item) => item.cluster.id === routeClusterId) || routeItems[0] || null;
   const routeCluster = activeRouteItem?.cluster || null;
   const routeStops = useMemo(
@@ -157,6 +160,12 @@ export function RoutePage() {
   const selectedStop = routeStops.find((stop) => stop.id === selectedStopId || stop.pinId === selectedStopId) || routeStops[0] || null;
   const mapsUrl = buildSelectedMapsUrl(selectedStop);
   const clusterIndex = activeRouteItem?.index ?? 0;
+
+  useEffect(() => {
+    if (selectedStop?.dealershipId) {
+      dispatch({ type: "select-dealership", dealershipId: selectedStop.dealershipId });
+    }
+  }, [dispatch, selectedStop?.dealershipId]);
 
   function selectStop(stop) {
     setSelectedStopId(stop.id);
@@ -222,6 +231,33 @@ export function RoutePage() {
           </div>
         )}
       </section>
+
+      {selectedStop ? (
+        <section className="panel pad" style={{ marginTop: 14 }}>
+          <div className="section-head">
+            <div>
+              <div className="kicker">Selected stop</div>
+              <h2>{selectedStop.name}</h2>
+              <small>{selectedStop.address}</small>
+            </div>
+            <span className="pill active">Loaded across app</span>
+          </div>
+          <div className="action-row">
+            <a className="btn primary" href={mapsUrl} target="_blank" rel="noreferrer">
+              Open in Maps
+            </a>
+            <Link className="btn" to="/location">
+              Location + notes
+            </Link>
+            <Link className="btn primary" to="/leads">
+              Log visit
+            </Link>
+            <Link className="btn" to="/email">
+              Email
+            </Link>
+          </div>
+        </section>
+      ) : null}
     </AppLayout>
   );
 }

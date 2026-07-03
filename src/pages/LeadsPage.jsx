@@ -116,6 +116,7 @@ export function LeadsPage() {
   const selectedDealershipInGroup = selectedGroupDealerships.some((dealership) => dealership.id === selectedDealership.id);
   const nearestSuggestion = locationSuggestion && locationSuggestion.id !== dismissedSuggestionId ? locationSuggestion : null;
   const visitAdminEntries = useMemo(() => buildAdminEntries(selectedVisitOutcomes), [selectedVisitOutcomes]);
+  const noEmailRequired = selectedVisitOutcomes.some((outcome) => ["Closed today", "Permanently closed", "No one present"].includes(outcome));
 
   useEffect(() => {
     if (previousDealershipIdRef.current === selectedDealership.id) return;
@@ -698,15 +699,23 @@ export function LeadsPage() {
               onClick={() => saveVisitOutcomes(false)}
               disabled={!selectedVisitOutcomes.length}
             >
-              Save visit
+              Save visit evidence
+            </button>
+            <button
+              className="btn primary"
+              type="button"
+              onClick={() => saveVisitOutcomes(true)}
+              disabled={!selectedVisitOutcomes.length || noEmailRequired}
+            >
+              Save visit + email page
             </button>
             <button
               className="btn primary"
               type="button"
               onClick={() => saveContact(true)}
-              disabled={!ocrFields.name && !ocrFields.email && !ocrFields.phone}
+              disabled={(!ocrFields.name && !ocrFields.email && !ocrFields.phone) || noEmailRequired}
             >
-              Save and open email
+              Save contact + email page
             </button>
           </div>
         </article>

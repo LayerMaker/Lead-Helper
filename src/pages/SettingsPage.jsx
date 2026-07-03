@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppLayout } from "../components/AppLayout";
 import { useAppState } from "../state/AppState";
 import { STORAGE_KEY } from "../lib/leadHelperModel";
@@ -14,6 +14,7 @@ export function SettingsPage() {
   );
   const [saveState, setSaveState] = useState("Unsaved");
   const [serverStatus, setServerStatus] = useState({ checked: false, configured: false });
+  const importInputRef = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -63,6 +64,30 @@ export function SettingsPage() {
     anchor.download = `lead-helper-backup-${new Date().toISOString().slice(0, 10)}.json`;
     anchor.click();
     window.URL.revokeObjectURL(url);
+  }
+
+  function importBackupFile(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result || "{}"));
+        if (!parsed?.version) throw new Error("This does not look like a Lead Helper backup file.");
+        dispatch({ type: "replace-state", state: parsed });
+        setSaveState(`Imported ${file.name}`);
+      } catch (error) {
+        setSaveState(error.message || "Backup import failed");
+      } finally {
+        event.target.value = "";
+      }
+    };
+    reader.onerror = () => {
+      setSaveState("Backup import failed");
+      event.target.value = "";
+    };
+    reader.readAsText(file);
   }
 
   async function requestNotificationPermission() {
@@ -127,6 +152,16 @@ export function SettingsPage() {
             </button>
             <button className="btn" type="button" onClick={exportBackup}>
               Export backup
+            </button>
+            <input
+              ref={importInputRef}
+              className="sr-only-input"
+              type="file"
+              accept="application/json,.json"
+              onChange={importBackupFile}
+            />
+            <button className="btn primary" type="button" onClick={() => importInputRef.current?.click()}>
+              Import backup
             </button>
             <button className="btn" type="button" onClick={() => dispatch({ type: "reset-demo" })}>
               Reset demo data

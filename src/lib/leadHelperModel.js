@@ -66,6 +66,21 @@ export const outcomeRules = {
     createAction: { type: "call", title: "Chase manager contact", duePreset: { offsetDays: 1, hour: 11, minute: 0 } },
     adminActions: ["Create manager chase task"],
   },
+  "Closed today": {
+    scoreDelta: -1,
+    status: "Visited - closed",
+    adminActions: ["Record closed-on-arrival proof"],
+  },
+  "Permanently closed": {
+    scoreDelta: -10,
+    status: "Permanently closed",
+    adminActions: ["Remove from active route and report as closed"],
+  },
+  "No one present": {
+    scoreDelta: -1,
+    status: "Visited - no contact",
+    adminActions: ["Record no-contact proof of visit"],
+  },
   "Site walk booked": {
     scoreDelta: 6,
     status: "Site walk booked",
@@ -92,6 +107,7 @@ export const outcomeRules = {
 };
 
 export const emailTypeCatalog = [
+  "No email required",
   "Standard follow-up",
   "Site details follow-up",
   "Decision-maker intro request",
@@ -107,6 +123,9 @@ export const visitOutcomeOptions = [
   "Follow-up required",
   "Not a good time",
   "Management not present",
+  "Closed today",
+  "Permanently closed",
+  "No one present",
   "Deferred to decision maker",
   "Card captured",
   "Site walk booked",
@@ -1040,14 +1059,19 @@ export function sameOutcomes(left = [], right = []) {
 }
 
 export function summarizeStatusFromOutcomes(outcomes) {
+  if (outcomes.includes("Permanently closed")) return "Permanently closed";
+  if (outcomes.includes("Closed today")) return "Visited - closed";
   if (outcomes.includes("Not suitable")) return "Not suitable";
   if (outcomes.includes("Site walk booked")) return "Site walk booked";
   if (outcomes.includes("Interested")) return "Interested";
   if (outcomes.includes("Met manager")) return "Met manager";
+  if (outcomes.includes("No one present")) return "Visited - no contact";
+  if (outcomes.includes("Management not present")) return "Manager unavailable";
   return "Visited";
 }
 
 export function deriveEmailType(outcomes, preferredType = "") {
+  if (outcomes.includes("Permanently closed") || outcomes.includes("Closed today") || outcomes.includes("No one present")) return "No email required";
   if (preferredType) return preferredType;
   if (outcomes.includes("Site walk booked")) return "Site walk confirmation";
   if (outcomes.includes("Deferred to decision maker")) return "Decision-maker intro request";
@@ -1093,6 +1117,7 @@ export function buildSuggestedRecipientOptions(state, dealershipId) {
 export function buildEmailSubject(state, dealershipId, emailType) {
   const dealership = mergeDealership(state, dealershipId);
 
+  if (emailType === "No email required") return `${dealership.name} visit logged`;
   if (emailType === "Site walk confirmation") return `Battersea site walk for ${dealership.name}`;
   if (emailType === "Decision-maker intro request") return `${dealership.name} property contact intro`;
   if (emailType === "Contact verification") return `${dealership.name} contact details check`;
@@ -1127,6 +1152,16 @@ export function buildEmailDraft(state, dealershipId, outcomes, options = {}) {
   const subject = buildEmailSubject(state, dealershipId, emailType);
   const noteLine = latestVisit?.note ? ` ${latestVisit.note}` : "";
   const mediaLine = latestMedia?.rawText ? " I have also logged the contact details captured on site." : "";
+
+  if (emailType === "No email required") {
+    return {
+      emailType,
+      subject,
+      body: formatEmailBody(greeting, [
+        `Visit logged for ${dealership.name}. No email should be sent from this outcome.${noteLine}${mediaLine}`,
+      ]),
+    };
+  }
 
   if (intentDetails.length) {
     const bodyBlocks = intentDetails.map((intent) => intent.templateBlock);
@@ -1436,6 +1471,30 @@ export function applyVisitOutcomes(state, dealershipId, outcomes, note, options 
   if (outcomes.some((outcome) => outcomeRules[outcome]?.createDraft)) {
     upsertDraft(state, dealershipId, outcomes, "draft");
   }
+
+  const reportLabelMap = {
+    "Closed today": "Closed when visited",
+    "Permanently closed": "Permanently closed / remove from active list",
+    "No one present": "Visited, no one present",
+    "Management not present": "Management not present",
+    "Not suitable": "Not suitable",
+  };
+  const existingSummary = (state.summaryOutcomes || []).find(
+    (item) => canonicalDealershipId(item.dealershipId) === canonicalDealershipId(dealershipId),
+  );
+  state.summaryOutcomes = [
+    {
+      ...(existingSummary || { id: uid("summary") }),
+      dealershipId,
+      outcomeIds: [...outcomes],
+      labels: outcomes.map((outcome) => reportLabelMap[outcome] || outcome),
+      note: note || "",
+      includeInReport: true,
+      reportIncludedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+    ...(state.summaryOutcomes || []).filter((item) => canonicalDealershipId(item.dealershipId) !== canonicalDealershipId(dealershipId)),
+  ];
 
   state.selectedClusterId = mergeDealership(state, dealershipId).clusterId;
   state.currentDealershipId = dealershipId;
