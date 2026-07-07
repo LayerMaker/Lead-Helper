@@ -57,3 +57,17 @@ For Telegram/Hermes/Codex work:
 5. Report the commit SHA and deploy trigger status back to the user.
 
 Only deploy after the user explicitly says to deploy, ship, publish, or push live.
+
+## Deployment Truth Rules
+
+Do not report that the app has deployed just because a commit was pushed.
+
+A deployment has only been triggered if one of these is true:
+
+1. `npm run deploy:render` or `npm run deploy:render:current` exits successfully and prints `Render deploy accepted`.
+2. The Render API returns a successful deploy creation response.
+3. The user manually confirms a deploy was triggered in Render.
+
+If `RENDER_LEAD_HELPER_DEPLOY_HOOK` is missing, report that deployment is blocked and ask the user to add the hook. Do not create empty "deploy trigger" commits as a substitute for a Render deploy hook/API call.
+
+If Render is configured to deploy only from `main`, pushing a feature branch such as `codex/field-report-recovery-flow` will not update the live site. In that case, merge or cherry-pick the approved changes into `main`, push `main`, and then trigger Render.
