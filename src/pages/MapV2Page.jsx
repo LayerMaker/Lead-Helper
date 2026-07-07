@@ -368,15 +368,23 @@ export function MapV2Page() {
   const selectedPinCluster = selectedPin ? getMapV2ClusterForPin(state, selectedPin.id) : null;
   const lassoPins = pins.filter((pin) => lassoPinIds.includes(pin.id));
   const selectedPinDealershipId = selectedPin?.legacyDealershipId || selectedPin?.dealershipId || "";
+  const [loadStatus, setLoadStatus] = useState("");
 
   function selectPin(pinId) {
     setSelectedPinId(pinId);
     const pin = pins.find((item) => item.id === pinId);
     const cluster = pin ? getMapV2ClusterForPin(state, pin.id) : null;
     if (cluster?.id) setSelectedClusterId(cluster.id);
-    const dealershipId = pin?.legacyDealershipId || pin?.dealershipId || "";
+    setLoadStatus(pin ? `${pin.name} selected on the map. Use Load dealership when you are ready to work it.` : "");
+  }
+
+  function loadSelectedDealership() {
+    const dealershipId = selectedPin?.legacyDealershipId || selectedPin?.dealershipId || "";
     if (dealershipId) {
       dispatch({ type: "select-dealership", dealershipId });
+      setLoadStatus(`${selectedPin.name} loaded into Leads, Email, + Location, and Route.`);
+    } else {
+      setLoadStatus("This pin is not linked to a dealership record yet. Open + Location to create the working record.");
     }
   }
 
@@ -511,13 +519,17 @@ export function MapV2Page() {
               <button className={`btn${drawMode ? " primary" : ""}`} type="button" onClick={drawMode ? cancelDrawing : startDrawing}>
                 {drawMode ? "Cancel drawing" : "Draw selection"}
               </button>
+              <button className="btn primary" type="button" onClick={loadSelectedDealership} disabled={!selectedPin}>
+                Load dealership
+              </button>
               <button className="btn primary" type="button" onClick={createClusterFromLasso} disabled={!lassoPins.length}>
-                Create cluster from selection
+                Create cluster
               </button>
               <button className="btn" type="button" onClick={clearLassoSelection} disabled={!drawMode && !lassoPins.length}>
                 Clear
               </button>
             </div>
+            {loadStatus ? <div className="inline-alert">{loadStatus}</div> : null}
 
             {lassoPins.length ? (
               <div className="admin-actions discovery-list map-v2-lasso-list">
@@ -598,16 +610,19 @@ export function MapV2Page() {
                   <button className="btn primary" type="button" onClick={assignSelectedPin} disabled={!selectedCluster || !selectedPin}>
                     Assign selected pin
                   </button>
+                  <button className="btn primary" type="button" onClick={loadSelectedDealership}>
+                    Load dealership
+                  </button>
                   <a className="btn" href={selectedPinMapsUrl()} target="_blank" rel="noreferrer">
                     Open in Maps
                   </a>
-                  <Link className="btn" to="/location">
+                  <Link className="btn" to="/location" onClick={loadSelectedDealership}>
                     Location
                   </Link>
-                  <Link className="btn primary" to="/leads">
+                  <Link className="btn primary" to="/leads" onClick={loadSelectedDealership}>
                     Work lead
                   </Link>
-                  <Link className="btn" to="/route">
+                  <Link className="btn" to="/route" onClick={loadSelectedDealership}>
                     Route
                   </Link>
                 </div>
