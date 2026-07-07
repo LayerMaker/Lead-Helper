@@ -140,6 +140,7 @@ export function LocationPage() {
   const nearestUserPin = useMemo(() => findNearestPin(userLocation, mapV2.pins), [mapV2.pins, userLocation]);
   const visitAdminEntries = useMemo(() => buildAdminEntries(selectedVisitOutcomes), [selectedVisitOutcomes]);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- Reset editable draft fields when the active dealership changes. */
   useEffect(() => {
     setForm(formFromDealership(selectedDealership));
     const activePin = mapV2.pins.find(
@@ -151,6 +152,7 @@ export function LocationPage() {
     setVisitSaveStatus(latestVisit ? "Latest visit loaded" : "No visit saved yet");
     setStatus(`Loaded active map pin: ${selectedDealership.name}. Edit fields, then save to update the working record.`);
   }, [latestVisit, mapV2.pins, selectedDealership]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   function updateField(key, value) {
     setForm((current) => ({
