@@ -451,7 +451,7 @@ export function MapV2Page() {
       <section className="title-row">
         <div>
           <div className="kicker">Map</div>
-          <h1>Dealership Location's</h1>
+          <h1>Dealership-Location's</h1>
           <p className="subtle-copy">
             Pins stay independent, assignments control cluster membership, and boundaries connect assigned pins directly.
           </p>
