@@ -71,3 +71,5 @@ A deployment has only been triggered if one of these is true:
 If `RENDER_LEAD_HELPER_DEPLOY_HOOK` is missing, report that deployment is blocked and ask the user to add the hook. Do not create empty "deploy trigger" commits as a substitute for a Render deploy hook/API call.
 
 If Render is configured to deploy only from `main`, pushing a feature branch such as `codex/field-report-recovery-flow` will not update the live site. In that case, merge or cherry-pick the approved changes into `main`, push `main`, and then trigger Render.
+
+Current known pitfall: `codex/field-report-recovery-flow` is not proven to be the live Render branch. Do not describe pushes to that branch as deployments.
