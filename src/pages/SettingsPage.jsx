@@ -4,7 +4,7 @@ import { useAppState } from "../state/AppState";
 import { STORAGE_KEY } from "../lib/leadHelperModel";
 
 export function SettingsPage() {
-  const { cloudSync, dispatch, pullCloudBackup, pushCloudBackup, refreshCloudSyncStatus, settings } = useAppState();
+  const { cloudSync, dispatch, pushCloudBackup, settings } = useAppState();
   const [emailGenerationMode, setEmailGenerationMode] = useState(settings?.emailGenerationMode || "template");
   const [workEmail, setWorkEmail] = useState(settings?.workEmail || "");
   const [notificationsEnabled, setNotificationsEnabled] = useState(Boolean(settings?.notificationsEnabled));
@@ -78,10 +78,10 @@ export function SettingsPage() {
     window.URL.revokeObjectURL(url);
   }
 
-  async function backUpThisDevice() {
+  async function syncData() {
     if (
       !window.confirm(
-        "Back up this device to cloud? This will replace the current cloud backup with the data on this device.",
+        "Sync this device data to cloud? This sends the data currently stored on this device to Supabase.",
       )
     ) {
       return;
@@ -89,26 +89,9 @@ export function SettingsPage() {
 
     try {
       await pushCloudBackup();
-      setSaveState("Backed up to cloud");
+      setSaveState("Synced to cloud");
     } catch (error) {
-      setSaveState(error.message || "Cloud backup failed");
-    }
-  }
-
-  async function loadCloudBackup() {
-    if (
-      !window.confirm(
-        "Load the cloud backup onto this device? This replaces the data currently stored in this browser. Export a backup first if you need a safety copy.",
-      )
-    ) {
-      return;
-    }
-
-    try {
-      await pullCloudBackup();
-      setSaveState("Cloud backup loaded");
-    } catch (error) {
-      setSaveState(error.message || "Cloud backup load failed");
+      setSaveState(error.message || "Sync failed");
     }
   }
 
@@ -186,23 +169,17 @@ export function SettingsPage() {
             <span className="pill active">{saveState}</span>
           </div>
           <div className="draft settings-preview">
-            Phone-first field backup:
-            {"\n"}- Back up this device after field visits
-            {"\n"}- Load cloud backup on desktop before report cleanup
-            {"\n"}- Export backup before replacing local browser data
-            {"\n"}- Last cloud update: {formatSyncDate(cloudSync.lastCloudUpdatedAt)}
+            Phone-first data flow:
+            {"\n"}- Sync data sends this device's current field data to Supabase
+            {"\n"}- Export backup creates the JSON file used for report recovery
+            {"\n"}- Import data restores a JSON backup onto this device
+            {"\n"}- Last sync: {formatSyncDate(cloudSync.lastCloudUpdatedAt)}
             {"\n"}- Last source: {cloudSync.lastDeviceLabel || "Unknown device"}
             {cloudSync.error ? `\n- Error: ${cloudSync.error}` : ""}
           </div>
           <div className="action-row">
-            <button className="btn primary" type="button" disabled={cloudSync.busy} onClick={backUpThisDevice}>
-              Back up this device
-            </button>
-            <button className="btn" type="button" disabled={cloudSync.busy} onClick={loadCloudBackup}>
-              Load cloud backup
-            </button>
-            <button className="btn" type="button" disabled={cloudSync.busy} onClick={refreshCloudSyncStatus}>
-              Check cloud
+            <button className="btn primary" type="button" disabled={cloudSync.busy} onClick={syncData}>
+              Sync data
             </button>
             <button className="btn" type="button" onClick={exportBackup}>
               Export backup
@@ -214,11 +191,8 @@ export function SettingsPage() {
               accept="application/json,.json"
               onChange={importBackupFile}
             />
-            <button className="btn primary" type="button" onClick={() => importInputRef.current?.click()}>
-              Import backup
-            </button>
-            <button className="btn" type="button" onClick={() => dispatch({ type: "reset-demo" })}>
-              Reset demo data
+            <button className="btn" type="button" onClick={() => importInputRef.current?.click()}>
+              Import data
             </button>
           </div>
         </article>
