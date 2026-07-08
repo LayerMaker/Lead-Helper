@@ -128,6 +128,7 @@ export function LocationPage() {
   const [selectedPinId, setSelectedPinId] = useState("");
   const [targetClusterId, setTargetClusterId] = useState(mapV2.clusters[0]?.id || "");
   const [useCurrentLocationForPin, setUseCurrentLocationForPin] = useState(false);
+  const [newLocationMode, setNewLocationMode] = useState(false);
   const nameInputRef = useRef(null);
   const addressInputRef = useRef(null);
   const websiteInputRef = useRef(null);
@@ -148,6 +149,7 @@ export function LocationPage() {
   const visitAdminEntries = useMemo(() => buildAdminEntries(selectedVisitOutcomes), [selectedVisitOutcomes]);
 
   useEffect(() => {
+    if (newLocationMode) return;
     const syncKey = `${selectedDealership.id}:${latestVisit?.id || ""}`;
     if (formSyncKeyRef.current === syncKey) return;
     formSyncKeyRef.current = syncKey;
@@ -160,7 +162,7 @@ export function LocationPage() {
     setVisitNote(latestVisit?.note || "");
     setVisitSaveStatus(latestVisit ? "Latest visit loaded" : "No visit saved yet");
     setStatus(`Loaded active map pin: ${selectedDealership.name}. Edit fields, then save to update the working record.`);
-  }, [latestVisit, mapV2.pins, selectedDealership]);
+  }, [latestVisit, mapV2.pins, newLocationMode, selectedDealership]);
 
   function updateField(key, value) {
     setForm((current) => ({
@@ -170,11 +172,49 @@ export function LocationPage() {
   }
 
   function loadAutoWestTestLead() {
+    setNewLocationMode(true);
+    formSyncKeyRef.current = "new-location";
+    setSelectedPinId("");
+    setSelectedVisitOutcomes([]);
+    setVisitNote("");
+    setVisitSaveStatus("New location draft");
     setError("");
     setStatus("Auto West test lead loaded. Add it to the map or edit the fields first.");
     setForm({
       ...AUTO_WEST_TEST_LEAD,
     });
+  }
+
+  function startNewLocation() {
+    setNewLocationMode(true);
+    formSyncKeyRef.current = "new-location";
+    setForm(emptyLocationForm());
+    setSelectedPinId("");
+    setSelectedVisitOutcomes([]);
+    setVisitNote("");
+    setVisitSaveStatus("New location draft");
+    setMapDetailsText("");
+    setUseCurrentLocationForPin(false);
+    setUserLocation(null);
+    setLocationStatus("Use your phone location, paste Maps details, or type the address manually.");
+    setError("");
+    setStatus("New map pin draft started. Fill the fields, then choose Add to map or Add to cluster.");
+    nameInputRef.current?.focus();
+  }
+
+  function loadActiveDealership() {
+    setNewLocationMode(false);
+    formSyncKeyRef.current = "";
+    setForm(formFromDealership(selectedDealership));
+    const activePin = mapV2.pins.find(
+      (pin) => pin.legacyDealershipId === selectedDealership.id || pin.dealershipId === selectedDealership.id,
+    );
+    setSelectedPinId(activePin?.id || "");
+    setSelectedVisitOutcomes(latestVisit?.outcomes || []);
+    setVisitNote(latestVisit?.note || "");
+    setVisitSaveStatus(latestVisit ? "Latest visit loaded" : "No visit saved yet");
+    setError("");
+    setStatus(`Loaded active dealership: ${selectedDealership.name}`);
   }
 
   function applyFormPatch(patch) {
@@ -212,6 +252,8 @@ export function LocationPage() {
 
   function selectExistingPin(pin) {
     if (!pin) return;
+    setNewLocationMode(false);
+    formSyncKeyRef.current = "";
     setSelectedPinId(pin.id);
     if (pin.legacyDealershipId || pin.dealershipId) {
       dispatch({ type: "select-dealership", dealershipId: pin.legacyDealershipId || pin.dealershipId });
@@ -412,6 +454,9 @@ export function LocationPage() {
           </p>
         </div>
         <div className="action-row">
+          <button className="btn primary" type="button" onClick={startNewLocation}>
+            + New location
+          </button>
           <Link className="btn" to="/map">
             View map
           </Link>
@@ -435,10 +480,7 @@ export function LocationPage() {
             <button
               className="btn primary"
               type="button"
-              onClick={() => {
-                setForm(formFromDealership(selectedDealership));
-                setStatus(`Loaded active dealership: ${selectedDealership.name}`);
-              }}
+              onClick={loadActiveDealership}
             >
               Load active pin
             </button>
@@ -452,6 +494,12 @@ export function LocationPage() {
               Use my location
             </button>
           </div>
+
+          {newLocationMode ? (
+            <div className="inline-alert">
+              New location mode is active. Loaded dealership fields have been cleared so this saves as a separate map pin.
+            </div>
+          ) : null}
 
           <div className="location-import-box">
             <div className="section-head compact">
