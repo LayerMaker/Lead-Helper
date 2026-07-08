@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ClusterReportTemplate } from "../components/ClusterReportTemplate";
 import {
@@ -27,7 +27,7 @@ export function ReportPrintPage() {
   const autoprint = searchParams.get("autoprint") === "1";
   const [pdfState, setPdfState] = useState("idle");
   const [pdfMessage, setPdfMessage] = useState("");
-  const pendingPdfUrlRef = useRef("");
+  const [generatedPdf, setGeneratedPdf] = useState(null);
   const cluster = clusters.find((item) => item.id === clusterId) || clusters[0];
   const reportPins = useMemo(() => getReportPinsForCluster(state, cluster?.id), [cluster?.id, state]);
   const reportDealerships = useMemo(
@@ -63,7 +63,6 @@ export function ReportPrintPage() {
     document.body.classList.add("print-route-body");
     return () => {
       document.body.classList.remove("print-route-body");
-      if (pendingPdfUrlRef.current) window.URL.revokeObjectURL(pendingPdfUrlRef.current);
     };
   }, []);
 
@@ -75,15 +74,23 @@ export function ReportPrintPage() {
     return () => window.clearTimeout(timer);
   }, [autoprint]);
 
-  async function createReportPdf() {
+  function getAbsolutePdfUrl(pathname) {
+    return new URL(pathname, window.location.origin).toString();
+  }
+
+  async function createReportPdfSession({ force = false } = {}) {
     if (!reportModel?.clusterId) {
       throw new Error("No report cluster is selected.");
     }
 
-    setPdfState("working");
-    setPdfMessage("Generating the PDF from the report preview...");
+    if (!force && generatedPdf) {
+      return generatedPdf;
+    }
 
-    const response = await fetch("/api/reports/pdf", {
+    setPdfState("working");
+    setPdfMessage("Generating a real PDF file from the report preview...");
+
+    const response = await fetch("/api/reports/pdf/session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ clusterId: reportModel.clusterId, state }),
@@ -100,29 +107,23 @@ export function ReportPrintPage() {
       throw new Error(errorMessage);
     }
 
-    const blob = await response.blob();
-    const fileName = response.headers.get("X-Report-Filename") || reportModel.fileName || "lead-helper-report.pdf";
-    return { blob, fileName };
-  }
-
-  function keepPdfUrl(blob) {
-    if (pendingPdfUrlRef.current) window.URL.revokeObjectURL(pendingPdfUrlRef.current);
-    pendingPdfUrlRef.current = window.URL.createObjectURL(blob);
-    return pendingPdfUrlRef.current;
+    const body = await response.json();
+    const nextPdf = {
+      downloadUrl: getAbsolutePdfUrl(body.downloadUrl),
+      expiresInSeconds: body.expiresInSeconds,
+      fileName: body.fileName || reportModel.fileName || "lead-helper-report.pdf",
+      url: getAbsolutePdfUrl(body.url),
+    };
+    setGeneratedPdf(nextPdf);
+    return nextPdf;
   }
 
   async function downloadReportPdf() {
     try {
-      const { blob, fileName } = await createReportPdf();
-      const pdfUrl = keepPdfUrl(blob);
-      const anchor = document.createElement("a");
-      anchor.href = pdfUrl;
-      anchor.download = fileName;
-      document.body.append(anchor);
-      anchor.click();
-      anchor.remove();
+      const pdf = await createReportPdfSession();
       setPdfState("done");
-      setPdfMessage("PDF generated. If your phone does not show a download, use Open PDF or Share PDF from this screen.");
+      setPdfMessage("PDF generated as a file. Opening the download now...");
+      window.location.assign(pdf.downloadUrl);
     } catch (error) {
       setPdfState("error");
       setPdfMessage(`${error.message} Use Print / Save as PDF as the fallback.`);
@@ -130,19 +131,12 @@ export function ReportPrintPage() {
   }
 
   async function openReportPdf() {
-    const openedWindow = window.open("", "_blank");
     try {
-      const { blob } = await createReportPdf();
-      const pdfUrl = keepPdfUrl(blob);
-      if (openedWindow) {
-        openedWindow.location.href = pdfUrl;
-      } else {
-        window.location.href = pdfUrl;
-      }
+      const pdf = await createReportPdfSession();
       setPdfState("done");
-      setPdfMessage("PDF opened. Use the browser share/save controls if the file preview is shown.");
+      setPdfMessage("PDF generated as a file. Opening the PDF now...");
+      window.location.assign(pdf.url);
     } catch (error) {
-      if (openedWindow) openedWindow.close();
       setPdfState("error");
       setPdfMessage(`${error.message} Use Print / Save as PDF as the fallback.`);
     }
@@ -150,8 +144,11 @@ export function ReportPrintPage() {
 
   async function shareReportPdf() {
     try {
-      const { blob, fileName } = await createReportPdf();
-      const file = new File([blob], fileName, { type: "application/pdf" });
+      const pdf = await createReportPdfSession();
+      const response = await fetch(pdf.url);
+      if (!response.ok) throw new Error("The generated PDF file could not be loaded for sharing.");
+      const blob = await response.blob();
+      const file = new File([blob], pdf.fileName, { type: "application/pdf" });
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({
           files: [file],
@@ -163,10 +160,9 @@ export function ReportPrintPage() {
         return;
       }
 
-      const pdfUrl = keepPdfUrl(blob);
-      window.open(pdfUrl, "_blank", "noopener,noreferrer");
       setPdfState("done");
-      setPdfMessage("Sharing is not supported in this browser, so the PDF was opened instead.");
+      setPdfMessage("Sharing files is not supported in this browser, so the real PDF file is opening instead.");
+      window.location.assign(pdf.url);
     } catch (error) {
       setPdfState("error");
       setPdfMessage(`${error.message} Use Open PDF or Print / Save as PDF instead.`);

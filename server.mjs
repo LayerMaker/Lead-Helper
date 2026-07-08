@@ -13,8 +13,10 @@ const port = process.env.PORT || 4174;
 const appDir = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(appDir, "dist");
 const contactCards = new Map();
+const reportPdfs = new Map();
 const syncRecordId = "default";
 const clientStorageKey = "lead-helper-shell-v1";
+const reportPdfTtlMs = 15 * 60 * 1000;
 
 app.use(express.json({ limit: "12mb" }));
 
@@ -232,6 +234,13 @@ function cleanupContactCards() {
   }
 }
 
+function cleanupReportPdfs() {
+  const now = Date.now();
+  for (const [id, record] of reportPdfs.entries()) {
+    if (record.expiresAt <= now) reportPdfs.delete(id);
+  }
+}
+
 app.get("/api/openrouter/status", (_request, response) => {
   response.json({
     configured: Boolean(process.env.OPENROUTER_API_KEY),
@@ -362,6 +371,65 @@ app.post("/api/reports/pdf", async (request, response) => {
       hint: "Use Print / Save as PDF if the server renderer is warming up or unavailable.",
     });
   }
+});
+
+app.post("/api/reports/pdf/session", async (request, response) => {
+  try {
+    cleanupReportPdfs();
+
+    const clusterId = String(request.body?.clusterId || request.query.cluster || "");
+    const state = request.body?.state;
+
+    if (!state || typeof state !== "object") {
+      response.status(400).json({ error: "Current browser state is required to generate this report." });
+      return;
+    }
+
+    const pdfBuffer = await renderReportPdf({ request, clusterId, state });
+    const clusterName = getClusterNameFromState(state, clusterId);
+    const fileName = `${slugifyFilePart(clusterName) || "lead-helper"}-cluster-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+    const id = randomUUID();
+
+    reportPdfs.set(id, {
+      buffer: pdfBuffer,
+      expiresAt: Date.now() + reportPdfTtlMs,
+      fileName,
+    });
+
+    response.json({
+      downloadUrl: `/api/reports/pdf/session/${id}?download=1`,
+      expiresInSeconds: Math.floor(reportPdfTtlMs / 1000),
+      fileName,
+      url: `/api/reports/pdf/session/${id}`,
+    });
+  } catch (error) {
+    response.status(error.status || 500).json({
+      error: error.body?.message || error.message || "Report PDF generation failed.",
+      hint: "Use Print / Save as PDF if the server renderer is warming up or unavailable.",
+    });
+  }
+});
+
+app.get("/api/reports/pdf/session/:id", (request, response) => {
+  cleanupReportPdfs();
+
+  const record = reportPdfs.get(request.params.id);
+  if (!record) {
+    response.status(404).type("text/plain").send("Report PDF expired or not found. Generate the PDF again from the report preview.");
+    return;
+  }
+
+  const disposition = request.query.download === "1" ? "attachment" : "inline";
+
+  response
+    .status(200)
+    .set({
+      "Cache-Control": "no-store",
+      "Content-Disposition": `${disposition}; filename="${record.fileName}"`,
+      "Content-Length": record.buffer.length,
+      "Content-Type": "application/pdf",
+    })
+    .send(record.buffer);
 });
 
 async function proxyOpenRouterChat(request, response, modelOverride) {
