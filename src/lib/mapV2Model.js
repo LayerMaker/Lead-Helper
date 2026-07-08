@@ -212,6 +212,17 @@ export function upsertMapV2Pin(mapV2, pin) {
   };
 }
 
+export function removeMapV2Pin(mapV2, pinId) {
+  if (!pinId) return mapV2;
+
+  return {
+    ...mapV2,
+    pins: (mapV2.pins || []).filter((pin) => pin.id !== pinId),
+    assignments: (mapV2.assignments || []).filter((assignment) => assignment.pinId !== pinId),
+    reportSnapshots: (mapV2.reportSnapshots || []).filter((snapshot) => snapshot.pinId !== pinId),
+  };
+}
+
 export function assignMapV2PinToCluster(mapV2, pinId, clusterId, options = {}) {
   const assignmentId = `assignment-${slugify(clusterId)}-${slugify(pinId)}`;
   const nextAssignment = {

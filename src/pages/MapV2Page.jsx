@@ -498,6 +498,21 @@ export function MapV2Page() {
     clearLassoSelection();
   }
 
+  function removeSelectedPin() {
+    if (!selectedPin) return;
+    if (!window.confirm(`Remove ${selectedPin.name} from the map? This removes the map pin and its cluster assignments.`)) return;
+
+    const remainingPins = pins.filter((pin) => pin.id !== selectedPin.id);
+    const nextPin = remainingPins[0] || null;
+    dispatch({ type: "remove-map-v2-pin", pinId: selectedPin.id });
+    setLassoPinIds((current) => current.filter((pinId) => pinId !== selectedPin.id));
+    if (loadedPinId === selectedPin.id) setLoadedPinId("");
+    setSelectedPinId(nextPin?.id || "");
+    const nextCluster = nextPin ? getMapV2ClusterForPin({ ...state, mapV2: { ...state.mapV2, pins: remainingPins } }, nextPin.id) : null;
+    if (nextCluster?.id) setSelectedClusterId(nextCluster.id);
+    setLoadStatus(`${selectedPin.name} removed from the map and cluster assignments.`);
+  }
+
   return (
     <AppLayout statusLine="Map - pin assignments and generated boundaries">
       <section className="title-row">
@@ -670,6 +685,9 @@ export function MapV2Page() {
                   <Link className="btn" to="/route" onClick={loadSelectedDealership}>
                     Route
                   </Link>
+                  <button className="btn" type="button" onClick={removeSelectedPin}>
+                    Remove pin
+                  </button>
                 </div>
                 {!selectedPinDealershipId ? (
                   <div className="inline-alert">This pin is not linked to a dealership record yet. Open Location to create or update the working record.</div>

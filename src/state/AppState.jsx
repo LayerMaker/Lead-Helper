@@ -32,6 +32,7 @@ import {
   createMapV2ClusterFromPins,
   createMapV2PinFromManualPayload,
   ensureMapV2State,
+  removeMapV2Pin,
   upsertMapV2Pin,
 } from "../lib/mapV2Model";
 
@@ -123,6 +124,11 @@ function reducer(state, action) {
 
   if (action.type === "assign-map-v2-pin") {
     next.mapV2 = assignMapV2PinToCluster(ensureMapV2State(next), action.pinId, action.clusterId, action.options || {});
+    return next;
+  }
+
+  if (action.type === "remove-map-v2-pin") {
+    next.mapV2 = removeMapV2Pin(ensureMapV2State(next), action.pinId);
     return next;
   }
 
