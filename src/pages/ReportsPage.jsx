@@ -70,7 +70,7 @@ export function ReportsPage() {
 
   function handleExportVisibleCluster() {
     const printUrl = `${buildReportPrintUrl(reportModel.clusterId)}&autoprint=1`;
-    window.open(printUrl, "_blank", "noopener,noreferrer");
+    window.location.assign(printUrl);
     setExportState("done");
     setExportMessage("Print/PDF view opened using the local browser data.");
   }
