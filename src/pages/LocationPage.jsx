@@ -126,22 +126,31 @@ export function LocationPage() {
   const [userLocation, setUserLocation] = useState(null);
   const [locationStatus, setLocationStatus] = useState("Use your phone location to check for an existing nearby map pin.");
   const [selectedPinId, setSelectedPinId] = useState("");
+  const [targetClusterId, setTargetClusterId] = useState(mapV2.clusters[0]?.id || "");
+  const [useCurrentLocationForPin, setUseCurrentLocationForPin] = useState(false);
   const nameInputRef = useRef(null);
   const addressInputRef = useRef(null);
   const websiteInputRef = useRef(null);
   const phoneInputRef = useRef(null);
   const roleInputRef = useRef(null);
   const hintInputRef = useRef(null);
+  const formSyncKeyRef = useRef("");
   const [form, setForm] = useState(() => formFromDealership(selectedDealership));
   const [selectedVisitOutcomes, setSelectedVisitOutcomes] = useState(() => latestVisit?.outcomes || []);
   const [visitNote, setVisitNote] = useState(latestVisit?.note || "");
   const [visitSaveStatus, setVisitSaveStatus] = useState(latestVisit ? "Latest visit loaded" : "No visit saved yet");
   const selectedPin = useMemo(() => mapV2.pins.find((pin) => pin.id === selectedPinId) || null, [mapV2.pins, selectedPinId]);
+  const targetCluster = useMemo(
+    () => mapV2.clusters.find((cluster) => cluster.id === targetClusterId) || mapV2.clusters[0] || null,
+    [mapV2.clusters, targetClusterId],
+  );
   const nearestUserPin = useMemo(() => findNearestPin(userLocation, mapV2.pins), [mapV2.pins, userLocation]);
   const visitAdminEntries = useMemo(() => buildAdminEntries(selectedVisitOutcomes), [selectedVisitOutcomes]);
 
-  /* eslint-disable react-hooks/set-state-in-effect -- Reset editable draft fields when the active dealership changes. */
   useEffect(() => {
+    const syncKey = `${selectedDealership.id}:${latestVisit?.id || ""}`;
+    if (formSyncKeyRef.current === syncKey) return;
+    formSyncKeyRef.current = syncKey;
     setForm(formFromDealership(selectedDealership));
     const activePin = mapV2.pins.find(
       (pin) => pin.legacyDealershipId === selectedDealership.id || pin.dealershipId === selectedDealership.id,
@@ -152,7 +161,6 @@ export function LocationPage() {
     setVisitSaveStatus(latestVisit ? "Latest visit loaded" : "No visit saved yet");
     setStatus(`Loaded active map pin: ${selectedDealership.name}. Edit fields, then save to update the working record.`);
   }, [latestVisit, mapV2.pins, selectedDealership]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   function updateField(key, value) {
     setForm((current) => ({
@@ -220,19 +228,22 @@ export function LocationPage() {
     });
   }
 
-  function requestCurrentLocation() {
+  function requestCurrentLocation(useForPin = false) {
     if (!("geolocation" in navigator)) {
       setLocationStatus("Location is not available on this device.");
       return;
     }
-    setLocationStatus("Checking your current position");
+    setLocationStatus(useForPin ? "Getting your current position for the new pin" : "Checking your current position");
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const nextLocation = [position.coords.latitude, position.coords.longitude];
         const nearest = findNearestPin(nextLocation, mapV2.pins);
         setUserLocation(nextLocation);
+        if (useForPin) setUseCurrentLocationForPin(true);
         setLocationStatus(
-          nearest
+          useForPin
+            ? `Current position ready for the new pin. ${nearest ? `Nearest existing pin: ${nearest.name}, ${formatMiles(nearest.distanceMiles)} away.` : "No nearby pin found."}`
+            : nearest
             ? `Nearest existing pin: ${nearest.name}, ${formatMiles(nearest.distanceMiles)} away.`
             : "Location found. No dealership pins are close enough to flag.",
         );
@@ -244,7 +255,7 @@ export function LocationPage() {
     );
   }
 
-  async function addLocation() {
+  function getLocationFormValues() {
     const name = String(nameInputRef.current?.value ?? form.name).trim();
     const address = String(addressInputRef.current?.value ?? form.address).trim();
     const website = String(websiteInputRef.current?.value ?? form.website).trim();
@@ -261,35 +272,67 @@ export function LocationPage() {
       contactHint,
     });
 
-    if (!name || !address) {
-      setError("Dealership name and street address are required.");
+    return { address, contactHint, name, phone, roleHint, website };
+  }
+
+  async function resolvePinLocation({ address }) {
+    if (useCurrentLocationForPin && Array.isArray(userLocation)) {
+      return {
+        displayName: "Current GPS position",
+        location: userLocation,
+      };
+    }
+
+    if (!address) {
+      throw new Error("Add a street address or use your current location for the pin.");
+    }
+
+    const [bestMatch] = await geocodeAddress(address);
+    return {
+      displayName: bestMatch.displayName,
+      location: [bestMatch.lat, bestMatch.lng],
+    };
+  }
+
+  async function saveLocation({ assignToCluster = false } = {}) {
+    const { address, contactHint, name, phone, roleHint, website } = getLocationFormValues();
+
+    if (!name) {
+      setError("Dealership name is required.");
+      return;
+    }
+
+    if (assignToCluster && !targetCluster) {
+      setError("Choose a cluster before adding this pin to a cluster.");
       return;
     }
 
     setBusy(true);
     setError("");
-    setStatus("Resolving address against OpenStreetMap");
+    setStatus(useCurrentLocationForPin ? "Using current GPS position for the map pin" : "Resolving address against OpenStreetMap");
 
     try {
-      const [bestMatch] = await geocodeAddress(address);
-      const resolvedLocation = [bestMatch.lat, bestMatch.lng];
+      const resolved = await resolvePinLocation({ address });
+      const resolvedLocation = resolved.location;
       const nearestResolvedPin = findNearestPin(resolvedLocation, mapV2.pins);
       const pinToUpdate =
         selectedPin ||
         (nearestResolvedPin && nearestResolvedPin.distanceMiles <= DUPLICATE_DISTANCE_MILES ? nearestResolvedPin : null);
-      const manualDealershipId = pinToUpdate?.legacyDealershipId || createManualDealershipId(name, address);
+      const displayAddress = address || `${resolvedLocation[0].toFixed(6)}, ${resolvedLocation[1].toFixed(6)}`;
+      const manualDealershipId = pinToUpdate?.legacyDealershipId || pinToUpdate?.dealershipId || createManualDealershipId(name, displayAddress);
+      const nextPinId = pinToUpdate?.id || `pin-${manualDealershipId}`;
       dispatch({
         type: "upsert-manual-dealership",
         payload: {
           id: manualDealershipId,
           name,
-          address,
+          address: displayAddress,
           website,
           phone,
           roleHint,
           contactHint,
           location: resolvedLocation,
-          geocodeLabel: bestMatch.displayName,
+          geocodeLabel: resolved.displayName,
           intelDistance: "Manual add",
           nextAction: "Capture contact and log visit outcomes",
         },
@@ -297,24 +340,38 @@ export function LocationPage() {
       dispatch({
         type: "upsert-map-v2-pin",
         payload: {
-          pinId: pinToUpdate?.id,
+          pinId: nextPinId,
           legacyDealershipId: manualDealershipId,
           name,
-          address,
+          address: displayAddress,
           website,
           phone,
           location: resolvedLocation,
           sourceRef: "add-location",
         },
       });
+      if (assignToCluster) {
+        dispatch({
+          type: "assign-map-v2-pin",
+          pinId: nextPinId,
+          clusterId: targetCluster.id,
+          options: {
+            assignmentType: "manual",
+            assignedBy: "user",
+          },
+        });
+      }
       setStatus(
         pinToUpdate
           ? `Updated existing map pin: ${pinToUpdate.name} -> ${name}.`
-          : `Pinned to Map as an unassigned location from: ${bestMatch.displayName}`,
+          : assignToCluster
+            ? `Added ${name} to Map and ${targetCluster.name}.`
+            : `Added ${name} to Map as an unassigned location from: ${resolved.displayName}.`,
       );
       setForm(emptyLocationForm());
       setMapDetailsText("");
-      setSelectedPinId("");
+      setSelectedPinId(nextPinId);
+      setUseCurrentLocationForPin(false);
     } catch (addError) {
       setError(addError.message || "Address lookup failed.");
       setStatus("Location needs a valid map match before it can join the dealership database.");
@@ -388,8 +445,11 @@ export function LocationPage() {
             <button className="btn" type="button" onClick={loadAutoWestTestLead}>
               Load Auto West test lead
             </button>
-            <button className="btn" type="button" onClick={requestCurrentLocation}>
+            <button className="btn" type="button" onClick={() => requestCurrentLocation(false)}>
               Check nearby pins
+            </button>
+            <button className="btn" type="button" onClick={() => requestCurrentLocation(true)}>
+              Use my location
             </button>
           </div>
 
@@ -435,6 +495,12 @@ export function LocationPage() {
             </div>
           ) : null}
 
+          {useCurrentLocationForPin && Array.isArray(userLocation) ? (
+            <div className="inline-alert">
+              New map pin will use your current GPS position: <b>{userLocation[0].toFixed(6)}, {userLocation[1].toFixed(6)}</b>.
+            </div>
+          ) : null}
+
           <div className="grid two compact-form">
             <div className="field">
               <label>Dealership name</label>
@@ -455,6 +521,16 @@ export function LocationPage() {
                 onChange={(event) => updateField("address", event.target.value)}
                 placeholder="Type full street address"
               />
+            </div>
+            <div className="field" style={{ gridColumn: "1 / -1" }}>
+              <label>Add to cluster</label>
+              <select className="text-input" value={targetCluster?.id || ""} onChange={(event) => setTargetClusterId(event.target.value)}>
+                {mapV2.clusters.map((cluster) => (
+                  <option key={cluster.id} value={cluster.id}>
+                    {cluster.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="field">
               <label>Website</label>
@@ -509,8 +585,11 @@ export function LocationPage() {
           {error ? <div className="inline-alert error">{error}</div> : null}
 
           <div className="action-row">
-            <button className="btn primary" type="button" disabled={busy} onClick={addLocation}>
-              {busy ? "Pinning location" : "Add location to map"}
+            <button className="btn primary" type="button" disabled={busy} onClick={() => saveLocation({ assignToCluster: false })}>
+              {busy ? "Pinning location" : "Add to map"}
+            </button>
+            <button className="btn primary" type="button" disabled={busy || !targetCluster} onClick={() => saveLocation({ assignToCluster: true })}>
+              {busy ? "Pinning location" : "Add to cluster"}
             </button>
           </div>
         </article>
