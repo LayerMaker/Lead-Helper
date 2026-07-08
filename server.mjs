@@ -118,9 +118,30 @@ async function renderReportPdf({ request, clusterId, state }) {
     }
 
     const page = await context.newPage();
+    const pageErrors = [];
+    page.on("console", (message) => {
+      if (["error", "warning"].includes(message.type())) pageErrors.push(`${message.type()}: ${message.text()}`);
+    });
+    page.on("pageerror", (error) => {
+      pageErrors.push(`pageerror: ${error.message}`);
+    });
     await page.goto(printUrl.toString(), { waitUntil: "networkidle", timeout: 45000 });
     await page.emulateMedia({ media: "print" });
-    await page.waitForSelector(".report-export-sheet", { state: "visible", timeout: 15000 });
+    try {
+      await page.waitForSelector(".report-export-sheet", { state: "visible", timeout: 45000 });
+    } catch (error) {
+      const pageTitle = await page.title().catch(() => "");
+      const bodyText = await page.locator("body").innerText({ timeout: 2000 }).catch(() => "");
+      const diagnostic = [
+        error.message,
+        pageTitle ? `Title: ${pageTitle}` : "",
+        bodyText ? `Body: ${bodyText.slice(0, 500)}` : "",
+        pageErrors.length ? `Page errors: ${pageErrors.slice(0, 5).join(" | ")}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
+      throw new Error(diagnostic);
+    }
     await page
       .waitForFunction(
         () => {
