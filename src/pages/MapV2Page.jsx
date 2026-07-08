@@ -582,6 +582,9 @@ export function MapV2Page() {
               <button className="btn primary" type="button" onClick={loadSelectedDealership} disabled={!selectedPin}>
                 Load dealership
               </button>
+              <button className="btn" type="button" onClick={removeSelectedPin} disabled={!selectedPin}>
+                Remove pin
+              </button>
               <button className="btn primary" type="button" onClick={createClusterFromLasso} disabled={!lassoPins.length}>
                 Create cluster
               </button>
@@ -685,9 +688,6 @@ export function MapV2Page() {
                   <Link className="btn" to="/route" onClick={loadSelectedDealership}>
                     Route
                   </Link>
-                  <button className="btn" type="button" onClick={removeSelectedPin}>
-                    Remove pin
-                  </button>
                 </div>
                 {!selectedPinDealershipId ? (
                   <div className="inline-alert">This pin is not linked to a dealership record yet. Open Location to create or update the working record.</div>
