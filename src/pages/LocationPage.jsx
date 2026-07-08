@@ -359,14 +359,16 @@ export function LocationPage() {
       const nearestResolvedPin = findNearestPin(resolvedLocation, mapV2.pins);
       const pinToUpdate =
         selectedPin ||
-        (nearestResolvedPin && nearestResolvedPin.distanceMiles <= DUPLICATE_DISTANCE_MILES ? nearestResolvedPin : null);
+        (!newLocationMode && nearestResolvedPin && nearestResolvedPin.distanceMiles <= DUPLICATE_DISTANCE_MILES ? nearestResolvedPin : null);
       const displayAddress = address || `${resolvedLocation[0].toFixed(6)}, ${resolvedLocation[1].toFixed(6)}`;
       const manualDealershipId = pinToUpdate?.legacyDealershipId || pinToUpdate?.dealershipId || createManualDealershipId(name, displayAddress);
       const nextPinId = pinToUpdate?.id || `pin-${manualDealershipId}`;
       dispatch({
-        type: "upsert-manual-dealership",
-        payload: {
+        type: "add-location-to-map",
+        clusterId: assignToCluster ? targetCluster.id : "",
+        dealership: {
           id: manualDealershipId,
+          clusterId: assignToCluster ? targetCluster.id : targetCluster?.id,
           name,
           address: displayAddress,
           website,
@@ -378,10 +380,7 @@ export function LocationPage() {
           intelDistance: "Manual add",
           nextAction: "Capture contact and log visit outcomes",
         },
-      });
-      dispatch({
-        type: "upsert-map-v2-pin",
-        payload: {
+        pin: {
           pinId: nextPinId,
           legacyDealershipId: manualDealershipId,
           name,
@@ -391,24 +390,17 @@ export function LocationPage() {
           location: resolvedLocation,
           sourceRef: "add-location",
         },
+        options: {
+          assignmentType: "manual",
+          assignedBy: "user",
+        },
       });
-      if (assignToCluster) {
-        dispatch({
-          type: "assign-map-v2-pin",
-          pinId: nextPinId,
-          clusterId: targetCluster.id,
-          options: {
-            assignmentType: "manual",
-            assignedBy: "user",
-          },
-        });
-      }
       setStatus(
         pinToUpdate
           ? `Updated existing map pin: ${pinToUpdate.name} -> ${name}.`
           : assignToCluster
-            ? `Added ${name} to Map and ${targetCluster.name}.`
-            : `Added ${name} to Map as an unassigned location from: ${resolved.displayName}.`,
+            ? `Added ${name} to Map and ${targetCluster.name}. Pin ready on the map.`
+            : `Added ${name} to Map as an unassigned location from: ${resolved.displayName}. Pin ready on the map.`,
       );
       setForm(emptyLocationForm());
       setMapDetailsText("");

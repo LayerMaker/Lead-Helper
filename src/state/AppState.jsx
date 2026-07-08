@@ -107,6 +107,20 @@ function reducer(state, action) {
     return next;
   }
 
+  if (action.type === "add-location-to-map") {
+    const dealership = upsertManualDealership(next, action.dealership || {});
+    const pinPayload = {
+      ...(action.pin || {}),
+      legacyDealershipId: dealership.id,
+    };
+    const pin = createMapV2PinFromManualPayload(pinPayload);
+    next.mapV2 = upsertMapV2Pin(ensureMapV2State(next), pin);
+    if (action.clusterId) {
+      next.mapV2 = assignMapV2PinToCluster(next.mapV2, pin.id, action.clusterId, action.options || {});
+    }
+    return next;
+  }
+
   if (action.type === "assign-map-v2-pin") {
     next.mapV2 = assignMapV2PinToCluster(ensureMapV2State(next), action.pinId, action.clusterId, action.options || {});
     return next;
