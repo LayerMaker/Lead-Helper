@@ -265,10 +265,10 @@ export function SummaryPage() {
       return;
     }
 
-    const printUrl = `${buildReportPrintUrl(cluster.id)}&autoprint=1`;
+    const printUrl = buildReportPrintUrl(cluster.id);
     window.location.assign(printUrl);
     setExportState("done");
-    setExportMessage(`${cluster.name} print/PDF view opened using the local browser data.`);
+    setExportMessage(`${cluster.name} report preview opened using the local browser data.`);
   }
 
   return (
@@ -391,7 +391,7 @@ export function SummaryPage() {
             disabled={!selectedReportCluster?.id || !selectedReportSummary?.included}
             onClick={() => openClusterReport(selectedReportCluster)}
           >
-            Open report PDF view
+            Generate report PDF
           </button>
         </div>
       </section>

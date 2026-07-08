@@ -69,10 +69,10 @@ export function ReportsPage() {
   );
 
   function handleExportVisibleCluster() {
-    const printUrl = `${buildReportPrintUrl(reportModel.clusterId)}&autoprint=1`;
+    const printUrl = buildReportPrintUrl(reportModel.clusterId);
     window.location.assign(printUrl);
     setExportState("done");
-    setExportMessage("Print/PDF view opened using the local browser data.");
+    setExportMessage("Report preview opened using the local browser data.");
   }
 
   function scrollToPreview() {
@@ -96,7 +96,7 @@ export function ReportsPage() {
             Open print view
           </a>
           <button className="btn primary" type="button" disabled={exportState === "exporting"} onClick={handleExportVisibleCluster}>
-            Open PDF view
+            Generate PDF
           </button>
         </div>
       </section>
@@ -201,7 +201,7 @@ export function ReportsPage() {
                               Print view
                             </a>
                             <button className="btn primary" type="button" onClick={handleExportVisibleCluster}>
-                              Open PDF view
+                              Generate PDF
                             </button>
                           </div>
                         </div>

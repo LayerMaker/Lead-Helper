@@ -92,6 +92,62 @@ async function launchPdfBrowser() {
   }
 }
 
+async function renderReportPdf({ request, clusterId, state }) {
+  let browser;
+
+  try {
+    const baseUrl = getRequestBaseUrl(request);
+    const printUrl = new URL("/reports/print", baseUrl);
+    if (clusterId) printUrl.searchParams.set("cluster", clusterId);
+    printUrl.searchParams.set("pdf", "1");
+
+    browser = await launchPdfBrowser();
+    const context = await browser.newContext({
+      viewport: { width: 1240, height: 1754 },
+    });
+
+    if (state) {
+      await context.addInitScript(
+        ({ key, value }) => {
+          window.localStorage.setItem(key, JSON.stringify(value));
+        },
+        { key: clientStorageKey, value: state },
+      );
+    }
+
+    const page = await context.newPage();
+    await page.goto(printUrl.toString(), { waitUntil: "networkidle", timeout: 45000 });
+    await page.emulateMedia({ media: "print" });
+    await page.waitForSelector(".report-export-sheet", { state: "visible", timeout: 15000 });
+    await page
+      .waitForFunction(
+        () => {
+          const map = document.querySelector(".report-leaflet-map");
+          if (!map) return true;
+          const tiles = [...map.querySelectorAll(".leaflet-tile")];
+          return tiles.length > 0 && tiles.every((tile) => tile.complete && tile.naturalWidth > 0);
+        },
+        { timeout: 12000 },
+      )
+      .catch(() => {});
+    await page.waitForTimeout(350);
+
+    return await page.pdf({
+      format: "A4",
+      printBackground: true,
+      preferCSSPageSize: true,
+      margin: {
+        top: "0mm",
+        right: "0mm",
+        bottom: "0mm",
+        left: "0mm",
+      },
+    });
+  } finally {
+    if (browser) await browser.close();
+  }
+}
+
 async function supabaseRest(pathname, options = {}) {
   const config = getSupabaseConfig();
   if (!config.configured) {
@@ -252,59 +308,11 @@ app.put("/api/sync/state", async (request, response) => {
 });
 
 app.get("/api/reports/pdf", async (request, response) => {
-  let browser;
-
   try {
     const clusterId = String(request.query.cluster || "");
     const rows = await supabaseRest(`lead_helper_app_state?id=eq.${syncRecordId}&select=state&limit=1`);
     const state = Array.isArray(rows) ? rows[0]?.state : null;
-    const baseUrl = getRequestBaseUrl(request);
-    const printUrl = new URL("/reports/print", baseUrl);
-    if (clusterId) printUrl.searchParams.set("cluster", clusterId);
-    printUrl.searchParams.set("pdf", "1");
-
-    browser = await launchPdfBrowser();
-    const context = await browser.newContext({
-      viewport: { width: 1240, height: 1754 },
-    });
-
-    if (state) {
-      await context.addInitScript(
-        ({ key, value }) => {
-          window.localStorage.setItem(key, JSON.stringify(value));
-        },
-        { key: clientStorageKey, value: state },
-      );
-    }
-
-    const page = await context.newPage();
-    await page.goto(printUrl.toString(), { waitUntil: "networkidle", timeout: 45000 });
-    await page.emulateMedia({ media: "print" });
-    await page.waitForSelector(".report-export-sheet", { state: "visible", timeout: 15000 });
-    await page
-      .waitForFunction(
-        () => {
-          const map = document.querySelector(".report-leaflet-map");
-          if (!map) return true;
-          const tiles = [...map.querySelectorAll(".leaflet-tile")];
-          return tiles.length > 0 && tiles.every((tile) => tile.complete && tile.naturalWidth > 0);
-        },
-        { timeout: 12000 },
-      )
-      .catch(() => {});
-    await page.waitForTimeout(350);
-
-    const pdfBuffer = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      preferCSSPageSize: true,
-      margin: {
-        top: "0mm",
-        right: "0mm",
-        bottom: "0mm",
-        left: "0mm",
-      },
-    });
+    const pdfBuffer = await renderReportPdf({ request, clusterId, state });
 
     const clusterName = getClusterNameFromState(state, clusterId);
     const fileName = `${slugifyFilePart(clusterName) || "lead-helper"}-cluster-report-${new Date().toISOString().slice(0, 10)}.pdf`;
@@ -322,8 +330,37 @@ app.get("/api/reports/pdf", async (request, response) => {
       error: error.body?.message || error.message || "Report PDF generation failed.",
       hint: "If this is running on Render, confirm the latest deploy installed the Chromium renderer.",
     });
-  } finally {
-    if (browser) await browser.close();
+  }
+});
+
+app.post("/api/reports/pdf", async (request, response) => {
+  try {
+    const clusterId = String(request.body?.clusterId || request.query.cluster || "");
+    const state = request.body?.state;
+
+    if (!state || typeof state !== "object") {
+      response.status(400).json({ error: "Current browser state is required to generate this report." });
+      return;
+    }
+
+    const pdfBuffer = await renderReportPdf({ request, clusterId, state });
+    const clusterName = getClusterNameFromState(state, clusterId);
+    const fileName = `${slugifyFilePart(clusterName) || "lead-helper"}-cluster-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+
+    response
+      .status(200)
+      .set({
+        "Cache-Control": "no-store",
+        "Content-Disposition": `attachment; filename="${fileName}"`,
+        "Content-Type": "application/pdf",
+        "X-Report-Filename": fileName,
+      })
+      .send(pdfBuffer);
+  } catch (error) {
+    response.status(error.status || 500).json({
+      error: error.body?.message || error.message || "Report PDF generation failed.",
+      hint: "Use Print / Save as PDF if the server renderer is warming up or unavailable.",
+    });
   }
 });
 
