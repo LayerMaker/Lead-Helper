@@ -278,27 +278,44 @@ function MapV2Canvas({
             const isSelected = pin.id === selectedPinId;
             const isLassoSelected = lassoPinIdSet.has(pin.id);
             const colour = cluster ? getClusterColour(cluster) : "#f3a53d";
+            const visibleRadius = isSelected || isLassoSelected ? 10 : 7;
+            const touchRadius = isSelected || isLassoSelected ? 22 : 18;
 
             return (
-              <CircleMarker
-                key={pin.id}
-                center={pin.location}
-                radius={isSelected || isLassoSelected ? 10 : 7}
-                pathOptions={{
-                  color: isLassoSelected ? "#fff4df" : isSelected ? "#fff4df" : colour,
-                  weight: isLassoSelected ? 4 : isSelected ? 3 : 2,
-                  fillColor: isLassoSelected ? "#ff7fa7" : cluster ? colour : "#f3a53d",
-                  fillOpacity: cluster || isLassoSelected ? 0.88 : 0.95,
-                  dashArray: cluster ? undefined : "5 5",
-                }}
-                eventHandlers={{
-                  click: () => onSelectPin(pin.id),
-                }}
-              >
-                <Tooltip direction="top" offset={[0, -8]} className={`map-tooltip marker ${isSelected ? "selected" : ""}`}>
-                  {pin.name} {cluster ? `(${cluster.name})` : "(unassigned)"}
-                </Tooltip>
-              </CircleMarker>
+              <Fragment key={pin.id}>
+                <CircleMarker
+                  center={pin.location}
+                  radius={touchRadius}
+                  pathOptions={{
+                    color: colour,
+                    weight: 0,
+                    opacity: 0,
+                    fillColor: colour,
+                    fillOpacity: 0.01,
+                  }}
+                  eventHandlers={{
+                    click: () => onSelectPin(pin.id),
+                  }}
+                />
+                <CircleMarker
+                  center={pin.location}
+                  radius={visibleRadius}
+                  pathOptions={{
+                    color: isLassoSelected ? "#fff4df" : isSelected ? "#fff4df" : colour,
+                    weight: isLassoSelected ? 4 : isSelected ? 3 : 2,
+                    fillColor: isLassoSelected ? "#ff7fa7" : cluster ? colour : "#f3a53d",
+                    fillOpacity: cluster || isLassoSelected ? 0.88 : 0.95,
+                    dashArray: cluster ? undefined : "5 5",
+                  }}
+                  eventHandlers={{
+                    click: () => onSelectPin(pin.id),
+                  }}
+                >
+                  <Tooltip direction="top" offset={[0, -8]} className={`map-tooltip marker ${isSelected ? "selected" : ""}`}>
+                    {pin.name} {cluster ? `(${cluster.name})` : "(unassigned)"}
+                  </Tooltip>
+                </CircleMarker>
+              </Fragment>
             );
           })}
 
