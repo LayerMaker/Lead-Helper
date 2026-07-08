@@ -137,6 +137,8 @@ function MapV2Canvas({
   );
   const selectedBoundary = getMapV2BoundaryForPins(selectedClusterPins);
   const lassoBoundary = getMapV2BoundaryForPins(lassoPins);
+  const loadedPin = pins.find((pin) => pin.id === loadedPinId && Array.isArray(pin.location)) || null;
+  const loadedPinCluster = loadedPin ? getMapV2ClusterForPin(state, loadedPin.id) : null;
 
   function getDrawPoint(event) {
     if (!frameRef.current || !mapRef.current) return null;
@@ -313,20 +315,34 @@ function MapV2Canvas({
                     click: () => onSelectPin(pin.id),
                   }}
                 >
-                  <Tooltip
-                    key={`${pin.id}-${isLoaded ? "loaded" : "hint"}`}
-                    direction="top"
-                    offset={[0, -8]}
-                    permanent={isLoaded}
-                    className={`map-tooltip marker ${isLoaded ? "loaded" : isSelected ? "selected" : ""}`}
-                  >
-                    {isLoaded ? "Loaded: " : ""}
-                    {pin.name} {cluster ? `(${cluster.name})` : "(unassigned)"}
-                  </Tooltip>
+                  {!isLoaded ? (
+                    <Tooltip direction="top" offset={[0, -8]} className={`map-tooltip marker ${isSelected ? "selected" : ""}`}>
+                      {pin.name} {cluster ? `(${cluster.name})` : "(unassigned)"}
+                    </Tooltip>
+                  ) : null}
                 </CircleMarker>
               </Fragment>
             );
           })}
+
+        {loadedPin ? (
+          <CircleMarker
+            key={`${loadedPin.id}-loaded-label`}
+            center={loadedPin.location}
+            radius={1}
+            pathOptions={{
+              color: "#fff4df",
+              weight: 0,
+              opacity: 0,
+              fillOpacity: 0,
+            }}
+            interactive={false}
+          >
+            <Tooltip permanent direction="top" offset={[0, -16]} className="map-tooltip marker loaded">
+              Loaded: {loadedPin.name} {loadedPinCluster ? `(${loadedPinCluster.name})` : "(unassigned)"}
+            </Tooltip>
+          </CircleMarker>
+        ) : null}
 
         {selectedBoundary.map((location, index) => (
           <CircleMarker
