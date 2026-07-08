@@ -4,7 +4,7 @@ import { useAppState } from "../state/AppState";
 import { STORAGE_KEY } from "../lib/leadHelperModel";
 
 export function SettingsPage() {
-  const { dispatch, settings } = useAppState();
+  const { cloudSync, dispatch, pullCloudBackup, pushCloudBackup, refreshCloudSyncStatus, settings } = useAppState();
   const [emailGenerationMode, setEmailGenerationMode] = useState(settings?.emailGenerationMode || "template");
   const [workEmail, setWorkEmail] = useState(settings?.workEmail || "");
   const [notificationsEnabled, setNotificationsEnabled] = useState(Boolean(settings?.notificationsEnabled));
@@ -15,6 +15,18 @@ export function SettingsPage() {
   const [saveState, setSaveState] = useState("Unsaved");
   const [serverStatus, setServerStatus] = useState({ checked: false, configured: false });
   const importInputRef = useRef(null);
+
+  function formatSyncDate(value) {
+    if (!value) return "Not available";
+    try {
+      return new Intl.DateTimeFormat("en-GB", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(new Date(value));
+    } catch {
+      return value;
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -64,6 +76,40 @@ export function SettingsPage() {
     anchor.download = `lead-helper-backup-${new Date().toISOString().slice(0, 10)}.json`;
     anchor.click();
     window.URL.revokeObjectURL(url);
+  }
+
+  async function backUpThisDevice() {
+    if (
+      !window.confirm(
+        "Back up this device to cloud? This will replace the current cloud backup with the data on this device.",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await pushCloudBackup();
+      setSaveState("Backed up to cloud");
+    } catch (error) {
+      setSaveState(error.message || "Cloud backup failed");
+    }
+  }
+
+  async function loadCloudBackup() {
+    if (
+      !window.confirm(
+        "Load the cloud backup onto this device? This replaces the data currently stored in this browser. Export a backup first if you need a safety copy.",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await pullCloudBackup();
+      setSaveState("Cloud backup loaded");
+    } catch (error) {
+      setSaveState(error.message || "Cloud backup load failed");
+    }
   }
 
   function importBackupFile(event) {
@@ -125,8 +171,8 @@ export function SettingsPage() {
           <span>Follow-up SLA after warm visit</span>
         </article>
         <article className="panel metric">
-          <strong>{serverStatus.configured ? "Live" : "Server"}</strong>
-          <span>{serverStatus.configured ? "LLM proxy configured" : "Set Render env key"}</span>
+          <strong>{cloudSync.busy ? "Syncing" : cloudSync.checked ? "Cloud" : "Check"}</strong>
+          <span>{cloudSync.message}</span>
         </article>
       </section>
 
@@ -140,15 +186,23 @@ export function SettingsPage() {
             <span className="pill active">{saveState}</span>
           </div>
           <div className="draft settings-preview">
-            When a visit is marked "Interested", Lead Helper creates:
-            {"\n"}- a visit record
-            {"\n"}- a dashboard action
-            {"\n"}- a short dealer-specific email draft
-            {"\n"}- a report-card evidence line
+            Phone-first field backup:
+            {"\n"}- Back up this device after field visits
+            {"\n"}- Load cloud backup on desktop before report cleanup
+            {"\n"}- Export backup before replacing local browser data
+            {"\n"}- Last cloud update: {formatSyncDate(cloudSync.lastCloudUpdatedAt)}
+            {"\n"}- Last source: {cloudSync.lastDeviceLabel || "Unknown device"}
+            {cloudSync.error ? `\n- Error: ${cloudSync.error}` : ""}
           </div>
           <div className="action-row">
-            <button className="btn" type="button">
-              Sync now
+            <button className="btn primary" type="button" disabled={cloudSync.busy} onClick={backUpThisDevice}>
+              Back up this device
+            </button>
+            <button className="btn" type="button" disabled={cloudSync.busy} onClick={loadCloudBackup}>
+              Load cloud backup
+            </button>
+            <button className="btn" type="button" disabled={cloudSync.busy} onClick={refreshCloudSyncStatus}>
+              Check cloud
             </button>
             <button className="btn" type="button" onClick={exportBackup}>
               Export backup

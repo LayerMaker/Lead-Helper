@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState } from "react";
 import {
   STORAGE_KEY,
   STATE_VERSION,
@@ -36,6 +36,7 @@ import {
 } from "../lib/mapV2Model";
 
 const AppStateContext = createContext(null);
+const REMOTE_SYNC_DEVICE_KEY = `${STORAGE_KEY}:device-id`;
 
 function buildNextWeekDueAt() {
   const dueAt = new Date();
@@ -369,9 +370,33 @@ function hydrateState(parsed) {
   };
 }
 
-function prepareRemoteState(state) {
+function getSyncDevice() {
+  const nav = typeof window !== "undefined" ? window.navigator : null;
+  const userAgent = nav?.userAgent || "";
+  const isPhone = /iphone|android.*mobile|mobile/i.test(userAgent);
+  const label = isPhone ? "Phone field device" : "Desktop review device";
+  let id;
+
+  try {
+    id = window.localStorage.getItem(REMOTE_SYNC_DEVICE_KEY) || "";
+    if (!id) {
+      id = `device-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+      window.localStorage.setItem(REMOTE_SYNC_DEVICE_KEY, id);
+    }
+  } catch {
+    id = "unknown-device";
+  }
+
+  return { id, label };
+}
+
+function prepareRemoteState(state, syncMeta = {}) {
   const remoteState = cloneState(state);
   if (remoteState.settings) delete remoteState.settings.openRouterApiKey;
+  remoteState.syncMeta = {
+    ...(remoteState.syncMeta || {}),
+    ...syncMeta,
+  };
   return remoteState;
 }
 
@@ -388,66 +413,127 @@ function loadInitialState() {
 
 export function AppStateProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, undefined, loadInitialState);
-  const [remoteSyncReady, setRemoteSyncReady] = useState(false);
-  const latestRemotePayload = useRef("");
-  const remoteSaveTimer = useRef(null);
+  const [cloudSync, setCloudSync] = useState({
+    checked: false,
+    busy: false,
+    error: "",
+    lastCloudUpdatedAt: "",
+    lastDeviceLabel: "",
+    lastPushedAt: "",
+    lastPulledAt: "",
+    message: "Cloud backup not checked yet",
+  });
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadRemoteState() {
-      try {
-        const response = await fetch("/api/sync/state");
-        if (!response.ok) throw new Error("Remote sync is not ready.");
-        const payload = await response.json();
-        if (cancelled) return;
-
-        if (payload.state?.version === STATE_VERSION) {
-          latestRemotePayload.current = JSON.stringify(prepareRemoteState(payload.state));
-          dispatch({ type: "replace-state", state: payload.state });
-        }
-      } catch {
-        // Local storage remains the offline fallback until Supabase is ready.
-      } finally {
-        if (!cancelled) setRemoteSyncReady(true);
-      }
+  const refreshCloudSyncStatus = useCallback(async function refreshCloudSyncStatus() {
+    setCloudSync((current) => ({ ...current, busy: true, error: "", message: "Checking cloud backup..." }));
+    try {
+      const response = await fetch("/api/sync/state");
+      if (!response.ok) throw new Error("Cloud backup is not ready.");
+      const payload = await response.json();
+      const remoteState = payload.state?.version === STATE_VERSION ? payload.state : null;
+      setCloudSync((current) => ({
+        ...current,
+        checked: true,
+        busy: false,
+        error: "",
+        lastCloudUpdatedAt: payload.updatedAt || "",
+        lastDeviceLabel: remoteState?.syncMeta?.deviceLabel || "",
+        lastPushedAt: remoteState?.syncMeta?.pushedAt || "",
+        message: remoteState ? "Cloud backup available" : "No cloud backup has been saved yet",
+      }));
+      return payload;
+    } catch (error) {
+      setCloudSync((current) => ({
+        ...current,
+        checked: true,
+        busy: false,
+        error: error.message || "Cloud backup check failed",
+        message: "Cloud backup unavailable",
+      }));
+      throw error;
     }
+  }, []);
 
-    loadRemoteState();
-    return () => {
-      cancelled = true;
-    };
+  const pushCloudBackup = useCallback(async function pushCloudBackup() {
+    const device = getSyncDevice();
+    const pushedAt = new Date().toISOString();
+    const remoteState = prepareRemoteState(state, {
+      deviceId: device.id,
+      deviceLabel: device.label,
+      pushedAt,
+    });
+
+    setCloudSync((current) => ({ ...current, busy: true, error: "", message: "Backing up this device to cloud..." }));
+    try {
+      const response = await fetch("/api/sync/state", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ state: remoteState }),
+      });
+      if (!response.ok) throw new Error("Cloud backup failed.");
+      const payload = await response.json();
+      setCloudSync((current) => ({
+        ...current,
+        checked: true,
+        busy: false,
+        error: "",
+        lastCloudUpdatedAt: payload.updatedAt || pushedAt,
+        lastDeviceLabel: device.label,
+        lastPushedAt: pushedAt,
+        message: "This device is backed up to cloud",
+      }));
+      return payload;
+    } catch (error) {
+      setCloudSync((current) => ({
+        ...current,
+        busy: false,
+        error: error.message || "Cloud backup failed",
+        message: "Cloud backup failed",
+      }));
+      throw error;
+    }
+  }, [state]);
+
+  const pullCloudBackup = useCallback(async function pullCloudBackup() {
+    setCloudSync((current) => ({ ...current, busy: true, error: "", message: "Loading cloud backup onto this device..." }));
+    try {
+      const response = await fetch("/api/sync/state");
+      if (!response.ok) throw new Error("Cloud backup is not ready.");
+      const payload = await response.json();
+      if (payload.state?.version !== STATE_VERSION) throw new Error("No compatible cloud backup was found.");
+      dispatch({ type: "replace-state", state: payload.state });
+      setCloudSync((current) => ({
+        ...current,
+        checked: true,
+        busy: false,
+        error: "",
+        lastCloudUpdatedAt: payload.updatedAt || "",
+        lastDeviceLabel: payload.state?.syncMeta?.deviceLabel || "",
+        lastPulledAt: new Date().toISOString(),
+        lastPushedAt: payload.state?.syncMeta?.pushedAt || current.lastPushedAt,
+        message: "Cloud backup loaded onto this device",
+      }));
+      return payload;
+    } catch (error) {
+      setCloudSync((current) => ({
+        ...current,
+        busy: false,
+        error: error.message || "Cloud backup load failed",
+        message: "Cloud backup load failed",
+      }));
+      throw error;
+    }
   }, []);
 
   useEffect(() => {
-    if (!remoteSyncReady) return undefined;
-
-    const remoteState = prepareRemoteState(state);
-    const payload = JSON.stringify(remoteState);
-    if (payload === latestRemotePayload.current) return undefined;
-
-    window.clearTimeout(remoteSaveTimer.current);
-    remoteSaveTimer.current = window.setTimeout(async () => {
-      try {
-        const response = await fetch("/api/sync/state", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ state: remoteState }),
-        });
-        if (response.ok) latestRemotePayload.current = payload;
-      } catch {
-        // Keep working locally; the next state change will retry.
-      }
-    }, 900);
-
-    return () => window.clearTimeout(remoteSaveTimer.current);
-  }, [remoteSyncReady, state]);
+    refreshCloudSyncStatus().catch(() => {});
+  }, [refreshCloudSyncStatus]);
 
   const value = useMemo(() => {
     const clusters = getAllClusters(state);
@@ -474,6 +560,10 @@ export function AppStateProvider({ children }) {
       completedActions,
       pendingDrafts,
       clustersWithVisits,
+      cloudSync,
+      pushCloudBackup,
+      pullCloudBackup,
+      refreshCloudSyncStatus,
       getDealershipsForCluster: (clusterId) => getDealershipsForCluster(state, clusterId),
       getDraftForDealership: (dealershipId) => getDraftForDealership(state, dealershipId),
       getLatestContact: (dealershipId) => getLatestContact(state, dealershipId),
@@ -483,7 +573,7 @@ export function AppStateProvider({ children }) {
       getDealershipById: (dealershipId) => mergeDealership(state, dealershipId),
       dispatch,
     };
-  }, [state]);
+  }, [cloudSync, pullCloudBackup, pushCloudBackup, refreshCloudSyncStatus, state]);
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
 }
