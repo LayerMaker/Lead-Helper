@@ -297,6 +297,12 @@ p { margin: 0; color: var(--muted); line-height: 1.55; }
   border-color: oklch(76% 0.19 58 / 0.9);
   box-shadow: 0 0 0 1px oklch(76% 0.19 58 / 0.4), 0 12px 32px oklch(0% 0 0 / 0.3);
 }
+.field-map .leaflet-tooltip.map-tooltip.loaded {
+  border-color: oklch(82% 0.15 145 / 0.92);
+  background: oklch(13% 0.035 145 / 0.94);
+  color: oklch(91% 0.08 145);
+  box-shadow: 0 0 0 1px oklch(72% 0.13 145 / 0.45), 0 12px 34px oklch(0% 0 0 / 0.34);
+}
 .field-map .leaflet-tooltip-top:before,
 .field-map .leaflet-tooltip-bottom:before,
 .field-map .leaflet-tooltip-left:before,

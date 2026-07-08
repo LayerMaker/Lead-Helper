@@ -105,6 +105,7 @@ function MapV2Canvas({
   pins,
   selectedCluster,
   selectedPinId,
+  loadedPinId,
   lassoPinIds,
   drawMode,
   onSelectCluster,
@@ -276,10 +277,11 @@ function MapV2Canvas({
           .map((pin) => {
             const cluster = getMapV2ClusterForPin(state, pin.id);
             const isSelected = pin.id === selectedPinId;
+            const isLoaded = pin.id === loadedPinId;
             const isLassoSelected = lassoPinIdSet.has(pin.id);
             const colour = cluster ? getClusterColour(cluster) : "#f3a53d";
-            const visibleRadius = isSelected || isLassoSelected ? 10 : 7;
-            const touchRadius = isSelected || isLassoSelected ? 22 : 18;
+            const visibleRadius = isSelected || isLoaded || isLassoSelected ? 10 : 7;
+            const touchRadius = isSelected || isLoaded || isLassoSelected ? 22 : 18;
 
             return (
               <Fragment key={pin.id}>
@@ -301,7 +303,7 @@ function MapV2Canvas({
                   center={pin.location}
                   radius={visibleRadius}
                   pathOptions={{
-                    color: isLassoSelected ? "#fff4df" : isSelected ? "#fff4df" : colour,
+                    color: isLassoSelected ? "#fff4df" : isLoaded ? "#fff4df" : isSelected ? "#fff4df" : colour,
                     weight: isLassoSelected ? 4 : isSelected ? 3 : 2,
                     fillColor: isLassoSelected ? "#ff7fa7" : cluster ? colour : "#f3a53d",
                     fillOpacity: cluster || isLassoSelected ? 0.88 : 0.95,
@@ -311,7 +313,14 @@ function MapV2Canvas({
                     click: () => onSelectPin(pin.id),
                   }}
                 >
-                  <Tooltip direction="top" offset={[0, -8]} className={`map-tooltip marker ${isSelected ? "selected" : ""}`}>
+                  <Tooltip
+                    key={`${pin.id}-${isLoaded ? "loaded" : "hint"}`}
+                    direction="top"
+                    offset={[0, -8]}
+                    permanent={isLoaded}
+                    className={`map-tooltip marker ${isLoaded ? "loaded" : isSelected ? "selected" : ""}`}
+                  >
+                    {isLoaded ? "Loaded: " : ""}
                     {pin.name} {cluster ? `(${cluster.name})` : "(unassigned)"}
                   </Tooltip>
                 </CircleMarker>
@@ -375,6 +384,7 @@ export function MapV2Page() {
     pins[0] ||
     null;
   const [selectedPinId, setSelectedPinId] = useState(initialSelectedPin?.id || "");
+  const [loadedPinId, setLoadedPinId] = useState("");
   const [drawMode, setDrawMode] = useState(false);
   const [lassoPinIds, setLassoPinIds] = useState([]);
   const [manualClusterName, setManualClusterName] = useState("");
@@ -397,6 +407,7 @@ export function MapV2Page() {
 
   function loadSelectedDealership() {
     const dealershipId = selectedPin?.legacyDealershipId || selectedPin?.dealershipId || "";
+    if (selectedPin?.id) setLoadedPinId(selectedPin.id);
     if (dealershipId) {
       dispatch({ type: "select-dealership", dealershipId });
       setLoadStatus(`${selectedPin.name} loaded into Leads, Email, + Location, and Route.`);
@@ -497,6 +508,7 @@ export function MapV2Page() {
                 pins={pins}
                 selectedCluster={selectedCluster}
                 selectedPinId={selectedPin?.id || ""}
+                loadedPinId={loadedPinId}
                 onSelectCluster={setSelectedClusterId}
                 onSelectPin={selectPin}
                 lassoPinIds={lassoPinIds}
