@@ -30,6 +30,27 @@ const clusterColours = {
   slate: "#9aa7b8",
 };
 
+const UNVERIFIED_PIN_COLOUR = "#ef4444";
+const UNVERIFIED_PIN_IDS = new Set([
+  "pin-battersea-motors",
+  "pin-brentford-auto-centre",
+  "pin-fast-cars-chiswick",
+  "pin-chiswick-motor-house",
+  "pin-west4-auto-centre",
+  "pin-node-3488395622",
+  "pin-way-821683850",
+  "pin-way-1211583716",
+  "pin-way-1109765963",
+  "pin-node-5855832443",
+  "pin-node-8779669268",
+  "pin-way-188541854",
+  "pin-node-7838663552",
+  "pin-node-7901967458",
+  "pin-way-138701171",
+  "pin-way-825900460",
+  "pin-way-428293728",
+]);
+
 function getClusterColour(cluster) {
   return clusterColours[cluster?.colour] || "#f3a53d";
 }
@@ -281,7 +302,9 @@ function MapV2Canvas({
             const isSelected = pin.id === selectedPinId;
             const isLoaded = pin.id === loadedPinId;
             const isLassoSelected = lassoPinIdSet.has(pin.id);
-            const colour = cluster ? getClusterColour(cluster) : "#f3a53d";
+            const isUnverified = UNVERIFIED_PIN_IDS.has(pin.id);
+            const clusterColour = cluster ? getClusterColour(cluster) : "#f3a53d";
+            const colour = isUnverified ? UNVERIFIED_PIN_COLOUR : clusterColour;
             const visibleRadius = isSelected || isLoaded || isLassoSelected ? 10 : 7;
             const touchRadius = isSelected || isLoaded || isLassoSelected ? 22 : 18;
 
@@ -317,7 +340,7 @@ function MapV2Canvas({
                 >
                   {!isLoaded ? (
                     <Tooltip direction="top" offset={[0, -8]} className={`map-tooltip marker ${isSelected ? "selected" : ""}`}>
-                      {pin.name} {cluster ? `(${cluster.name})` : "(unassigned)"}
+                      {pin.name} {cluster ? `(${cluster.name})` : "(unassigned)"} {isUnverified ? "- verify before visit" : ""}
                     </Tooltip>
                   ) : null}
                 </CircleMarker>
