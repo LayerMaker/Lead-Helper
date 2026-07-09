@@ -118,12 +118,23 @@ export function ReportPrintPage() {
     return nextPdf;
   }
 
+  function triggerPdfDownload(pdf) {
+    const anchor = document.createElement("a");
+    anchor.href = pdf.downloadUrl;
+    anchor.download = pdf.fileName;
+    anchor.rel = "noopener";
+    anchor.target = "_blank";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  }
+
   async function downloadReportPdf() {
     try {
       const pdf = await createReportPdfSession();
+      triggerPdfDownload(pdf);
       setPdfState("done");
-      setPdfMessage("PDF generated as a file. Opening the download now...");
-      window.location.assign(pdf.downloadUrl);
+      setPdfMessage("PDF download requested. On iPhone, check the download indicator or Files > Downloads. If it does not appear, use Save file.");
     } catch (error) {
       setPdfState("error");
       setPdfMessage(`${error.message} Use Print / Save as PDF as the fallback.`);
@@ -184,6 +195,11 @@ export function ReportPrintPage() {
           <button className="btn primary" type="button" disabled={pdfState === "working"} onClick={downloadReportPdf}>
             {pdfState === "working" ? "Generating..." : "Download PDF"}
           </button>
+          {generatedPdf ? (
+            <a className="btn primary" href={generatedPdf.downloadUrl} download={generatedPdf.fileName} target="_blank" rel="noreferrer">
+              Save file
+            </a>
+          ) : null}
           <button className="btn" type="button" disabled={pdfState === "working"} onClick={openReportPdf}>
             Open PDF
           </button>
