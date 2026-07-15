@@ -10,6 +10,33 @@ function toneClass(tone) {
   return "amber";
 }
 
+function reportEvidenceItems(row) {
+  const contactRole = row.contact?.role && row.contact.role !== "Contact pending title" ? row.contact.role : "";
+
+  return [
+    row.contact
+      ? {
+          label: "On-site contact",
+          value: contactRole ? `${row.contact.name} - ${contactRole}` : row.contact.name,
+        }
+      : null,
+    row.emailProof
+      ? {
+          label: "Follow-up record",
+          value: row.emailProofHeadline,
+        }
+      : null,
+  ].filter(Boolean);
+}
+
+function reportActivityLog(row) {
+  return [
+    row.evidenceDateLabel ? `Visit logged ${row.evidenceDateLabel}.` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
 function FitReportMap({ leafletMap }) {
   const map = useMap();
 
@@ -152,7 +179,7 @@ export function ClusterReportTemplate({ report, exportRef = null, mode = "previe
             <h3>{report.coverageTitle || `${report.clusterName} cluster coverage`}</h3>
             <small>{report.map.sourceLabel}</small>
           </div>
-          <span className="pill active">Generated {report.exportDateLabel}</span>
+          <span className="pill active">Field evidence {report.exportDateLabel}</span>
         </div>
 
         <div className={`report-export-map${hasLeafletMap ? " leaflet" : ""}`}>
@@ -203,76 +230,74 @@ export function ClusterReportTemplate({ report, exportRef = null, mode = "previe
 
       <section className="report-export-body">
         <div className="report-export-cards">
-          {report.dealershipCards.map((row, index) => (
-            <article className={`report-export-dealer-card${index === 0 ? " expanded" : ""}`} key={`${row.id}-${row.visit?.id || "seed"}`}>
-              <div className="report-export-dealer-top">
-                <div className="report-export-dealer-brand">
-                  <span className="dealer-logo-chip" style={{ borderColor: row.reportColour, color: row.reportColour }}>
-                    {row.initials}
-                  </span>
-                  <div>
-                    <h3 style={{ color: row.reportColour }}>{row.name}</h3>
-                    <small>{row.address}</small>
+          {report.dealershipCards.map((row, index) => {
+            const evidenceItems = reportEvidenceItems(row);
+            const activityLog = reportActivityLog(row);
+
+            return (
+              <article className={`report-export-dealer-card${index === 0 ? " expanded" : ""}`} key={`${row.id}-${row.visit?.id || "seed"}`}>
+                <div className="report-export-dealer-top">
+                  <div className="report-export-dealer-brand">
+                    <span className="dealer-logo-chip" style={{ borderColor: row.reportColour, color: row.reportColour }}>
+                      {row.initials}
+                    </span>
+                    <div>
+                      <h3 style={{ color: row.reportColour }}>{row.name}</h3>
+                      <small>{row.address}</small>
+                    </div>
                   </div>
+                  <span className={`report-status-pill ${toneClass(row.statusTone)}`}>{row.status}</span>
                 </div>
-                <span className={`report-status-pill ${toneClass(row.statusTone)}`}>{row.status}</span>
-              </div>
 
-              <div className="report-export-dealer-grid">
-                <div>
-                  <label>Contact captured</label>
-                  <strong>{row.contact ? row.contact.name : "No"}</strong>
-                </div>
-                <div>
-                  <label>Email status</label>
-                  <strong>{row.emailProof ? row.emailProofHeadline : row.emailProofLabel}</strong>
-                </div>
-              </div>
+                {evidenceItems.length ? (
+                  <div className="report-export-dealer-grid">
+                    {evidenceItems.map((item) => (
+                      <div key={item.label}>
+                        <label>{item.label}</label>
+                        <strong>{item.value}</strong>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
 
-              <div className="report-export-outcomes">
-                {((row.reportOutcomeLabels?.length ? row.reportOutcomeLabels : row.outcomes).length
-                  ? row.reportOutcomeLabels?.length
-                    ? row.reportOutcomeLabels
-                    : row.outcomes
-                  : [row.roleHint]
-                ).map((outcome) => (
-                  <span className="report-outcome-chip" key={outcome}>
-                    {outcome}
-                  </span>
-                ))}
-              </div>
-
-              {row.summaryLabels?.length ? (
-                <div className="report-export-outcomes summary-review">
-                  {row.summaryLabels.map((label) => (
-                    <span className="report-outcome-chip" key={label}>
-                      {label}
+                <div className="report-export-outcomes">
+                  {((row.reportOutcomeLabels?.length ? row.reportOutcomeLabels : row.outcomes).length
+                    ? row.reportOutcomeLabels?.length
+                      ? row.reportOutcomeLabels
+                      : row.outcomes
+                    : [row.roleHint]
+                  ).map((outcome) => (
+                    <span className="report-outcome-chip" key={outcome}>
+                      {outcome}
                     </span>
                   ))}
                 </div>
-              ) : null}
 
-              <div className="report-export-note">
-                <div>
-                  <label>Visit note</label>
-                  <p>{row.note || row.pitch || "No visit note added yet."}</p>
+                {row.summaryLabels?.length ? (
+                  <div className="report-export-outcomes summary-review">
+                    {row.summaryLabels.map((label) => (
+                      <span className="report-outcome-chip" key={label}>
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+
+                <div className="report-export-note">
+                  <div>
+                    <label>Visit note</label>
+                    <p>{row.note || row.pitch || "No visit note added yet."}</p>
+                  </div>
+                  {activityLog ? (
+                    <div>
+                      <label>Visit record</label>
+                      <p>{activityLog}</p>
+                    </div>
+                  ) : null}
                 </div>
-                <div>
-                  <label>Logs</label>
-                  <p>
-                    {row.visit ? `Visit logged ${row.visitDate}. ` : ""}
-                    {row.contact ? `Contact ${row.contact.name}${row.contact.role ? `, ${row.contact.role}` : ""}. ` : ""}
-                    {row.media ? `Media capture recorded. ` : ""}
-                    {row.emailProof
-                      ? row.emailProofDetail
-                      : row.draft
-                        ? `Email draft ready: ${row.draft.emailType}.`
-                        : "No email evidence yet."}
-                  </p>
-                </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
 
       </section>

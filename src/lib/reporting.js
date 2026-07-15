@@ -163,6 +163,40 @@ function formatLogDate(value) {
   return formatDate(date.toISOString());
 }
 
+function parseReportDate(value) {
+  if (!value) return null;
+  const normalized = String(value).replace(" ", "T");
+  const date = new Date(normalized);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatReportDateRange(values = [], fallbackDate = new Date()) {
+  const timestamps = values
+    .map(parseReportDate)
+    .filter(Boolean)
+    .map((date) => date.getTime())
+    .sort((left, right) => left - right);
+
+  if (!timestamps.length) {
+    return {
+      iso: fallbackDate.toISOString(),
+      label: formatDate(fallbackDate.toISOString()),
+      slug: fallbackDate.toISOString().slice(0, 10),
+    };
+  }
+
+  const first = new Date(timestamps[0]);
+  const last = new Date(timestamps[timestamps.length - 1]);
+  const firstSlug = first.toISOString().slice(0, 10);
+  const lastSlug = last.toISOString().slice(0, 10);
+
+  return {
+    iso: first.toISOString(),
+    label: firstSlug === lastSlug ? formatDate(first.toISOString()) : `${formatDate(first.toISOString())} - ${formatDate(last.toISOString())}`,
+    slug: firstSlug === lastSlug ? firstSlug : `${firstSlug}-to-${lastSlug}`,
+  };
+}
+
 function formatClusterReportTitle(clusterName) {
   const name = String(clusterName || "Cluster").trim();
   return /\bcluster\b/i.test(name) ? `${name} Report` : `${name} Cluster Report`;
@@ -181,9 +215,13 @@ function getEmailProofLabel(draft) {
   return "Draft ready";
 }
 
+function isPlaceholderContactRole(role) {
+  return !role || String(role).trim().toLowerCase() === "contact pending title";
+}
+
 function formatRecipient(contact, draft) {
   const name = contact?.name || draft?.toName || draft?.toAddress || "contact";
-  return contact?.role ? `${name} - ${contact.role}` : name;
+  return !isPlaceholderContactRole(contact?.role) ? `${name} - ${contact.role}` : name;
 }
 
 function getActionPhraseFromIntent(label) {
@@ -225,7 +263,7 @@ function getReportChipLabel(outcome) {
   if (normalized.includes("not suitable")) return "Not suitable";
   if (normalized.includes("interested")) return "Interest logged";
   if (normalized.includes("manager")) return "Manager met";
-  if (normalized.includes("card")) return "Contact captured";
+  if (normalized.includes("card")) return "Contact logged";
   return outcome;
 }
 
@@ -261,7 +299,7 @@ function formatContactName(contact) {
 }
 
 function formatContactTitle(contact) {
-  return contact?.role || "title not captured";
+  return !isPlaceholderContactRole(contact?.role) ? contact.role : "title not captured";
 }
 
 function formatContactWithTitle(contact) {
@@ -337,6 +375,20 @@ function buildChipReportText({ outcomes = [], contact, actions = [] }) {
 function buildVisitReportNote({ note, outcomes = [], contact, actions = [] }) {
   if (!isInternalVisitNote(note)) return note;
   return buildChipReportText({ outcomes, contact, actions });
+}
+
+function getRowEvidenceTimestamp({ visit, summaryRecord, draft, media, completedActions = [] }) {
+  return (
+    visit?.createdAt ||
+    summaryRecord?.reportIncludedAt ||
+    summaryRecord?.updatedAt ||
+    media?.createdAt ||
+    draft?.openedAt ||
+    draft?.sentAt ||
+    draft?.createdAt ||
+    completedActions[0]?.completedAt ||
+    ""
+  );
 }
 
 function buildOutcomeReportSummary({ outcomes = [], contact, actions = [] }) {
@@ -508,6 +560,7 @@ export function buildClusterReportModel({
       contact,
       actions,
     });
+    const evidenceTimestamp = getRowEvidenceTimestamp({ visit, summaryRecord, draft, media, completedActions });
 
     return {
       id: dealership.id,
@@ -526,6 +579,8 @@ export function buildClusterReportModel({
       projectedLocation: Array.isArray(dealership.location) ? projectPoint(dealership.location, bounds) : null,
       visit,
       visitDate: formatLogDate(visit?.createdAt),
+      evidenceDate: evidenceTimestamp,
+      evidenceDateLabel: formatLogDate(evidenceTimestamp),
       outcomes: visit?.outcomes || [],
       reportOutcomeLabels: (visit?.outcomes || []).map(getReportChipLabel),
       outcomeSummary,
@@ -574,17 +629,19 @@ export function buildClusterReportModel({
     .map((dealership) => projectPoint(dealership.location, bounds));
 
   const exportDate = new Date();
+  const reportDate = formatReportDateRange(reportableRows.map((row) => row.evidenceDate), exportDate);
 
   return {
     clusterId,
     clusterName: cluster.name,
     exportTitle: formatClusterReportTitle(cluster.name),
     coverageTitle: formatClusterCoverageTitle(cluster.name),
-    exportDateLabel: formatDate(exportDate.toISOString()),
-    exportDateIso: exportDate.toISOString(),
-    fileName: `${slugify(cluster.name)}-cluster-report-${exportDate.toISOString().slice(0, 10)}.pdf`,
+    exportDateLabel: reportDate.label,
+    exportDateIso: reportDate.iso,
+    generatedDateLabel: formatDate(exportDate.toISOString()),
+    fileName: `${slugify(cluster.name)}-cluster-report-${reportDate.slug}.pdf`,
     meta: [
-      { label: "Date", value: formatDate(exportDate.toISOString()) },
+      { label: "Date", value: reportDate.label },
       { label: "Visited", value: String(visitedRows.length) },
       { label: "Open actions", value: String(openActions.length) },
       { label: "Follow-ups", value: String(sentFollowUps) },
