@@ -6,6 +6,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-chromium";
+import { buildDiscoveryPipelineFileName, buildDiscoveryPipelineWorkbookBuffer } from "./src/lib/spreadsheetReporting.js";
 
 const app = express();
 const execFileAsync = promisify(execFile);
@@ -359,6 +360,59 @@ app.get("/api/reports/pdf", async (request, response) => {
     response.status(error.status || 500).json({
       error: error.body?.message || error.message || "Report PDF generation failed.",
       hint: "If this is running on Render, confirm the latest deploy installed the Chromium renderer.",
+    });
+  }
+});
+
+app.get("/api/reports/discovery-pipeline.xlsx", async (_request, response) => {
+  try {
+    const rows = await supabaseRest(`lead_helper_app_state?id=eq.${syncRecordId}&select=state&limit=1`);
+    const state = Array.isArray(rows) ? rows[0]?.state : null;
+    if (!state) {
+      response.status(404).json({ error: "No synced Lead Helper state was found." });
+      return;
+    }
+
+    const { buffer } = buildDiscoveryPipelineWorkbookBuffer(state);
+    const fileName = buildDiscoveryPipelineFileName();
+
+    response
+      .status(200)
+      .set({
+        "Cache-Control": "no-store",
+        "Content-Disposition": `attachment; filename="${fileName}"`,
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      })
+      .send(buffer);
+  } catch (error) {
+    response.status(error.status || 500).json({
+      error: error.body?.message || error.message || "Discovery pipeline spreadsheet generation failed.",
+    });
+  }
+});
+
+app.post("/api/reports/discovery-pipeline.xlsx", async (request, response) => {
+  const state = request.body?.state;
+  if (!state || typeof state !== "object") {
+    response.status(400).json({ error: "Current browser state is required to generate the discovery pipeline spreadsheet." });
+    return;
+  }
+
+  try {
+    const { buffer } = buildDiscoveryPipelineWorkbookBuffer(state);
+    const fileName = buildDiscoveryPipelineFileName();
+
+    response
+      .status(200)
+      .set({
+        "Cache-Control": "no-store",
+        "Content-Disposition": `attachment; filename="${fileName}"`,
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      })
+      .send(buffer);
+  } catch (error) {
+    response.status(500).json({
+      error: error.message || "Discovery pipeline spreadsheet generation failed.",
     });
   }
 });

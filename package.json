@@ -13,6 +13,7 @@
     "deploy:render": "powershell -ExecutionPolicy Bypass -File ./scripts/deploy-render.ps1",
     "deploy:render:current": "powershell -ExecutionPolicy Bypass -File ./scripts/deploy-render.ps1 -CurrentCommit",
     "ship:render": "npm run build && npm run deploy:render:current",
+    "report:spreadsheet": "node ./scripts/build-discovery-pipeline-xlsx.mjs",
     "data:build": "node ./scripts/build-dealership-dataset.mjs",
     "data:import": "node ./scripts/import-dealership-job.mjs",
     "data:collect": "node ./scripts/collect-osm-candidates.mjs",
@@ -35,7 +36,8 @@
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-leaflet": "^5.0.0",
-    "react-router-dom": "^7.17.0"
+    "react-router-dom": "^7.17.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

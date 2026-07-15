@@ -26,6 +26,7 @@ export function ReportsPage() {
   } = useAppState();
   const [exportState, setExportState] = useState("idle");
   const [exportMessage, setExportMessage] = useState("");
+  const [spreadsheetState, setSpreadsheetState] = useState("idle");
   const reportClusters = useMemo(() => getReportClusters(state), [state]);
   const [selectedReportClusterId, setSelectedReportClusterId] = useState(() => getDefaultReportClusterId(state));
   const reportRef = useRef(null);
@@ -75,6 +76,47 @@ export function ReportsPage() {
     setExportMessage("Report preview opened using the local browser data.");
   }
 
+  async function downloadDiscoverySpreadsheet() {
+    setSpreadsheetState("exporting");
+    setExportMessage("Generating discovery pipeline spreadsheet from current field inputs...");
+    try {
+      const response = await fetch("/api/reports/discovery-pipeline.xlsx", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ state }),
+      });
+
+      if (!response.ok) {
+        let errorMessage = "Spreadsheet generation failed.";
+        try {
+          const body = await response.json();
+          errorMessage = body.error || errorMessage;
+        } catch {
+          errorMessage = await response.text();
+        }
+        throw new Error(errorMessage);
+      }
+
+      const blob = await response.blob();
+      const disposition = response.headers.get("content-disposition") || "";
+      const fileNameMatch = disposition.match(/filename="?([^"]+)"?/i);
+      const fileName = fileNameMatch?.[1] || `lead-helper-discovery-pipeline-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+      setSpreadsheetState("done");
+      setExportMessage("Discovery pipeline spreadsheet download requested.");
+    } catch (error) {
+      setSpreadsheetState("error");
+      setExportMessage(error.message || "Spreadsheet generation failed.");
+    }
+  }
+
   function scrollToPreview() {
     reportRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -98,11 +140,16 @@ export function ReportsPage() {
           <button className="btn primary" type="button" disabled={exportState === "exporting"} onClick={handleExportVisibleCluster}>
             Generate PDF
           </button>
+          <button className="btn primary" type="button" disabled={spreadsheetState === "exporting"} onClick={downloadDiscoverySpreadsheet}>
+            {spreadsheetState === "exporting" ? "Generating..." : "Generate spreadsheet"}
+          </button>
         </div>
       </section>
 
-      {exportState === "error" && exportMessage ? <div className="inline-alert error">{exportMessage}</div> : null}
-      {exportState === "done" && exportMessage ? <div className="inline-alert">{exportMessage}</div> : null}
+      {(exportState === "error" || spreadsheetState === "error") && exportMessage ? <div className="inline-alert error">{exportMessage}</div> : null}
+      {(exportState === "done" || spreadsheetState === "done" || spreadsheetState === "exporting") && exportMessage ? (
+        <div className="inline-alert">{exportMessage}</div>
+      ) : null}
 
       <section className="pipeline-strip panel pad">
         <div>
@@ -117,8 +164,8 @@ export function ReportsPage() {
         </div>
         <div>
           <span className="flow-dot"></span>
-          <b>Cluster report</b>
-          <small>Proof feed for Battersea tenant search</small>
+          <b>Spreadsheet report</b>
+          <small>Discovery pipeline for senior handover</small>
         </div>
       </section>
 
